@@ -40,10 +40,12 @@ namespace BuildingBlocksManager
                                     settings.LastSourceDirectory = value;
                                     break;
                                 case "FlatImport":
-                                    bool.TryParse(value, out settings.FlatImport);
+                                    if (bool.TryParse(value, out bool flatImport))
+                                        settings.FlatImport = flatImport;
                                     break;
                                 case "FlatExport":
-                                    bool.TryParse(value, out settings.FlatExport);
+                                    if (bool.TryParse(value, out bool flatExport))
+                                        settings.FlatExport = flatExport;
                                     break;
                             }
                         }
