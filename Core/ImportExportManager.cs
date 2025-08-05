@@ -458,11 +458,6 @@ namespace BuildingBlocksManager.Core
             return result == DialogResult.Yes;
         }
 
-        private void OnProgressUpdate(string message)
-        {
-            ProgressUpdate?.Invoke(this, message);
-        }
-
         public ExportResult BatchExport(string templatePath, ExportOptions options)
         {
             var startTime = DateTime.Now;
