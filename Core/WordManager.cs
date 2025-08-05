@@ -220,7 +220,8 @@ namespace BuildingBlocksManager.Core
                 tempDoc.Content.Paste();
 
                 // Create Building Block
-                BuildingBlock bb = _templateDoc.AttachedTemplate.BuildingBlockEntries.Add(
+                var attachedTemplate = _templateDoc.get_AttachedTemplate();
+                BuildingBlock bb = attachedTemplate.BuildingBlockEntries.Add(
                     Name: buildingBlockName,
                     Type: WdBuildingBlockTypes.wdTypeCustom1,
                     Category: category,
@@ -348,14 +349,16 @@ namespace BuildingBlocksManager.Core
 
             try
             {
-                foreach (BuildingBlock bb in _templateDoc.AttachedTemplate.BuildingBlockEntries)
+                var attachedTemplate = _templateDoc.get_AttachedTemplate();
+                foreach (BuildingBlock bb in attachedTemplate.BuildingBlockEntries)
                 {
-                    if (string.IsNullOrEmpty(categoryPrefix) || bb.Category.StartsWith(categoryPrefix))
+                    var categoryString = bb.Category.ToString();
+                    if (string.IsNullOrEmpty(categoryPrefix) || categoryString.StartsWith(categoryPrefix))
                     {
                         buildingBlocks.Add(new BuildingBlockInfo
                         {
                             Name = bb.Name,
-                            Category = bb.Category,
+                            Category = categoryString,
                             Gallery = bb.Type.ToString(),
                             Description = bb.Description,
                             CreatedDate = DateTime.Now, // COM doesn't expose creation date
@@ -379,9 +382,10 @@ namespace BuildingBlocksManager.Core
 
             try
             {
-                foreach (BuildingBlock bb in _templateDoc.AttachedTemplate.BuildingBlockEntries)
+                var attachedTemplate = _templateDoc.get_AttachedTemplate();
+                foreach (BuildingBlock bb in attachedTemplate.BuildingBlockEntries)
                 {
-                    if (bb.Name == name && bb.Category == category)
+                    if (bb.Name == name && bb.Category.ToString() == category)
                     {
                         return true;
                     }
@@ -402,9 +406,10 @@ namespace BuildingBlocksManager.Core
 
             try
             {
-                foreach (BuildingBlock bb in _templateDoc.AttachedTemplate.BuildingBlockEntries)
+                var attachedTemplate = _templateDoc.get_AttachedTemplate();
+                foreach (BuildingBlock bb in attachedTemplate.BuildingBlockEntries)
                 {
-                    if (bb.Name == name && bb.Category == category)
+                    if (bb.Name == name && bb.Category.ToString() == category)
                     {
                         bb.Delete();
                         return true;

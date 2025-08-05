@@ -130,7 +130,7 @@ namespace BuildingBlocksManager.Core
             var fileInfo = new FileInfo
             {
                 FullPath = fullPath,
-                RelativePath = Path.GetRelativePath(rootPath, fullPath),
+                RelativePath = GetRelativePath(rootPath, fullPath),
                 FileName = fileName,
                 LastModified = File.GetLastWriteTime(fullPath)
             };
@@ -191,7 +191,7 @@ namespace BuildingBlocksManager.Core
 
         private string GenerateCategory(string fullPath, string rootPath)
         {
-            var relativePath = Path.GetRelativePath(rootPath, fullPath);
+            var relativePath = GetRelativePath(rootPath, fullPath);
             var directoryPath = Path.GetDirectoryName(relativePath);
 
             if (string.IsNullOrEmpty(directoryPath) || directoryPath == ".")
@@ -245,6 +245,22 @@ namespace BuildingBlocksManager.Core
             return files.Where(f => !f.IsValid && f.ValidationError?.Contains("invalid characters") == true)
                        .Select(f => f.FileName)
                        .ToList();
+        }
+
+        private string GetRelativePath(string rootPath, string fullPath)
+        {
+            // .NET Framework compatible relative path calculation
+            var rootUri = new Uri(rootPath.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar);
+            var fullUri = new Uri(fullPath);
+            
+            if (rootUri.Scheme != fullUri.Scheme) 
+                return fullPath; // Different schemes, can't make relative
+            
+            var relativeUri = rootUri.MakeRelativeUri(fullUri);
+            var relativePath = Uri.UnescapeDataString(relativeUri.ToString());
+            
+            // Convert forward slashes to backslashes for Windows
+            return relativePath.Replace('/', Path.DirectorySeparatorChar);
         }
     }
 }

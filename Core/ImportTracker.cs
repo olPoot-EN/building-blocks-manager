@@ -118,7 +118,11 @@ namespace BuildingBlocksManager.Core
 
         public DateTime? GetLastImportTime(string filePath)
         {
-            return _importedFiles.TryGetValue(filePath, out DateTime importTime) ? importTime : null;
+            if (_importedFiles.TryGetValue(filePath, out DateTime importTime))
+            {
+                return importTime;
+            }
+            return null;
         }
 
         public bool HasBeenImported(string filePath)
@@ -288,7 +292,11 @@ namespace BuildingBlocksManager.Core
 
         public DateTime? GetLastImportDate()
         {
-            return _importedFiles.Values.Any() ? _importedFiles.Values.Max() : null;
+            if (_importedFiles.Values.Any())
+            {
+                return _importedFiles.Values.Max();
+            }
+            return null;
         }
 
         private void SaveTrackingData()

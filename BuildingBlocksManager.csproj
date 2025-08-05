@@ -5,6 +5,7 @@
     <TargetFramework>net48</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <PlatformTarget>AnyCPU</PlatformTarget>
+    <LangVersion>9.0</LangVersion>
     <AssemblyTitle>Building Blocks Manager</AssemblyTitle>
     <AssemblyDescription>Word Building Blocks Import/Export Tool</AssemblyDescription>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
