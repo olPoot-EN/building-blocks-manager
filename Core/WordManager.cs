@@ -220,7 +220,7 @@ namespace BuildingBlocksManager.Core
                 tempDoc.Content.Paste();
 
                 // Create Building Block
-                var attachedTemplate = _templateDoc.get_AttachedTemplate();
+                var attachedTemplate = (Template)_templateDoc.get_AttachedTemplate();
                 BuildingBlock bb = attachedTemplate.BuildingBlockEntries.Add(
                     Name: buildingBlockName,
                     Type: WdBuildingBlockTypes.wdTypeCustom1,
@@ -282,7 +282,7 @@ namespace BuildingBlocksManager.Core
             {
                 // Find the Building Block
                 BuildingBlock bb = null;
-                var attachedTemplate = _templateDoc.get_AttachedTemplate();
+                var attachedTemplate = (Template)_templateDoc.get_AttachedTemplate();
                 foreach (BuildingBlock block in attachedTemplate.BuildingBlockEntries)
                 {
                     if (block.Name == buildingBlockName && block.Category.ToString() == category)
@@ -350,7 +350,7 @@ namespace BuildingBlocksManager.Core
 
             try
             {
-                var attachedTemplate = _templateDoc.get_AttachedTemplate();
+                var attachedTemplate = (Template)_templateDoc.get_AttachedTemplate();
                 foreach (BuildingBlock bb in attachedTemplate.BuildingBlockEntries)
                 {
                     var categoryString = bb.Category.ToString();
@@ -383,7 +383,7 @@ namespace BuildingBlocksManager.Core
 
             try
             {
-                var attachedTemplate = _templateDoc.get_AttachedTemplate();
+                var attachedTemplate = (Template)_templateDoc.get_AttachedTemplate();
                 foreach (BuildingBlock bb in attachedTemplate.BuildingBlockEntries)
                 {
                     if (bb.Name == name && bb.Category.ToString() == category)
@@ -407,7 +407,7 @@ namespace BuildingBlocksManager.Core
 
             try
             {
-                var attachedTemplate = _templateDoc.get_AttachedTemplate();
+                var attachedTemplate = (Template)_templateDoc.get_AttachedTemplate();
                 foreach (BuildingBlock bb in attachedTemplate.BuildingBlockEntries)
                 {
                     if (bb.Name == name && bb.Category.ToString() == category)
