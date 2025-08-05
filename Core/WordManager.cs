@@ -283,8 +283,9 @@ namespace BuildingBlocksManager.Core
                 // Find the Building Block
                 BuildingBlock bb = null;
                 Microsoft.Office.Interop.Word.Template attachedTemplate = (Microsoft.Office.Interop.Word.Template)_templateDoc.get_AttachedTemplate();
-                foreach (BuildingBlock block in attachedTemplate.BuildingBlockEntries)
+                for (int i = 1; i <= attachedTemplate.BuildingBlockEntries.Count; i++)
                 {
+                    BuildingBlock block = attachedTemplate.BuildingBlockEntries.Item(i);
                     if (block.Name == buildingBlockName && block.Category.ToString() == category)
                     {
                         bb = block;
@@ -351,8 +352,9 @@ namespace BuildingBlocksManager.Core
             try
             {
                 Microsoft.Office.Interop.Word.Template attachedTemplate = (Microsoft.Office.Interop.Word.Template)_templateDoc.get_AttachedTemplate();
-                foreach (BuildingBlock bb in attachedTemplate.BuildingBlockEntries)
+                for (int i = 1; i <= attachedTemplate.BuildingBlockEntries.Count; i++)
                 {
+                    BuildingBlock bb = attachedTemplate.BuildingBlockEntries.Item(i);
                     var categoryString = bb.Category.ToString();
                     if (string.IsNullOrEmpty(categoryPrefix) || categoryString.StartsWith(categoryPrefix))
                     {
@@ -384,8 +386,9 @@ namespace BuildingBlocksManager.Core
             try
             {
                 Microsoft.Office.Interop.Word.Template attachedTemplate = (Microsoft.Office.Interop.Word.Template)_templateDoc.get_AttachedTemplate();
-                foreach (BuildingBlock bb in attachedTemplate.BuildingBlockEntries)
+                for (int i = 1; i <= attachedTemplate.BuildingBlockEntries.Count; i++)
                 {
+                    BuildingBlock bb = attachedTemplate.BuildingBlockEntries.Item(i);
                     if (bb.Name == name && bb.Category.ToString() == category)
                     {
                         return true;
@@ -408,8 +411,9 @@ namespace BuildingBlocksManager.Core
             try
             {
                 Microsoft.Office.Interop.Word.Template attachedTemplate = (Microsoft.Office.Interop.Word.Template)_templateDoc.get_AttachedTemplate();
-                foreach (BuildingBlock bb in attachedTemplate.BuildingBlockEntries)
+                for (int i = 1; i <= attachedTemplate.BuildingBlockEntries.Count; i++)
                 {
+                    BuildingBlock bb = attachedTemplate.BuildingBlockEntries.Item(i);
                     if (bb.Name == name && bb.Category.ToString() == category)
                     {
                         bb.Delete();
