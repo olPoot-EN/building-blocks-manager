@@ -84,17 +84,19 @@ namespace BuildingBlocksManager
                 OpenTemplate();
                 
                 // Access Building Blocks through the template's BuildingBlockEntries
-                Word.Template template = templateDoc.get_AttachedTemplate();
+                Word.Template template = (Word.Template)templateDoc.get_AttachedTemplate();
                 
-                foreach (Word.BuildingBlock bb in template.BuildingBlockEntries)
+                // Use indexed access instead of foreach for COM collections
+                for (int i = 1; i <= template.BuildingBlockEntries.Count; i++)
                 {
+                    Word.BuildingBlock bb = template.BuildingBlockEntries.Item(i);
                     if (bb.Category.Name.StartsWith("InternalAutotext"))
                     {
                         buildingBlocks.Add(new BuildingBlockInfo
                         {
                             Name = bb.Name,
                             Category = bb.Category.Name,
-                            Gallery = bb.Gallery.ToString()
+                            Gallery = bb.Type.ToString()
                         });
                     }
                 }
@@ -127,13 +129,12 @@ namespace BuildingBlocksManager
                 range.Paste();
 
                 // Access template's BuildingBlockEntries
-                Word.Template template = templateDoc.get_AttachedTemplate();
+                Word.Template template = (Word.Template)templateDoc.get_AttachedTemplate();
                 template.BuildingBlockEntries.Add(
                     name,
                     Word.WdBuildingBlockTypes.wdTypeCustom1,
                     category,
-                    range,
-                    insertOptions: Word.WdDocPartInsertOptions.wdInsertContent);
+                    range);
 
                 // Clear the pasted content from template
                 range.Delete();
@@ -159,9 +160,12 @@ namespace BuildingBlocksManager
         {
             try
             {
-                Word.Template template = templateDoc.get_AttachedTemplate();
-                foreach (Word.BuildingBlock bb in template.BuildingBlockEntries)
+                Word.Template template = (Word.Template)templateDoc.get_AttachedTemplate();
+                
+                // Use indexed access to find and remove Building Block
+                for (int i = 1; i <= template.BuildingBlockEntries.Count; i++)
                 {
+                    Word.BuildingBlock bb = template.BuildingBlockEntries.Item(i);
                     if (bb.Name == name && bb.Category.Name == category)
                     {
                         bb.Delete();
@@ -185,9 +189,11 @@ namespace BuildingBlocksManager
                 
                 // Find the Building Block
                 Word.BuildingBlock targetBB = null;
-                Word.Template template = templateDoc.get_AttachedTemplate();
-                foreach (Word.BuildingBlock bb in template.BuildingBlockEntries)
+                Word.Template template = (Word.Template)templateDoc.get_AttachedTemplate();
+                
+                for (int i = 1; i <= template.BuildingBlockEntries.Count; i++)
                 {
+                    Word.BuildingBlock bb = template.BuildingBlockEntries.Item(i);
                     if (bb.Name == buildingBlockName && bb.Category.Name == category)
                     {
                         targetBB = bb;
