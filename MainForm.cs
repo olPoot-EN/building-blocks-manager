@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace BuildingBlocksManager
@@ -296,21 +297,43 @@ namespace BuildingBlocksManager
             AppendResults("=== DIRECTORY QUERY ===");
             AppendResults($"Scanning directory: {txtSourceDirectory.Text}");
             
-            // Simulate directory scanning
-            System.Threading.Thread.Sleep(1000);
-            
-            AppendResults("Files Ready for Import: 12");
-            AppendResults("- New Files: 8");
-            AppendResults("- Modified Files: 4");
-            AppendResults("- Up-to-date Files: 15");
-            AppendResults("- Ignored Files: 23");
-            AppendResults("");
-            AppendResults("Detailed Listing:");
-            AppendResults("Legal\\Contracts\\AT_Standard.docx - Modified (Last: 2025-01-15, Imported: 2025-01-10)");
-            AppendResults("Legal\\Forms\\AT_Disclaimer.docx - New (Never imported)");
-            AppendResults("HR\\AT_Policy.docx - Up-to-date");
-            AppendResults("");
-            AppendResults("Query completed successfully.");
+            try
+            {
+                var fileManager = new FileManager(txtSourceDirectory.Text);
+                var summary = fileManager.GetSummary();
+                
+                AppendResults("");
+                AppendResults(summary);
+                AppendResults("");
+                AppendResults("Detailed Listing:");
+                
+                var files = fileManager.ScanDirectory();
+                foreach (var file in files.Take(10)) // Show first 10 files
+                {
+                    var fileName = Path.GetFileName(file.FilePath);
+                    var status = file.IsNew ? "New (Never imported)" :
+                                file.IsModified ? $"Modified (Last: {file.LastModified:yyyy-MM-dd}, Imported: {file.LastImported:yyyy-MM-dd})" :
+                                "Up-to-date";
+                    
+                    if (!file.IsValid)
+                        status += $" - INVALID CHARACTERS: {string.Join(", ", file.InvalidCharacters)}";
+                    
+                    var relativePath = Path.GetRelativePath(txtSourceDirectory.Text, file.FilePath);
+                    AppendResults($"{relativePath} - {status}");
+                }
+                
+                if (files.Count > 10)
+                {
+                    AppendResults($"... and {files.Count - 10} more files");
+                }
+                
+                AppendResults("");
+                AppendResults("Query completed successfully.");
+            }
+            catch (Exception ex)
+            {
+                AppendResults($"Error during directory scan: {ex.Message}");
+            }
             
             progressBar.Style = ProgressBarStyle.Continuous;
             progressBar.Value = 0;
@@ -321,12 +344,13 @@ namespace BuildingBlocksManager
         {
             if (!ValidatePaths()) return;
 
+            string flatCategory = null;
             if (chkFlatImport.Checked)
             {
-                string categoryName = PromptForInput("Flat Import Category", 
+                flatCategory = PromptForInput("Flat Import Category", 
                     "Enter category name for all imported Building Blocks:");
-                if (string.IsNullOrWhiteSpace(categoryName)) return;
-                AppendResults($"Using flat import category: {categoryName}");
+                if (string.IsNullOrWhiteSpace(flatCategory)) return;
+                AppendResults($"Using flat import category: InternalAutotext\\{flatCategory}");
             }
 
             UpdateStatus("Importing all files...");
@@ -338,28 +362,89 @@ namespace BuildingBlocksManager
             AppendResults($"Source Directory: {txtSourceDirectory.Text}");
             AppendResults($"Flat Import: {(chkFlatImport.Checked ? "Yes" : "No")}");
             AppendResults("");
-            AppendResults("Creating backup...");
-            
-            // Simulate import process
-            for (int i = 0; i <= 100; i += 10)
+
+            WordManager wordManager = null;
+            var startTime = DateTime.Now;
+            int successCount = 0;
+            int errorCount = 0;
+
+            try
             {
-                progressBar.Value = i;
-                System.Threading.Thread.Sleep(200);
-                if (i == 30) AppendResults("Processing Legal\\Contracts\\AT_Standard.docx...");
-                if (i == 60) AppendResults("Processing HR\\AT_Policy.docx...");
-                if (i == 90) AppendResults("Saving template...");
+                // Initialize managers
+                wordManager = new WordManager(txtTemplatePath.Text);
+                var fileManager = new FileManager(txtSourceDirectory.Text);
+                var importTracker = new ImportTracker();
+
+                // Create backup
+                AppendResults("Creating backup...");
+                wordManager.CreateBackup();
+
+                // Get files to import (new and modified only)
+                var filesToImport = fileManager.ScanDirectory()
+                    .Where(f => (f.IsNew || f.IsModified) && f.IsValid)
+                    .ToList();
+
+                if (filesToImport.Count == 0)
+                {
+                    AppendResults("No files require importing.");
+                    return;
+                }
+
+                AppendResults($"Found {filesToImport.Count} files to import");
+                AppendResults("");
+
+                // Import each file
+                for (int i = 0; i < filesToImport.Count; i++)
+                {
+                    var file = filesToImport[i];
+                    var fileName = Path.GetFileName(file.FilePath);
+                    
+                    try
+                    {
+                        progressBar.Value = (int)((double)(i + 1) / filesToImport.Count * 100);
+                        UpdateStatus($"Processing {fileName}...");
+                        AppendResults($"Processing {fileName}...");
+
+                        // Use flat category if specified, otherwise use extracted category
+                        var category = chkFlatImport.Checked ? $"InternalAutotext\\{flatCategory}" : file.Category;
+                        
+                        // Import the Building Block
+                        wordManager.ImportBuildingBlock(file.FilePath, category, file.Name);
+                        
+                        // Update import tracking
+                        importTracker.UpdateImportTime(file.FilePath);
+                        
+                        successCount++;
+                        AppendResults($"  ✓ Successfully imported as {category}\\{file.Name}");
+                    }
+                    catch (Exception ex)
+                    {
+                        errorCount++;
+                        AppendResults($"  ✗ Failed to import {fileName}: {ex.Message}");
+                    }
+                }
             }
+            catch (Exception ex)
+            {
+                AppendResults($"Fatal error during import: {ex.Message}");
+                UpdateStatus("Import failed");
+                return;
+            }
+            finally
+            {
+                wordManager?.Dispose();
+            }
+
+            var processingTime = (DateTime.Now - startTime).TotalSeconds;
             
             AppendResults("");
-            AppendResults("Import Completed Successfully");
-            AppendResults("Building Blocks Imported: 12");
-            AppendResults("- InternalAutotext\\Legal\\Contracts: Standard, Premium, Basic");
-            AppendResults("- InternalAutotext\\HR\\Policies: Vacation, Sick_Leave");
-            AppendResults("Files Ignored: 23 (notes, documentation, non-AT_ files)");
-            AppendResults("Processing Time: 2.3 seconds");
+            AppendResults("Import Operation Completed");
+            AppendResults($"Building Blocks Successfully Imported: {successCount}");
+            AppendResults($"Files with Errors: {errorCount}");
+            AppendResults($"Processing Time: {processingTime:F1} seconds");
             
             progressBar.Value = 0;
-            UpdateStatus("Import completed successfully");
+            UpdateStatus(errorCount == 0 ? "Import completed successfully" : $"Import completed with {errorCount} errors");
         }
 
         private void BtnImportSelected_Click(object sender, EventArgs e)
