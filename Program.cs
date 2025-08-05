@@ -3,14 +3,14 @@ using System.Windows.Forms;
 
 namespace BuildingBlocksManager
 {
-    internal static class Program
+    static class Program
     {
         [STAThread]
         static void Main()
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new UI.MainForm());
+            Application.Run(new MainForm());
         }
     }
 }
