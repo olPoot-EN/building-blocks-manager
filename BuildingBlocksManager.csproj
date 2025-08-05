@@ -11,17 +11,17 @@
     <Company>Internal Tool</Company>
     <Product>Building Blocks Manager</Product>
     <Copyright>Copyright © 2025</Copyright>
+    <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="Microsoft.Office.Interop.Word">
-      <HintPath>C:\Program Files\Microsoft Office\root\Office16\ADDINS\Microsoft.Office.Interop.Word.dll</HintPath>
-      <EmbedInteropTypes>true</EmbedInteropTypes>
-    </Reference>
+    <PackageReference Include="Microsoft.Office.Interop.Word" Version="15.0.4797.1003" />
+    <PackageReference Include="System.Text.Json" Version="6.0.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="System.Windows.Forms" Version="4.0.0" />
+  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Drawing" />
   </ItemGroup>
 
 </Project>
