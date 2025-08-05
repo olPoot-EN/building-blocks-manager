@@ -467,17 +467,74 @@ namespace BuildingBlocksManager
                     AppendResults($"File: {Path.GetFileName(dialog.FileName)}");
                     AppendResults($"Template: {Path.GetFileName(txtTemplatePath.Text)}");
                     AppendResults("");
-                    AppendResults("Creating backup...");
-                    AppendResults("Processing file...");
+
+                    WordManager wordManager = null;
+                    var startTime = DateTime.Now;
                     
-                    System.Threading.Thread.Sleep(1500);
-                    
-                    AppendResults($"Successfully imported Building Block: {Path.GetFileNameWithoutExtension(dialog.FileName).Substring(3)}");
-                    AppendResults("Processing Time: 0.8 seconds");
+                    try
+                    {
+                        // Initialize managers
+                        wordManager = new WordManager(txtTemplatePath.Text);
+                        var fileManager = new FileManager(txtSourceDirectory.Text);
+                        var importTracker = new ImportTracker();
+
+                        // Create backup
+                        AppendResults("Creating backup...");
+                        wordManager.CreateBackup();
+
+                        // Extract category and name
+                        var fileName = Path.GetFileName(dialog.FileName);
+                        var category = fileManager.ExtractCategory(dialog.FileName);
+                        var name = fileManager.ExtractName(fileName);
+
+                        // Check for invalid characters
+                        var invalidChars = fileManager.GetInvalidCharacters(fileName);
+                        if (invalidChars.Count > 0)
+                        {
+                            AppendResults($"Warning: File contains invalid characters: {string.Join(", ", invalidChars)}");
+                            AppendResults("Import may fail or produce unexpected results.");
+                        }
+
+                        AppendResults("Processing file...");
+                        
+                        // Use flat category if specified
+                        if (chkFlatImport.Checked)
+                        {
+                            string flatCategory = PromptForInput("Flat Import Category", 
+                                "Enter category name for this Building Block:");
+                            if (string.IsNullOrWhiteSpace(flatCategory))
+                            {
+                                AppendResults("Import cancelled - no category specified.");
+                                return;
+                            }
+                            category = $"InternalAutotext\\{flatCategory}";
+                        }
+
+                        // Import the Building Block
+                        wordManager.ImportBuildingBlock(dialog.FileName, category, name);
+                        
+                        // Update import tracking
+                        importTracker.UpdateImportTime(dialog.FileName);
+                        
+                        var processingTime = (DateTime.Now - startTime).TotalSeconds;
+                        
+                        AppendResults($"Successfully imported Building Block: {category}\\{name}");
+                        AppendResults($"Processing Time: {processingTime:F1} seconds");
+                        
+                        UpdateStatus("Import completed successfully");
+                    }
+                    catch (Exception ex)
+                    {
+                        AppendResults($"Import failed: {ex.Message}");
+                        UpdateStatus("Import failed");
+                    }
+                    finally
+                    {
+                        wordManager?.Dispose();
+                    }
                     
                     progressBar.Style = ProgressBarStyle.Continuous;
                     progressBar.Value = 0;
-                    UpdateStatus("Import completed successfully");
                 }
             }
         }
@@ -507,26 +564,103 @@ namespace BuildingBlocksManager
             AppendResults($"Export Location: {exportPath}");
             AppendResults($"Flat Export: {(chkFlatExport.Checked ? "Yes" : "No")}");
             AppendResults("");
-            
-            // Simulate export process
-            for (int i = 0; i <= 100; i += 10)
+
+            WordManager wordManager = null;
+            var startTime = DateTime.Now;
+            int successCount = 0;
+            int errorCount = 0;
+            int directoriesCreated = 0;
+
+            try
             {
-                progressBar.Value = i;
-                System.Threading.Thread.Sleep(200);
-                if (i == 20) AppendResults("Creating directory structure...");
-                if (i == 40) AppendResults("Exporting Legal\\Contracts\\AT_Standard.docx...");
-                if (i == 70) AppendResults("Exporting HR\\AT_Policy.docx...");
+                // Initialize WordManager
+                wordManager = new WordManager(txtTemplatePath.Text);
+                
+                // Get all Building Blocks from template
+                AppendResults("Loading Building Blocks from template...");
+                var buildingBlocks = wordManager.GetBuildingBlocks();
+
+                if (buildingBlocks.Count == 0)
+                {
+                    AppendResults("No Building Blocks found in template.");
+                    return;
+                }
+
+                AppendResults($"Found {buildingBlocks.Count} Building Blocks to export");
+                AppendResults("");
+
+                // Export each Building Block
+                for (int i = 0; i < buildingBlocks.Count; i++)
+                {
+                    var bb = buildingBlocks[i];
+                    
+                    try
+                    {
+                        progressBar.Value = (int)((double)(i + 1) / buildingBlocks.Count * 100);
+                        UpdateStatus($"Exporting {bb.Name}...");
+                        AppendResults($"Exporting {bb.Name}...");
+
+                        string outputFilePath;
+                        
+                        if (chkFlatExport.Checked)
+                        {
+                            // Flat export - all files in selected folder
+                            outputFilePath = Path.Combine(exportPath, $"AT_{bb.Name}.docx");
+                        }
+                        else
+                        {
+                            // Hierarchical export - recreate folder structure
+                            var relativePath = ConvertCategoryToPath(bb.Category);
+                            var fullDir = Path.Combine(exportPath, relativePath);
+                            
+                            if (!Directory.Exists(fullDir))
+                            {
+                                Directory.CreateDirectory(fullDir);
+                                directoriesCreated++;
+                            }
+                            
+                            outputFilePath = Path.Combine(fullDir, $"AT_{bb.Name}.docx");
+                        }
+
+                        // Handle duplicate filenames
+                        outputFilePath = GetUniqueFilePath(outputFilePath);
+
+                        // Export the Building Block
+                        wordManager.ExportBuildingBlock(bb.Name, bb.Category, outputFilePath);
+                        
+                        successCount++;
+                        var displayPath = Path.GetRelativePath(exportPath, outputFilePath);
+                        AppendResults($"  ✓ Exported to {displayPath}");
+                    }
+                    catch (Exception ex)
+                    {
+                        errorCount++;
+                        AppendResults($"  ✗ Failed to export {bb.Name}: {ex.Message}");
+                    }
+                }
             }
+            catch (Exception ex)
+            {
+                AppendResults($"Fatal error during export: {ex.Message}");
+                UpdateStatus("Export failed");
+                return;
+            }
+            finally
+            {
+                wordManager?.Dispose();
+            }
+
+            var processingTime = (DateTime.Now - startTime).TotalSeconds;
             
             AppendResults("");
-            AppendResults("Export Completed Successfully");
-            AppendResults("Building Blocks Exported: 45");
-            AppendResults("- Created Directories: 8");
-            AppendResults("- Files Created: 45");
-            AppendResults("Processing Time: 1.8 seconds");
+            AppendResults("Export Operation Completed");
+            AppendResults($"Building Blocks Successfully Exported: {successCount}");
+            AppendResults($"Files with Errors: {errorCount}");
+            AppendResults($"Directories Created: {directoriesCreated}");
+            AppendResults($"Processing Time: {processingTime:F1} seconds");
             
             progressBar.Value = 0;
-            UpdateStatus("Export completed successfully");
+            UpdateStatus(errorCount == 0 ? "Export completed successfully" : $"Export completed with {errorCount} errors");
         }
 
         private void BtnExportSelected_Click(object sender, EventArgs e)
@@ -557,19 +691,90 @@ namespace BuildingBlocksManager
             AppendResults($"Selected Building Blocks: {selectedBlocks.Count}");
             AppendResults($"Export Location: {exportPath}");
             AppendResults("");
-            
-            // Simulate export process
-            for (int i = 0; i <= 100; i += 20)
+
+            WordManager wordManager = null;
+            var startTime = DateTime.Now;
+            int successCount = 0;
+            int errorCount = 0;
+            int directoriesCreated = 0;
+
+            try
             {
-                progressBar.Value = i;
-                System.Threading.Thread.Sleep(300);
+                // Initialize WordManager
+                wordManager = new WordManager(txtTemplatePath.Text);
+
+                // Export each selected Building Block
+                for (int i = 0; i < selectedBlocks.Count; i++)
+                {
+                    var bb = selectedBlocks[i];
+                    
+                    try
+                    {
+                        progressBar.Value = (int)((double)(i + 1) / selectedBlocks.Count * 100);
+                        UpdateStatus($"Exporting {bb.Name}...");
+                        AppendResults($"Exporting {bb.Name}...");
+
+                        string outputFilePath;
+                        
+                        if (chkFlatExport.Checked)
+                        {
+                            // Flat export - all files in selected folder
+                            outputFilePath = Path.Combine(exportPath, $"AT_{bb.Name}.docx");
+                        }
+                        else
+                        {
+                            // Hierarchical export - recreate folder structure
+                            var relativePath = ConvertCategoryToPath(bb.Category);
+                            var fullDir = Path.Combine(exportPath, relativePath);
+                            
+                            if (!Directory.Exists(fullDir))
+                            {
+                                Directory.CreateDirectory(fullDir);
+                                directoriesCreated++;
+                            }
+                            
+                            outputFilePath = Path.Combine(fullDir, $"AT_{bb.Name}.docx");
+                        }
+
+                        // Handle duplicate filenames
+                        outputFilePath = GetUniqueFilePath(outputFilePath);
+
+                        // Export the Building Block
+                        wordManager.ExportBuildingBlock(bb.Name, bb.Category, outputFilePath);
+                        
+                        successCount++;
+                        var displayPath = Path.GetRelativePath(exportPath, outputFilePath);
+                        AppendResults($"  ✓ Exported to {displayPath}");
+                    }
+                    catch (Exception ex)
+                    {
+                        errorCount++;
+                        AppendResults($"  ✗ Failed to export {bb.Name}: {ex.Message}");
+                    }
+                }
             }
+            catch (Exception ex)
+            {
+                AppendResults($"Fatal error during export: {ex.Message}");
+                UpdateStatus("Export failed");
+                return;
+            }
+            finally
+            {
+                wordManager?.Dispose();
+            }
+
+            var processingTime = (DateTime.Now - startTime).TotalSeconds;
             
-            AppendResults($"Successfully exported {selectedBlocks.Count} Building Blocks");
-            AppendResults("Processing Time: 0.9 seconds");
+            AppendResults("");
+            AppendResults("Export Selected Operation Completed");
+            AppendResults($"Building Blocks Successfully Exported: {successCount}");
+            AppendResults($"Files with Errors: {errorCount}");
+            AppendResults($"Directories Created: {directoriesCreated}");
+            AppendResults($"Processing Time: {processingTime:F1} seconds");
             
             progressBar.Value = 0;
-            UpdateStatus("Export completed successfully");
+            UpdateStatus(errorCount == 0 ? "Export completed successfully" : $"Export completed with {errorCount} errors");
         }
 
         private void BtnRollback_Click(object sender, EventArgs e)
@@ -595,20 +800,34 @@ namespace BuildingBlocksManager
                 AppendResults("=== ROLLBACK OPERATION ===");
                 AppendResults($"Template: {Path.GetFileName(txtTemplatePath.Text)}");
                 AppendResults("Searching for backup files...");
+
+                WordManager wordManager = null;
                 
-                System.Threading.Thread.Sleep(1000);
-                
-                AppendResults("Found backup: Template_Backup_20250803_143016.dotm");
-                AppendResults("Restoring template from backup...");
-                
-                System.Threading.Thread.Sleep(1500);
-                
-                AppendResults("Rollback completed successfully");
-                AppendResults("Template restored to previous state");
+                try
+                {
+                    wordManager = new WordManager(txtTemplatePath.Text);
+                    
+                    // Perform the rollback
+                    wordManager.RollbackFromBackup();
+                    
+                    AppendResults("Backup file found and restored successfully");
+                    AppendResults("Template restored to previous state");
+                    AppendResults("Rollback completed successfully");
+                    
+                    UpdateStatus("Rollback completed");
+                }
+                catch (Exception ex)
+                {
+                    AppendResults($"Rollback failed: {ex.Message}");
+                    UpdateStatus("Rollback failed");
+                }
+                finally
+                {
+                    wordManager?.Dispose();
+                }
                 
                 progressBar.Style = ProgressBarStyle.Continuous;
                 progressBar.Value = 0;
-                UpdateStatus("Rollback completed");
             }
         }
 
@@ -618,49 +837,71 @@ namespace BuildingBlocksManager
             return Microsoft.VisualBasic.Interaction.InputBox(prompt, title, "");
         }
 
-        private System.Collections.Generic.List<string> ShowBuildingBlockSelectionDialog()
+        private System.Collections.Generic.List<BuildingBlockInfo> ShowBuildingBlockSelectionDialog()
         {
-            // Simulate Building Block selection dialog
+            // Get real Building Blocks from template
+            System.Collections.Generic.List<BuildingBlockInfo> availableBlocks;
+            
+            try
+            {
+                using (var wordManager = new WordManager(txtTemplatePath.Text))
+                {
+                    availableBlocks = wordManager.GetBuildingBlocks();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to load Building Blocks from template: {ex.Message}", 
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return new System.Collections.Generic.List<BuildingBlockInfo>();
+            }
+
+            if (availableBlocks.Count == 0)
+            {
+                MessageBox.Show("No Building Blocks found in the template.", 
+                    "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return new System.Collections.Generic.List<BuildingBlockInfo>();
+            }
+
+            // Create selection dialog
             var form = new Form
             {
                 Text = "Select Building Blocks to Export",
-                Size = new System.Drawing.Size(500, 400),
+                Size = new System.Drawing.Size(600, 450),
                 StartPosition = FormStartPosition.CenterScreen
             };
 
             var listBox = new CheckedListBox
             {
                 Location = new System.Drawing.Point(20, 20),
-                Size = new System.Drawing.Size(440, 280),
+                Size = new System.Drawing.Size(540, 320),
                 CheckOnClick = true
             };
 
-            // Add sample Building Blocks
-            listBox.Items.Add("InternalAutotext\\Legal\\Contracts - Standard", false);
-            listBox.Items.Add("InternalAutotext\\Legal\\Contracts - Premium", false);
-            listBox.Items.Add("InternalAutotext\\Legal\\Forms - Disclaimer", false);
-            listBox.Items.Add("InternalAutotext\\HR\\Policies - Vacation", false);
-            listBox.Items.Add("InternalAutotext\\HR\\Policies - Sick_Leave", false);
-            listBox.Items.Add("InternalAutotext\\Finance - Summary", false);
+            // Add real Building Blocks to the list
+            foreach (var bb in availableBlocks)
+            {
+                listBox.Items.Add(bb, false);
+            }
 
             var btnSelectAll = new Button
             {
                 Text = "Select All",
-                Location = new System.Drawing.Point(20, 320),
+                Location = new System.Drawing.Point(20, 360),
                 Size = new System.Drawing.Size(80, 25)
             };
 
             var btnSelectNone = new Button
             {
                 Text = "Select None",
-                Location = new System.Drawing.Point(110, 320),
+                Location = new System.Drawing.Point(110, 360),
                 Size = new System.Drawing.Size(80, 25)
             };
 
             var btnOK = new Button
             {
                 Text = "OK",
-                Location = new System.Drawing.Point(300, 320),
+                Location = new System.Drawing.Point(400, 360),
                 Size = new System.Drawing.Size(80, 25),
                 DialogResult = DialogResult.OK
             };
@@ -668,7 +909,7 @@ namespace BuildingBlocksManager
             var btnCancel = new Button
             {
                 Text = "Cancel",
-                Location = new System.Drawing.Point(390, 320),
+                Location = new System.Drawing.Point(490, 360),
                 Size = new System.Drawing.Size(80, 25),
                 DialogResult = DialogResult.Cancel
             };
@@ -687,12 +928,12 @@ namespace BuildingBlocksManager
             form.AcceptButton = btnOK;
             form.CancelButton = btnCancel;
 
-            var result = new System.Collections.Generic.List<string>();
+            var result = new System.Collections.Generic.List<BuildingBlockInfo>();
             if (form.ShowDialog() == DialogResult.OK)
             {
-                foreach (var item in listBox.CheckedItems)
+                foreach (BuildingBlockInfo item in listBox.CheckedItems)
                 {
-                    result.Add(item.ToString());
+                    result.Add(item);
                 }
             }
 
@@ -731,6 +972,40 @@ namespace BuildingBlocksManager
         {
             SaveSettings();
             base.OnFormClosing(e);
+        }
+
+        private string ConvertCategoryToPath(string category)
+        {
+            // Convert "InternalAutotext\Legal\Contracts" to "Legal\Contracts"
+            if (category.StartsWith("InternalAutotext\\"))
+            {
+                var path = category.Substring("InternalAutotext\\".Length);
+                // Convert underscores back to spaces in folder names
+                return path.Replace('_', ' ');
+            }
+            return category.Replace('_', ' ');
+        }
+
+        private string GetUniqueFilePath(string originalPath)
+        {
+            if (!File.Exists(originalPath))
+                return originalPath;
+
+            var directory = Path.GetDirectoryName(originalPath);
+            var fileName = Path.GetFileNameWithoutExtension(originalPath);
+            var extension = Path.GetExtension(originalPath);
+            
+            int counter = 2;
+            string newPath;
+            
+            do
+            {
+                newPath = Path.Combine(directory, $"{fileName}_{counter}{extension}");
+                counter++;
+            }
+            while (File.Exists(newPath));
+            
+            return newPath;
         }
     }
 }
