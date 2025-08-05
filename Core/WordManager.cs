@@ -282,9 +282,10 @@ namespace BuildingBlocksManager.Core
             {
                 // Find the Building Block
                 BuildingBlock bb = null;
-                foreach (BuildingBlock block in _templateDoc.AttachedTemplate.BuildingBlockEntries)
+                var attachedTemplate = _templateDoc.get_AttachedTemplate();
+                foreach (BuildingBlock block in attachedTemplate.BuildingBlockEntries)
                 {
-                    if (block.Name == buildingBlockName && block.Category == category)
+                    if (block.Name == buildingBlockName && block.Category.ToString() == category)
                     {
                         bb = block;
                         break;

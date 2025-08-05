@@ -8,15 +8,23 @@
 ## Build Steps
 
 ### 1. Clean Previous Builds
-Before building, clean any cached files:
+**IMPORTANT:** Always clean before building to avoid cached language version issues:
 
 ```powershell
-# Delete bin and obj folders
+# Delete bin and obj folders (CRITICAL for language version changes)
 Remove-Item -Recurse -Force bin, obj -ErrorAction SilentlyContinue
 
 # Clean Visual Studio cache
 dotnet clean
+
+# Close and reopen Visual Studio after cleaning
 ```
+
+**If you still see C# 7.3 language errors:**
+1. Close Visual Studio completely
+2. Delete bin and obj folders again
+3. Restart Visual Studio
+4. Rebuild solution from scratch
 
 ### 2. Restore NuGet Packages
 ```powershell
