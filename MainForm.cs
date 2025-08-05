@@ -23,6 +23,7 @@ namespace BuildingBlocksManager
         private ProgressBar progressBar;
         private Label lblStatus;
         private Settings settings;
+        private Logger logger;
 
         public MainForm()
         {
@@ -44,23 +45,41 @@ namespace BuildingBlocksManager
             
             // Load and apply settings
             LoadSettings();
+            
+            // Initialize logger and clean up old logs
+            logger = new Logger();
+            Logger.CleanupOldLogs();
+            logger.Info("Building Blocks Manager started");
         }
 
         private void InitializeComponent()
         {
             SuspendLayout();
 
-            // Template file section
+            // Create menu bar
+            var menuStrip = new MenuStrip();
+            
+            var fileMenu = new ToolStripMenuItem("File");
+            var viewLogMenuItem = new ToolStripMenuItem("View Log File");
+            viewLogMenuItem.Click += ViewLogMenuItem_Click;
+            fileMenu.DropDownItems.Add(viewLogMenuItem);
+            
+            menuStrip.Items.Add(fileMenu);
+            
+            this.MainMenuStrip = menuStrip;
+            this.Controls.Add(menuStrip);
+
+            // Template file section (adjusted for menu bar)
             var lblTemplate = new Label
             {
                 Text = "Template File:",
-                Location = new System.Drawing.Point(20, 20),
+                Location = new System.Drawing.Point(20, 45),
                 Size = new System.Drawing.Size(100, 23)
             };
 
             txtTemplatePath = new TextBox
             {
-                Location = new System.Drawing.Point(130, 20),
+                Location = new System.Drawing.Point(130, 45),
                 Size = new System.Drawing.Size(500, 23),
                 ReadOnly = true
             };
@@ -68,7 +87,7 @@ namespace BuildingBlocksManager
             btnBrowseTemplate = new Button
             {
                 Text = "Browse",
-                Location = new System.Drawing.Point(640, 19),
+                Location = new System.Drawing.Point(640, 44),
                 Size = new System.Drawing.Size(80, 25)
             };
 
@@ -76,13 +95,13 @@ namespace BuildingBlocksManager
             var lblDirectory = new Label
             {
                 Text = "Source Directory:",
-                Location = new System.Drawing.Point(20, 60),
+                Location = new System.Drawing.Point(20, 85),
                 Size = new System.Drawing.Size(110, 23)
             };
 
             txtSourceDirectory = new TextBox
             {
-                Location = new System.Drawing.Point(140, 60),
+                Location = new System.Drawing.Point(140, 85),
                 Size = new System.Drawing.Size(490, 23),
                 ReadOnly = true
             };
@@ -90,7 +109,7 @@ namespace BuildingBlocksManager
             btnBrowseDirectory = new Button
             {
                 Text = "Browse",
-                Location = new System.Drawing.Point(640, 59),
+                Location = new System.Drawing.Point(640, 84),
                 Size = new System.Drawing.Size(80, 25)
             };
 
@@ -98,21 +117,21 @@ namespace BuildingBlocksManager
             var lblStructure = new Label
             {
                 Text = "Ignore folder/category structure for:",
-                Location = new System.Drawing.Point(20, 100),
+                Location = new System.Drawing.Point(20, 125),
                 Size = new System.Drawing.Size(250, 23)
             };
 
             chkFlatImport = new CheckBox
             {
                 Text = "Import",
-                Location = new System.Drawing.Point(280, 100),
+                Location = new System.Drawing.Point(280, 125),
                 Size = new System.Drawing.Size(80, 23)
             };
 
             chkFlatExport = new CheckBox
             {
                 Text = "Export",
-                Location = new System.Drawing.Point(370, 100),
+                Location = new System.Drawing.Point(370, 125),
                 Size = new System.Drawing.Size(80, 23)
             };
 
@@ -120,42 +139,42 @@ namespace BuildingBlocksManager
             btnQueryDirectory = new Button
             {
                 Text = "Query Directory",
-                Location = new System.Drawing.Point(20, 140),
+                Location = new System.Drawing.Point(20, 165),
                 Size = new System.Drawing.Size(120, 30)
             };
 
             btnImportAll = new Button
             {
                 Text = "Import All",
-                Location = new System.Drawing.Point(150, 140),
+                Location = new System.Drawing.Point(150, 165),
                 Size = new System.Drawing.Size(100, 30)
             };
 
             btnImportSelected = new Button
             {
                 Text = "Import Selected File",
-                Location = new System.Drawing.Point(260, 140),
+                Location = new System.Drawing.Point(260, 165),
                 Size = new System.Drawing.Size(130, 30)
             };
 
             btnExportAll = new Button
             {
                 Text = "Export All",
-                Location = new System.Drawing.Point(400, 140),
+                Location = new System.Drawing.Point(400, 165),
                 Size = new System.Drawing.Size(100, 30)
             };
 
             btnExportSelected = new Button
             {
                 Text = "Export Selected",
-                Location = new System.Drawing.Point(510, 140),
+                Location = new System.Drawing.Point(510, 165),
                 Size = new System.Drawing.Size(120, 30)
             };
 
             btnRollback = new Button
             {
                 Text = "Rollback",
-                Location = new System.Drawing.Point(640, 140),
+                Location = new System.Drawing.Point(640, 165),
                 Size = new System.Drawing.Size(80, 30)
             };
 
@@ -163,13 +182,13 @@ namespace BuildingBlocksManager
             var lblResults = new Label
             {
                 Text = "Results:",
-                Location = new System.Drawing.Point(20, 190),
+                Location = new System.Drawing.Point(20, 215),
                 Size = new System.Drawing.Size(100, 23)
             };
 
             txtResults = new TextBox
             {
-                Location = new System.Drawing.Point(20, 220),
+                Location = new System.Drawing.Point(20, 245),
                 Size = new System.Drawing.Size(700, 280),
                 Multiline = true,
                 ScrollBars = ScrollBars.Vertical,
@@ -180,7 +199,7 @@ namespace BuildingBlocksManager
             // Progress and status section
             progressBar = new ProgressBar
             {
-                Location = new System.Drawing.Point(20, 520),
+                Location = new System.Drawing.Point(20, 545),
                 Size = new System.Drawing.Size(500, 23),
                 Style = ProgressBarStyle.Continuous
             };
@@ -188,7 +207,7 @@ namespace BuildingBlocksManager
             lblStatus = new Label
             {
                 Text = "Ready",
-                Location = new System.Drawing.Point(530, 520),
+                Location = new System.Drawing.Point(530, 545),
                 Size = new System.Drawing.Size(190, 23),
                 TextAlign = System.Drawing.ContentAlignment.MiddleLeft
             };
@@ -362,6 +381,8 @@ namespace BuildingBlocksManager
             AppendResults($"Source Directory: {txtSourceDirectory.Text}");
             AppendResults($"Flat Import: {(chkFlatImport.Checked ? "Yes" : "No")}");
             AppendResults("");
+            
+            logger.Info($"Starting Import All operation - Template: {txtTemplatePath.Text}, Directory: {txtSourceDirectory.Text}");
 
             WordManager wordManager = null;
             var startTime = DateTime.Now;
@@ -416,11 +437,13 @@ namespace BuildingBlocksManager
                         
                         successCount++;
                         AppendResults($"  ✓ Successfully imported as {category}\\{file.Name}");
+                        logger.Success($"Imported {fileName} as {category}\\{file.Name}");
                     }
                     catch (Exception ex)
                     {
                         errorCount++;
                         AppendResults($"  ✗ Failed to import {fileName}: {ex.Message}");
+                        logger.Error($"Failed to import {fileName}: {ex.Message}");
                     }
                 }
             }
@@ -442,6 +465,8 @@ namespace BuildingBlocksManager
             AppendResults($"Building Blocks Successfully Imported: {successCount}");
             AppendResults($"Files with Errors: {errorCount}");
             AppendResults($"Processing Time: {processingTime:F1} seconds");
+            
+            logger.Info($"Import All completed - Success: {successCount}, Errors: {errorCount}, Time: {processingTime:F1}s");
             
             progressBar.Value = 0;
             UpdateStatus(errorCount == 0 ? "Import completed successfully" : $"Import completed with {errorCount} errors");
@@ -971,6 +996,7 @@ namespace BuildingBlocksManager
         protected override void OnFormClosing(System.Windows.Forms.FormClosingEventArgs e)
         {
             SaveSettings();
+            logger?.Info("Building Blocks Manager closing");
             base.OnFormClosing(e);
         }
 
@@ -1006,6 +1032,41 @@ namespace BuildingBlocksManager
             while (File.Exists(newPath));
             
             return newPath;
+        }
+
+        private void ViewLogMenuItem_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                var logDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BuildingBlocksManager", "Logs");
+                
+                if (Directory.Exists(logDirectory))
+                {
+                    var logFiles = Directory.GetFiles(logDirectory, "BBM_*.log")
+                        .OrderByDescending(f => new FileInfo(f).CreationTime)
+                        .FirstOrDefault();
+                    
+                    if (logFiles != null)
+                    {
+                        System.Diagnostics.Process.Start("notepad.exe", logFiles);
+                    }
+                    else
+                    {
+                        MessageBox.Show("No log files found.", "Information", 
+                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Log directory does not exist.", "Information", 
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to open log file: {ex.Message}", "Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
     }
 }
