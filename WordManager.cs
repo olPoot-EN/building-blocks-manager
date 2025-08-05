@@ -83,14 +83,17 @@ namespace BuildingBlocksManager
             {
                 OpenTemplate();
                 
-                foreach (Word.BuildingBlock bb in templateDoc.BuildingBlockEntries)
+                // Access Building Blocks through the template's BuildingBlockEntries
+                Word.Template template = templateDoc.get_AttachedTemplate();
+                
+                foreach (Word.BuildingBlock bb in template.BuildingBlockEntries)
                 {
-                    if (bb.Category.StartsWith("InternalAutotext"))
+                    if (bb.Category.Name.StartsWith("InternalAutotext"))
                     {
                         buildingBlocks.Add(new BuildingBlockInfo
                         {
                             Name = bb.Name,
-                            Category = bb.Category,
+                            Category = bb.Category.Name,
                             Gallery = bb.Gallery.ToString()
                         });
                     }
@@ -123,7 +126,9 @@ namespace BuildingBlocksManager
                 var range = templateDoc.Range();
                 range.Paste();
 
-                templateDoc.BuildingBlockEntries.Add(
+                // Access template's BuildingBlockEntries
+                Word.Template template = templateDoc.get_AttachedTemplate();
+                template.BuildingBlockEntries.Add(
                     name,
                     Word.WdBuildingBlockTypes.wdTypeCustom1,
                     category,
@@ -154,9 +159,10 @@ namespace BuildingBlocksManager
         {
             try
             {
-                foreach (Word.BuildingBlock bb in templateDoc.BuildingBlockEntries)
+                Word.Template template = templateDoc.get_AttachedTemplate();
+                foreach (Word.BuildingBlock bb in template.BuildingBlockEntries)
                 {
-                    if (bb.Name == name && bb.Category == category)
+                    if (bb.Name == name && bb.Category.Name == category)
                     {
                         bb.Delete();
                         break;
@@ -179,9 +185,10 @@ namespace BuildingBlocksManager
                 
                 // Find the Building Block
                 Word.BuildingBlock targetBB = null;
-                foreach (Word.BuildingBlock bb in templateDoc.BuildingBlockEntries)
+                Word.Template template = templateDoc.get_AttachedTemplate();
+                foreach (Word.BuildingBlock bb in template.BuildingBlockEntries)
                 {
-                    if (bb.Name == buildingBlockName && bb.Category == category)
+                    if (bb.Name == buildingBlockName && bb.Category.Name == category)
                     {
                         targetBB = bb;
                         break;
