@@ -76,13 +76,13 @@ namespace BuildingBlocksManager
             {
                 Text = "Source Directory:",
                 Location = new System.Drawing.Point(20, 60),
-                Size = new System.Drawing.Size(100, 23)
+                Size = new System.Drawing.Size(110, 23)
             };
 
             txtSourceDirectory = new TextBox
             {
-                Location = new System.Drawing.Point(130, 60),
-                Size = new System.Drawing.Size(500, 23),
+                Location = new System.Drawing.Point(140, 60),
+                Size = new System.Drawing.Size(490, 23),
                 ReadOnly = true
             };
 
