@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyTitle>Building Blocks Manager</AssemblyTitle>
+    <AssemblyDescription>Word Building Blocks Import/Export Tool</AssemblyDescription>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <Company>Internal Tool</Company>
+    <Product>Building Blocks Manager</Product>
+    <Copyright>Copyright © 2025</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="Microsoft.Office.Interop.Word">
+      <HintPath>C:\Program Files\Microsoft Office\root\Office16\ADDINS\Microsoft.Office.Interop.Word.dll</HintPath>
+      <EmbedInteropTypes>true</EmbedInteropTypes>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Windows.Forms" Version="4.0.0" />
+  </ItemGroup>
+
+</Project>
