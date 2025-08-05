@@ -282,19 +282,50 @@ namespace BuildingBlocksManager.UI
         {
             _settingsManager = new SettingsManager();
             _fileManager = new FileManager();
-            _wordManager = new WordManager();
             _importTracker = new ImportTracker();
             _logger = new Logger();
-            _importExportManager = new ImportExportManager(_fileManager, _wordManager, _importTracker, _logger);
+            
+            // Don't initialize WordManager until actually needed
+            // This prevents COM initialization failures on startup
+            _wordManager = null;
+            _importExportManager = null;
         }
 
         private void SetupEventHandlers()
         {
-            _importExportManager.ProgressUpdate += OnProgressUpdate;
-            _importExportManager.ProgressPercentageUpdate += OnProgressPercentageUpdate;
-            
+            // Don't setup import/export events until components are initialized
             FormClosing += MainForm_FormClosing;
             Load += MainForm_Load;
+        }
+
+        private bool EnsureWordComponentsInitialized()
+        {
+            if (_wordManager != null && _importExportManager != null)
+                return true;
+
+            try
+            {
+                _wordManager = new WordManager();
+                _importExportManager = new ImportExportManager(_fileManager, _wordManager, _importTracker, _logger);
+                
+                // Setup event handlers now that components exist
+                _importExportManager.ProgressUpdate += OnProgressUpdate;
+                _importExportManager.ProgressPercentageUpdate += OnProgressPercentageUpdate;
+                
+                return true;
+            }
+            catch (Exception ex)
+            {
+                AppendResults($"Failed to initialize Word components: {ex.Message}");
+                MessageBox.Show(
+                    $"Failed to initialize Microsoft Word components:\n\n{ex.Message}\n\n" +
+                    "Please ensure Microsoft Word is installed and accessible.",
+                    "Word Initialization Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error
+                );
+                return false;
+            }
         }
 
         private void LoadSettings()
@@ -468,6 +499,7 @@ namespace BuildingBlocksManager.UI
         private async void QueryButton_Click(object sender, EventArgs e)
         {
             if (!ValidateInputs()) return;
+            if (!EnsureWordComponentsInitialized()) return;
 
             EnableControls(false);
             _resultsTextBox.Clear();
@@ -521,6 +553,7 @@ namespace BuildingBlocksManager.UI
         private async void ImportAllButton_Click(object sender, EventArgs e)
         {
             if (!ValidateInputs()) return;
+            if (!EnsureWordComponentsInitialized()) return;
 
             EnableControls(false);
             _resultsTextBox.Clear();
@@ -583,6 +616,7 @@ namespace BuildingBlocksManager.UI
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
+            if (!EnsureWordComponentsInitialized()) return;
 
             EnableControls(false);
             _resultsTextBox.Clear();
@@ -638,6 +672,7 @@ namespace BuildingBlocksManager.UI
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
+            if (!EnsureWordComponentsInitialized()) return;
 
             string exportDirectory;
             using (var folderDialog = new FolderBrowserDialog())
@@ -710,6 +745,7 @@ namespace BuildingBlocksManager.UI
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
+            if (!EnsureWordComponentsInitialized()) return;
 
             string exportDirectory;
             using (var folderDialog = new FolderBrowserDialog())
@@ -777,6 +813,7 @@ namespace BuildingBlocksManager.UI
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
+            if (!EnsureWordComponentsInitialized()) return;
 
             try
             {
