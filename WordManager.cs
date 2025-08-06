@@ -106,8 +106,17 @@ namespace BuildingBlocksManager
 
                         if (docParts != null)
                         {
+                            int debugCount = 0;
                             foreach (XmlNode docPart in docParts)
                             {
+                                // Debug: dump first few entries to see XML structure
+                                if (debugCount < 3)
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"=== DocPart {debugCount} XML ===");
+                                    System.Diagnostics.Debug.WriteLine(docPart.OuterXml);
+                                    debugCount++;
+                                }
+
                                 // Try multiple possible XPath patterns for category
                                 var nameNode = docPart.SelectSingleNode(".//w:docPartPr/w:name/@w:val", namespaceManager) ??
                                               docPart.SelectSingleNode(".//w:name/@w:val", namespaceManager);
@@ -119,6 +128,15 @@ namespace BuildingBlocksManager
                                 var galleryNode = docPart.SelectSingleNode(".//w:docPartPr/w:types/w:type/@w:val", namespaceManager) ??
                                                  docPart.SelectSingleNode(".//w:types/w:type/@w:val", namespaceManager) ??
                                                  docPart.SelectSingleNode(".//w:type/@w:val", namespaceManager);
+
+                                // Debug: show what we found
+                                if (debugCount <= 3)
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"Name: {nameNode?.Value ?? "NULL"}");
+                                    System.Diagnostics.Debug.WriteLine($"Category: {categoryNode?.Value ?? "NULL"}");
+                                    System.Diagnostics.Debug.WriteLine($"Gallery: {galleryNode?.Value ?? "NULL"}");
+                                    System.Diagnostics.Debug.WriteLine("---");
+                                }
 
                                 if (nameNode != null)
                                 {
