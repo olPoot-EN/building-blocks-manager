@@ -136,14 +136,11 @@ namespace BuildingBlocksManager
         private string MapGalleryValue(string gallery)
         {
             // Map OpenXML gallery enum values to display names
-            return gallery switch
-            {
-                "autoTxt" => "AutoText",
-                "bbPlcHdr" => "Built-In",
-                "docPartObj" => "Quick Parts",
-                "placeholder" => "Text Box",
-                _ => gallery
-            };
+            if (gallery == "autoTxt") return "AutoText";
+            if (gallery == "bbPlcHdr") return "Built-In";
+            if (gallery == "docPartObj") return "Quick Parts";
+            if (gallery == "placeholder") return "Text Box";
+            return gallery;
         }
 
         private List<BuildingBlockInfo> GetBuildingBlocksFromManualXml()
