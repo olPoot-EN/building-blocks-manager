@@ -117,18 +117,11 @@ namespace BuildingBlocksManager
                                     debugCount++;
                                 }
 
-                                // Try multiple possible XPath patterns for category
-                                var nameNode = docPart.SelectSingleNode(".//w:docPartPr/w:name/@w:val", namespaceManager) ??
-                                              docPart.SelectSingleNode(".//w:name/@w:val", namespaceManager);
-                                              
-                                var categoryNode = docPart.SelectSingleNode(".//w:docPartPr/w:category/@w:val", namespaceManager) ??
-                                                  docPart.SelectSingleNode(".//w:category/@w:val", namespaceManager) ??
-                                                  docPart.SelectSingleNode(".//w:docPartPr/w:category/w:name/@w:val", namespaceManager);
-                                                  
-                                var galleryNode = docPart.SelectSingleNode(".//w:docPartPr/w:gallery/@w:val", namespaceManager) ??
-                                                 docPart.SelectSingleNode(".//w:gallery/@w:val", namespaceManager) ??
-                                                 docPart.SelectSingleNode(".//w:docPartPr/w:types/w:type/@w:val", namespaceManager) ??
-                                                 docPart.SelectSingleNode(".//w:types/w:type/@w:val", namespaceManager);
+                                // Correct XML structure based on OpenXML specification
+                                var nameNode = docPart.SelectSingleNode(".//w:docPartPr/w:name/@w:val", namespaceManager);
+                                var categoryNode = docPart.SelectSingleNode(".//w:docPartPr/w:category/w:name/@w:val", namespaceManager);
+                                var galleryNode = docPart.SelectSingleNode(".//w:docPartPr/w:category/w:gallery/@w:val", namespaceManager);
+                                var typeNode = docPart.SelectSingleNode(".//w:docPartPr/w:types/w:type/@w:val", namespaceManager);
 
                                 // Debug: show what we found
                                 if (debugCount <= 3)
@@ -136,6 +129,7 @@ namespace BuildingBlocksManager
                                     System.Diagnostics.Debug.WriteLine($"Name: {nameNode?.Value ?? "NULL"}");
                                     System.Diagnostics.Debug.WriteLine($"Category: {categoryNode?.Value ?? "NULL"}");
                                     System.Diagnostics.Debug.WriteLine($"Gallery: {galleryNode?.Value ?? "NULL"}");
+                                    System.Diagnostics.Debug.WriteLine($"Type: {typeNode?.Value ?? "NULL"}");
                                     System.Diagnostics.Debug.WriteLine("---");
                                 }
 
@@ -165,7 +159,7 @@ namespace BuildingBlocksManager
                                     {
                                         Name = nameNode.Value,
                                         Category = categoryNode?.Value ?? "",
-                                        Gallery = galleryNode?.Value ?? ""
+                                        Gallery = galleryNode?.Value ?? typeNode?.Value ?? ""
                                     });
                                 }
                             }
