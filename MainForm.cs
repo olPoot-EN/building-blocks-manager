@@ -1408,10 +1408,53 @@ namespace BuildingBlocksManager
 
             try
             {
-                // Check if file is accessible
-                using (var fileStream = File.Open(txtTemplatePath.Text, FileMode.Open, FileAccess.Read, FileShare.Read))
+                // Check if template file is locked first
+                if (WordManager.IsTemplateFileLocked(txtTemplatePath.Text))
                 {
-                    // File is accessible
+                    var wordProcesses = WordManager.GetWordProcessesUsingFile(txtTemplatePath.Text);
+                    
+                    string message = "The template file appears to be locked or in use.\n\n";
+                    
+                    if (wordProcesses.Count > 0)
+                    {
+                        message += $"Found {wordProcesses.Count} Word process(es) that might be using the file:\n";
+                        foreach (var process in wordProcesses.Take(3)) // Show max 3 processes
+                        {
+                            try
+                            {
+                                message += $"• Word (PID: {process.Id})\n";
+                            }
+                            catch
+                            {
+                                message += "• Word (process info unavailable)\n";
+                            }
+                        }
+                        if (wordProcesses.Count > 3)
+                        {
+                            message += $"• ... and {wordProcesses.Count - 3} more\n";
+                        }
+                        message += "\nPlease close the template file in Word and try again.";
+                    }
+                    else
+                    {
+                        message += "Please ensure the template file is not open in Word or another application.";
+                    }
+                    
+                    var result = MessageBox.Show(
+                        message + "\n\nDo you want to continue anyway?",
+                        "Template File Locked",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Warning);
+                        
+                    if (result == DialogResult.No)
+                    {
+                        progressBar.Style = ProgressBarStyle.Continuous;
+                        progressBar.Value = 0;
+                        UpdateStatus("Query cancelled");
+                        return;
+                    }
+                    
+                    UpdateStatus("Warning: Template file may be locked, continuing anyway...");
                 }
 
                 using (var wordManager = new WordManager(txtTemplatePath.Text))
