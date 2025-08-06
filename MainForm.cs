@@ -1148,18 +1148,27 @@ namespace BuildingBlocksManager
                 return new System.Collections.Generic.List<BuildingBlockInfo>();
             }
 
-            // Create selection dialog
+            // Create selection dialog (reduced width by ~35%: 600 -> 390)
             var form = new Form
             {
                 Text = "Select Building Blocks to Export",
-                Size = new System.Drawing.Size(600, 450),
+                Size = new System.Drawing.Size(390, 450),
                 StartPosition = FormStartPosition.CenterScreen
+            };
+
+            // Selected count label
+            var lblSelectedCount = new Label
+            {
+                Text = $"Selected 0 of {availableBlocks.Count}",
+                Location = new System.Drawing.Point(20, 20),
+                Size = new System.Drawing.Size(200, 20),
+                Font = new System.Drawing.Font(Label.DefaultFont, System.Drawing.FontStyle.Bold)
             };
 
             var listBox = new CheckedListBox
             {
-                Location = new System.Drawing.Point(20, 20),
-                Size = new System.Drawing.Size(540, 320),
+                Location = new System.Drawing.Point(20, 45),
+                Size = new System.Drawing.Size(330, 295),
                 CheckOnClick = true
             };
 
@@ -1186,7 +1195,7 @@ namespace BuildingBlocksManager
             var btnOK = new Button
             {
                 Text = "OK",
-                Location = new System.Drawing.Point(400, 360),
+                Location = new System.Drawing.Point(220, 360),
                 Size = new System.Drawing.Size(80, 25),
                 DialogResult = DialogResult.OK
             };
@@ -1194,22 +1203,33 @@ namespace BuildingBlocksManager
             var btnCancel = new Button
             {
                 Text = "Cancel",
-                Location = new System.Drawing.Point(490, 360),
+                Location = new System.Drawing.Point(310, 360),
                 Size = new System.Drawing.Size(80, 25),
                 DialogResult = DialogResult.Cancel
+            };
+
+            // Update selected count when items are checked/unchecked
+            listBox.ItemCheck += (s, e) => {
+                // Use BeginInvoke to update after the check state changes
+                this.BeginInvoke(new Action(() => {
+                    int checkedCount = listBox.CheckedItems.Count;
+                    lblSelectedCount.Text = $"Selected {checkedCount} of {availableBlocks.Count}";
+                }));
             };
 
             btnSelectAll.Click += (s, e) => {
                 for (int i = 0; i < listBox.Items.Count; i++)
                     listBox.SetItemChecked(i, true);
+                lblSelectedCount.Text = $"Selected {listBox.Items.Count} of {availableBlocks.Count}";
             };
 
             btnSelectNone.Click += (s, e) => {
                 for (int i = 0; i < listBox.Items.Count; i++)
                     listBox.SetItemChecked(i, false);
+                lblSelectedCount.Text = $"Selected 0 of {availableBlocks.Count}";
             };
 
-            form.Controls.AddRange(new Control[] { listBox, btnSelectAll, btnSelectNone, btnOK, btnCancel });
+            form.Controls.AddRange(new Control[] { lblSelectedCount, listBox, btnSelectAll, btnSelectNone, btnOK, btnCancel });
             form.AcceptButton = btnOK;
             form.CancelButton = btnCancel;
 
