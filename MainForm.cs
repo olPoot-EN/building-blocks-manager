@@ -854,16 +854,24 @@ namespace BuildingBlocksManager
             var selectedBlocks = ShowBuildingBlockSelectionDialog();
             if (selectedBlocks == null || selectedBlocks.Count == 0) return;
 
-            string exportPath = txtSourceDirectory.Text;
-            
-            if (chkFlatExport.Checked)
+            // Always prompt for export directory
+            string exportPath;
+            using (var dialog = new FolderBrowserDialog())
             {
-                using (var dialog = new FolderBrowserDialog())
+                if (chkFlatExport.Checked)
                 {
-                    dialog.Description = "Select Flat Export Folder";
-                    if (dialog.ShowDialog() != DialogResult.OK) return;
-                    exportPath = dialog.SelectedPath;
+                    dialog.Description = "Select Export Folder (Flat Structure - All files in one folder)";
                 }
+                else
+                {
+                    dialog.Description = "Select Export Folder (Hierarchical Structure - Files organized in category folders)";
+                }
+                
+                dialog.ShowNewFolderButton = true;
+                dialog.SelectedPath = txtSourceDirectory.Text; // Default to source directory
+                
+                if (dialog.ShowDialog() != DialogResult.OK) return;
+                exportPath = dialog.SelectedPath;
             }
 
             UpdateStatus("Exporting selected Building Blocks...");
