@@ -273,13 +273,12 @@ namespace BuildingBlocksManager
             tabResults = new TabPage("Results");
             txtResults = new TextBox
             {
-                Location = new System.Drawing.Point(5, 5),
-                Size = new System.Drawing.Size(700, 170), // Much smaller to ensure scrollbars are always visible
+                Location = new System.Drawing.Point(8, 8),
+                Size = new System.Drawing.Size(680, 160), // Even smaller to guarantee scrollbar space
                 Multiline = true,
                 ScrollBars = ScrollBars.Both, // Enable both horizontal and vertical scrollbars
                 ReadOnly = true,
                 Font = new System.Drawing.Font("Consolas", 9),
-                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom,
                 WordWrap = false // Prevent word wrapping which can cause display issues
             };
             tabResults.Controls.Add(txtResults);
@@ -288,9 +287,8 @@ namespace BuildingBlocksManager
             tabDirectory = new TabPage("Directory");
             treeDirectory = new TreeView
             {
-                Location = new System.Drawing.Point(5, 5),
-                Size = new System.Drawing.Size(700, 170), // Much smaller to ensure scrollbars are always visible
-                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom,
+                Location = new System.Drawing.Point(8, 8),
+                Size = new System.Drawing.Size(680, 160), // Even smaller to guarantee scrollbar space
                 Scrollable = true,
                 HotTracking = true,
                 ShowLines = true,
@@ -333,20 +331,19 @@ namespace BuildingBlocksManager
             // ListView (moved down to accommodate filter controls)
             listViewTemplate = new ListView
             {
-                Location = new System.Drawing.Point(5, 35),
-                Size = new System.Drawing.Size(700, 140), // Much smaller to ensure scrollbars are always visible
+                Location = new System.Drawing.Point(8, 35),
+                Size = new System.Drawing.Size(680, 130), // Even smaller to guarantee scrollbar space
                 View = View.Details,
                 FullRowSelect = true,
                 GridLines = true,
                 Sorting = SortOrder.None,
-                Scrollable = true, // Explicitly enable scrolling
-                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom
+                Scrollable = true // Explicitly enable scrolling
             };
 
-            // Add columns like Building Block Organizer
-            listViewTemplate.Columns.Add("Name", 250);
-            listViewTemplate.Columns.Add("Category", 250);
-            listViewTemplate.Columns.Add("Gallery", 200);
+            // Add columns like Building Block Organizer (reduced widths to leave room for scrollbars)
+            listViewTemplate.Columns.Add("Name", 220);
+            listViewTemplate.Columns.Add("Category", 220);
+            listViewTemplate.Columns.Add("Gallery", 180);
             
             // Enable column sorting
             listViewTemplate.ColumnClick += ListViewTemplate_ColumnClick;
@@ -1423,36 +1420,37 @@ FILE TO CATEGORY CONVERSION:
 • Directory structure converts to Building Block categories
 • Top-level source directory is ignored in category path
 
-EXAMPLES:
-Folder Path: C:\MyDocs\Legal\Contracts\AT_Standard.docx
-→ Category: InternalAutotext\Legal\Contracts
-→ Name: Standard
-
-Folder Path: C:\MyDocs\Forms\AT_Invoice.docx  
-→ Category: InternalAutotext\Forms
-→ Name: Invoice
+EXAMPLE:
+File: C:\MyDocs\Legal\Contracts\AT_Standard_Agreement.docx
+→ Category: InternalAutotext\Legal\Contracts  
+→ Name: Standard_Agreement
+→ Result: Building Block appears as 'Standard_Agreement' in category 'InternalAutotext\Legal\Contracts'
 
 SPECIAL CHARACTERS:
 • Spaces in folder names become underscores in categories
 • Invalid filename characters are flagged but processing continues
 • Case is preserved in both folder names and Building Block names
 
-FLAT STRUCTURE OPTIONS:
-• Flat Import: All files go into single specified category
-• Flat Export: All Building Blocks export to single folder (no subfolders)
-
 GALLERY SELECTION:
 • Choose target gallery: AutoText, Quick Parts, or Custom Gallery 1-5
 • AutoText is the most commonly used gallery (default selection)
 • Gallery selection affects where Building Blocks appear in Word's interface
 
+FLAT STRUCTURE OPTIONS:
+• Flat Import: All files go into single specified category
+• Flat Export: All Building Blocks export to single folder (no subfolders)
+
+BACKUP INFORMATION:
+• Backups are automatically created before each import operation
+• Location: Same folder as your template file
+• Format: [TemplateName]_Backup_YYYYMMDD_HHMMSS.dotm
+• Example: MyTemplate_Backup_20241208_143022.dotm
+• Last 5 backups are kept, older ones are deleted automatically
+
 IMPORTANT NOTES:
 • Only .docx files starting with 'AT_' are processed
 • Building Blocks are created in the selected gallery within the template document
-• Category structure: InternalAutotext\[folder path without root]
-• Export recreates the original folder structure
-• Backups are automatically created in the same folder as your template file
-• Backup filename format: TemplateName_Backup_YYYYMMDD_HHMMSS.dotm";
+• Export recreates the original folder structure from categories";
 
             MessageBox.Show(helpMessage, "Import/Export Rules", 
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
