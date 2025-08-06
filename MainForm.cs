@@ -1477,9 +1477,12 @@ IMPORTANT NOTES:
                         }
                     }
                     
-                    // Only pre-select galleries by default, let templates be manually selected
+                    // Pre-select galleries by default, except Built-In (like System/Hex entries)
                     var galleries = GetUniqueGalleries();
-                    selectedGalleries.AddRange(galleries);
+                    foreach (var gallery in galleries.Where(g => g != "Built-In"))
+                    {
+                        selectedGalleries.Add(gallery);
+                    }
                     
                     // Don't auto-select templates - let user choose which templates to show
                     
@@ -1889,7 +1892,7 @@ IMPORTANT NOTES:
             {
                 bool includeByCategory = selectedCategories.Count == 0;
                 bool includeByGallery = selectedGalleries.Count == 0;
-                bool includeByTemplate = selectedTemplates.Count == 0;
+                bool includeByTemplate = false; // Start with false - only include if template is selected
                 
                 // Check category filter
                 if (selectedCategories.Count > 0)
@@ -1916,8 +1919,12 @@ IMPORTANT NOTES:
                     }
                 }
                 
-                // Check template filter
-                if (selectedTemplates.Count > 0)
+                // Check template filter - if no templates selected, include nothing; if any selected, check if this one matches
+                if (selectedTemplates.Count == 0)
+                {
+                    includeByTemplate = false; // No templates selected = show nothing
+                }
+                else
                 {
                     if (selectedTemplates.Contains(string.IsNullOrEmpty(bb.Template) ? "(No Template)" : bb.Template))
                     {
