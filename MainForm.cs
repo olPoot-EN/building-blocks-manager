@@ -18,7 +18,6 @@ namespace BuildingBlocksManager
         private Button btnImportSelected;
         private Button btnExportAll;
         private Button btnExportSelected;
-        private Button btnRollback;
         private TextBox txtResults;
         private TabControl tabControl;
         private TabPage tabResults;
@@ -1248,7 +1247,7 @@ namespace BuildingBlocksManager
             }
         }
 
-        private void PopulateDirectoryTree(System.Collections.Generic.List<FileInfo> files)
+        private void PopulateDirectoryTree(System.Collections.Generic.List<FileManager.FileInfo> files)
         {
             treeDirectory.Nodes.Clear();
             
