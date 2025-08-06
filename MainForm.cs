@@ -13,6 +13,8 @@ namespace BuildingBlocksManager
         private TextBox txtSourceDirectory;
         private CheckBox chkFlatImport;
         private CheckBox chkFlatExport;
+        private ComboBox cmbTargetGallery;
+        private Label lblTargetGallery;
         private Button btnBrowseTemplate;
         private Button btnBrowseDirectory;
         private Button btnQueryDirectory;
@@ -163,6 +165,31 @@ namespace BuildingBlocksManager
                 Size = new System.Drawing.Size(80, 23)
             };
 
+            // Gallery selection section
+            lblTargetGallery = new Label
+            {
+                Text = "Import to Gallery:",
+                Location = new System.Drawing.Point(470, 125),
+                Size = new System.Drawing.Size(110, 23)
+            };
+
+            cmbTargetGallery = new ComboBox
+            {
+                Location = new System.Drawing.Point(590, 125),
+                Size = new System.Drawing.Size(130, 23),
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            
+            // Populate gallery options
+            cmbTargetGallery.Items.Add("AutoText");
+            cmbTargetGallery.Items.Add("Quick Parts");
+            cmbTargetGallery.Items.Add("Custom Gallery 1");
+            cmbTargetGallery.Items.Add("Custom Gallery 2");
+            cmbTargetGallery.Items.Add("Custom Gallery 3");
+            cmbTargetGallery.Items.Add("Custom Gallery 4");
+            cmbTargetGallery.Items.Add("Custom Gallery 5");
+            cmbTargetGallery.SelectedIndex = 0; // Default to AutoText
+
             // Query group
             var lblQuery = new Label
             {
@@ -246,8 +273,8 @@ namespace BuildingBlocksManager
             tabResults = new TabPage("Results");
             txtResults = new TextBox
             {
-                Location = new System.Drawing.Point(3, 3),
-                Size = new System.Drawing.Size(715, 185), // Reduced width/height to ensure scrollbars are visible
+                Location = new System.Drawing.Point(5, 5),
+                Size = new System.Drawing.Size(700, 170), // Much smaller to ensure scrollbars are always visible
                 Multiline = true,
                 ScrollBars = ScrollBars.Both, // Enable both horizontal and vertical scrollbars
                 ReadOnly = true,
@@ -261,8 +288,8 @@ namespace BuildingBlocksManager
             tabDirectory = new TabPage("Directory");
             treeDirectory = new TreeView
             {
-                Location = new System.Drawing.Point(3, 3),
-                Size = new System.Drawing.Size(715, 185), // Reduced size to ensure scrollbars are visible
+                Location = new System.Drawing.Point(5, 5),
+                Size = new System.Drawing.Size(700, 170), // Much smaller to ensure scrollbars are always visible
                 Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom,
                 Scrollable = true,
                 HotTracking = true,
@@ -306,8 +333,8 @@ namespace BuildingBlocksManager
             // ListView (moved down to accommodate filter controls)
             listViewTemplate = new ListView
             {
-                Location = new System.Drawing.Point(3, 35),
-                Size = new System.Drawing.Size(715, 150), // Reduced size to ensure scrollbars are visible
+                Location = new System.Drawing.Point(5, 35),
+                Size = new System.Drawing.Size(700, 140), // Much smaller to ensure scrollbars are always visible
                 View = View.Details,
                 FullRowSelect = true,
                 GridLines = true,
@@ -354,6 +381,7 @@ namespace BuildingBlocksManager
                 lblTemplate, txtTemplatePath, btnBrowseTemplate,
                 lblDirectory, txtSourceDirectory, btnBrowseDirectory,
                 lblStructure, chkFlatImport, chkFlatExport,
+                lblTargetGallery, cmbTargetGallery,
                 lblQuery, btnQueryDirectory, btnQueryTemplate,
                 lblImport, btnImportAll, btnImportSelected,
                 lblExport, btnExportAll, btnExportSelected,
@@ -560,8 +588,9 @@ namespace BuildingBlocksManager
                         // Use flat category if specified, otherwise use extracted category
                         var category = chkFlatImport.Checked ? $"InternalAutotext\\{flatCategory}" : file.Category;
                         
-                        // Import the Building Block
-                        wordManager.ImportBuildingBlock(file.FilePath, category, file.Name);
+                        // Import the Building Block with selected gallery
+                        var selectedGallery = cmbTargetGallery.SelectedItem?.ToString() ?? "AutoText";
+                        wordManager.ImportBuildingBlock(file.FilePath, category, file.Name, selectedGallery);
                         
                         // Update import tracking
                         importTracker.UpdateImportTime(file.FilePath);
@@ -678,8 +707,9 @@ namespace BuildingBlocksManager
                             category = $"InternalAutotext\\{flatCategory}";
                         }
 
-                        // Import the Building Block
-                        wordManager.ImportBuildingBlock(dialog.FileName, category, name);
+                        // Import the Building Block with selected gallery
+                        var selectedGallery = cmbTargetGallery.SelectedItem?.ToString() ?? "AutoText";
+                        wordManager.ImportBuildingBlock(dialog.FileName, category, name, selectedGallery);
                         
                         // Update import tracking
                         importTracker.UpdateImportTime(dialog.FileName);
@@ -1411,9 +1441,14 @@ FLAT STRUCTURE OPTIONS:
 • Flat Import: All files go into single specified category
 • Flat Export: All Building Blocks export to single folder (no subfolders)
 
+GALLERY SELECTION:
+• Choose target gallery: AutoText, Quick Parts, or Custom Gallery 1-5
+• AutoText is the most commonly used gallery (default selection)
+• Gallery selection affects where Building Blocks appear in Word's interface
+
 IMPORTANT NOTES:
 • Only .docx files starting with 'AT_' are processed
-• Building Blocks are created in the template document (not InternalAutotext gallery)
+• Building Blocks are created in the selected gallery within the template document
 • Category structure: InternalAutotext\[folder path without root]
 • Export recreates the original folder structure
 • Backups are automatically created in the same folder as your template file

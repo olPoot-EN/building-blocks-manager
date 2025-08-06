@@ -189,6 +189,30 @@ namespace BuildingBlocksManager
             if (gallery == "placeholder") return "Text Box";
             return gallery;
         }
+        
+        private Word.WdBuildingBlockTypes GetBuildingBlockType(string galleryType)
+        {
+            // Convert gallery type string to Word building block type enum
+            switch (galleryType)
+            {
+                case "AutoText":
+                    return Word.WdBuildingBlockTypes.wdTypeAutoText;
+                case "Quick Parts":
+                    return Word.WdBuildingBlockTypes.wdTypeQuickParts;
+                case "Custom Gallery 1":
+                    return Word.WdBuildingBlockTypes.wdTypeCustom1;
+                case "Custom Gallery 2":
+                    return Word.WdBuildingBlockTypes.wdTypeCustom2;
+                case "Custom Gallery 3":
+                    return Word.WdBuildingBlockTypes.wdTypeCustom3;
+                case "Custom Gallery 4":
+                    return Word.WdBuildingBlockTypes.wdTypeCustom4;
+                case "Custom Gallery 5":
+                    return Word.WdBuildingBlockTypes.wdTypeCustom5;
+                default:
+                    return Word.WdBuildingBlockTypes.wdTypeAutoText; // Default to AutoText
+            }
+        }
 
         private List<BuildingBlockInfo> GetBuildingBlocksFromManualXml()
         {
@@ -200,6 +224,11 @@ namespace BuildingBlocksManager
 
 
         public void ImportBuildingBlock(string sourceFile, string category, string name)
+        {
+            ImportBuildingBlock(sourceFile, category, name, "AutoText"); // Default to AutoText
+        }
+        
+        public void ImportBuildingBlock(string sourceFile, string category, string name, string galleryType)
         {
             Word.Document sourceDoc = null;
             
@@ -218,11 +247,14 @@ namespace BuildingBlocksManager
                 var range = templateDoc.Range();
                 range.Paste();
 
+                // Convert gallery type to Word enum
+                var buildingBlockType = GetBuildingBlockType(galleryType);
+
                 // Access template's BuildingBlockEntries
                 Word.Template template = (Word.Template)templateDoc.get_AttachedTemplate();
                 template.BuildingBlockEntries.Add(
                     name,
-                    Word.WdBuildingBlockTypes.wdTypeCustom1,
+                    buildingBlockType,
                     category,
                     range);
 
