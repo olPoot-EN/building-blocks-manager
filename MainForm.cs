@@ -1638,7 +1638,7 @@ IMPORTANT NOTES:
             var form = new Form
             {
                 Text = "Filter Building Blocks",
-                Size = new System.Drawing.Size(420, 400),
+                Size = new System.Drawing.Size(380, 400),
                 StartPosition = FormStartPosition.CenterScreen,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
                 MaximizeBox = false,
@@ -1657,7 +1657,7 @@ IMPORTANT NOTES:
             var listBoxCategories = new CheckedListBox
             {
                 Location = new System.Drawing.Point(15, 30),
-                Size = new System.Drawing.Size(170, 250),
+                Size = new System.Drawing.Size(150, 250),
                 CheckOnClick = true
             };
 
@@ -1671,15 +1671,15 @@ IMPORTANT NOTES:
             var lblGalleries = new Label
             {
                 Text = "Galleries:",
-                Location = new System.Drawing.Point(200, 10),
+                Location = new System.Drawing.Point(175, 10),
                 Size = new System.Drawing.Size(60, 20),
                 Font = new System.Drawing.Font(Label.DefaultFont, System.Drawing.FontStyle.Bold)
             };
 
             var listBoxGalleries = new CheckedListBox
             {
-                Location = new System.Drawing.Point(200, 30),
-                Size = new System.Drawing.Size(190, 110),
+                Location = new System.Drawing.Point(175, 30),
+                Size = new System.Drawing.Size(180, 100),
                 CheckOnClick = true
             };
 
@@ -1693,15 +1693,15 @@ IMPORTANT NOTES:
             var lblTemplates = new Label
             {
                 Text = "Templates:",
-                Location = new System.Drawing.Point(200, 170),
+                Location = new System.Drawing.Point(175, 160),
                 Size = new System.Drawing.Size(70, 20),
                 Font = new System.Drawing.Font(Label.DefaultFont, System.Drawing.FontStyle.Bold)
             };
 
             var listBoxTemplates = new CheckedListBox
             {
-                Location = new System.Drawing.Point(200, 190),
-                Size = new System.Drawing.Size(190, 90),
+                Location = new System.Drawing.Point(175, 180),
+                Size = new System.Drawing.Size(180, 80),
                 CheckOnClick = true
             };
 
@@ -1716,57 +1716,57 @@ IMPORTANT NOTES:
             {
                 Text = "All",
                 Location = new System.Drawing.Point(15, 285),
-                Size = new System.Drawing.Size(50, 25)
+                Size = new System.Drawing.Size(45, 25)
             };
 
             var btnSelectNoneCat = new Button
             {
                 Text = "None",
-                Location = new System.Drawing.Point(75, 285),
-                Size = new System.Drawing.Size(50, 25)
+                Location = new System.Drawing.Point(70, 285),
+                Size = new System.Drawing.Size(45, 25)
             };
 
             var btnSelectAllGal = new Button
             {
                 Text = "All",
-                Location = new System.Drawing.Point(200, 145),
-                Size = new System.Drawing.Size(50, 25)
+                Location = new System.Drawing.Point(175, 135),
+                Size = new System.Drawing.Size(45, 25)
             };
 
             var btnSelectNoneGal = new Button
             {
                 Text = "None",
-                Location = new System.Drawing.Point(260, 145),
-                Size = new System.Drawing.Size(50, 25)
+                Location = new System.Drawing.Point(230, 135),
+                Size = new System.Drawing.Size(45, 25)
             };
 
             var btnSelectAllTmp = new Button
             {
                 Text = "All",
-                Location = new System.Drawing.Point(200, 285),
-                Size = new System.Drawing.Size(50, 25)
+                Location = new System.Drawing.Point(175, 265),
+                Size = new System.Drawing.Size(45, 25)
             };
 
             var btnSelectNoneTmp = new Button
             {
                 Text = "None",
-                Location = new System.Drawing.Point(260, 285),
-                Size = new System.Drawing.Size(50, 25)
+                Location = new System.Drawing.Point(230, 265),
+                Size = new System.Drawing.Size(45, 25)
             };
 
             var btnOK = new Button
             {
                 Text = "OK",
-                Location = new System.Drawing.Point(240, 325),
-                Size = new System.Drawing.Size(75, 25),
+                Location = new System.Drawing.Point(220, 325),
+                Size = new System.Drawing.Size(70, 25),
                 DialogResult = DialogResult.OK
             };
 
             var btnCancel = new Button
             {
                 Text = "Cancel",
-                Location = new System.Drawing.Point(325, 325),
-                Size = new System.Drawing.Size(75, 25),
+                Location = new System.Drawing.Point(300, 325),
+                Size = new System.Drawing.Size(70, 25),
                 DialogResult = DialogResult.Cancel
             };
 
@@ -1882,59 +1882,52 @@ IMPORTANT NOTES:
             
             List<BuildingBlockInfo> filteredBlocks;
             
-            if (selectedCategories.Count == 0 && selectedGalleries.Count == 0 && selectedTemplates.Count == 0)
+            // Always apply filtering logic - no special case for "show all"
+            filteredBlocks = new List<BuildingBlockInfo>();
+            
+            foreach (var bb in allBuildingBlocks)
             {
-                // No filter - show all
-                filteredBlocks = allBuildingBlocks;
-            }
-            else
-            {
-                filteredBlocks = new List<BuildingBlockInfo>();
+                bool includeByCategory = selectedCategories.Count == 0;
+                bool includeByGallery = selectedGalleries.Count == 0;
+                bool includeByTemplate = selectedTemplates.Count == 0;
                 
-                foreach (var bb in allBuildingBlocks)
+                // Check category filter
+                if (selectedCategories.Count > 0)
                 {
-                    bool includeByCategory = selectedCategories.Count == 0;
-                    bool includeByGallery = selectedGalleries.Count == 0;
-                    bool includeByTemplate = selectedTemplates.Count == 0;
-                    
-                    // Check category filter
-                    if (selectedCategories.Count > 0)
+                    if (selectedCategories.Contains("System/Hex Entries") && IsSystemEntry(bb))
                     {
-                        if (selectedCategories.Contains("System/Hex Entries") && IsSystemEntry(bb))
+                        includeByCategory = true;
+                    }
+                    else if (selectedCategories.Contains(string.IsNullOrEmpty(bb.Category) ? "(No Category)" : bb.Category))
+                    {
+                        if (selectedCategories.Contains("System/Hex Entries") || !IsSystemEntry(bb))
                         {
                             includeByCategory = true;
                         }
-                        else if (selectedCategories.Contains(string.IsNullOrEmpty(bb.Category) ? "(No Category)" : bb.Category))
-                        {
-                            if (selectedCategories.Contains("System/Hex Entries") || !IsSystemEntry(bb))
-                            {
-                                includeByCategory = true;
-                            }
-                        }
                     }
-                    
-                    // Check gallery filter
-                    if (selectedGalleries.Count > 0)
+                }
+                
+                // Check gallery filter
+                if (selectedGalleries.Count > 0)
+                {
+                    if (selectedGalleries.Contains(string.IsNullOrEmpty(bb.Gallery) ? "(No Gallery)" : bb.Gallery))
                     {
-                        if (selectedGalleries.Contains(string.IsNullOrEmpty(bb.Gallery) ? "(No Gallery)" : bb.Gallery))
-                        {
-                            includeByGallery = true;
-                        }
+                        includeByGallery = true;
                     }
-                    
-                    // Check template filter
-                    if (selectedTemplates.Count > 0)
+                }
+                
+                // Check template filter
+                if (selectedTemplates.Count > 0)
+                {
+                    if (selectedTemplates.Contains(string.IsNullOrEmpty(bb.Template) ? "(No Template)" : bb.Template))
                     {
-                        if (selectedTemplates.Contains(string.IsNullOrEmpty(bb.Template) ? "(No Template)" : bb.Template))
-                        {
-                            includeByTemplate = true;
-                        }
+                        includeByTemplate = true;
                     }
+                }
                     
-                    if (includeByCategory && includeByGallery && includeByTemplate)
-                    {
-                        filteredBlocks.Add(bb);
-                    }
+                if (includeByCategory && includeByGallery && includeByTemplate)
+                {
+                    filteredBlocks.Add(bb);
                 }
             }
 
