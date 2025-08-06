@@ -785,15 +785,24 @@ namespace BuildingBlocksManager
                         {
                             // Hierarchical export - recreate folder structure
                             var relativePath = ConvertCategoryToPath(bb.Category);
-                            var fullDir = Path.Combine(exportPath, relativePath);
                             
-                            if (!Directory.Exists(fullDir))
+                            if (string.IsNullOrWhiteSpace(relativePath))
                             {
-                                Directory.CreateDirectory(fullDir);
-                                directoriesCreated++;
+                                // No subfolder - put directly in export path
+                                outputFilePath = Path.Combine(exportPath, $"AT_{bb.Name}.docx");
                             }
-                            
-                            outputFilePath = Path.Combine(fullDir, $"AT_{bb.Name}.docx");
+                            else
+                            {
+                                var fullDir = Path.Combine(exportPath, relativePath);
+                                
+                                if (!Directory.Exists(fullDir))
+                                {
+                                    Directory.CreateDirectory(fullDir);
+                                    directoriesCreated++;
+                                }
+                                
+                                outputFilePath = Path.Combine(fullDir, $"AT_{bb.Name}.docx");
+                            }
                         }
 
                         // Handle duplicate filenames
@@ -903,15 +912,24 @@ namespace BuildingBlocksManager
                         {
                             // Hierarchical export - recreate folder structure
                             var relativePath = ConvertCategoryToPath(bb.Category);
-                            var fullDir = Path.Combine(exportPath, relativePath);
                             
-                            if (!Directory.Exists(fullDir))
+                            if (string.IsNullOrWhiteSpace(relativePath))
                             {
-                                Directory.CreateDirectory(fullDir);
-                                directoriesCreated++;
+                                // No subfolder - put directly in export path
+                                outputFilePath = Path.Combine(exportPath, $"AT_{bb.Name}.docx");
                             }
-                            
-                            outputFilePath = Path.Combine(fullDir, $"AT_{bb.Name}.docx");
+                            else
+                            {
+                                var fullDir = Path.Combine(exportPath, relativePath);
+                                
+                                if (!Directory.Exists(fullDir))
+                                {
+                                    Directory.CreateDirectory(fullDir);
+                                    directoriesCreated++;
+                                }
+                                
+                                outputFilePath = Path.Combine(fullDir, $"AT_{bb.Name}.docx");
+                            }
                         }
 
                         // Handle duplicate filenames
@@ -1165,13 +1183,19 @@ namespace BuildingBlocksManager
         private string ConvertCategoryToPath(string category)
         {
             // Convert "InternalAutotext\Legal\Contracts" to "Legal\Contracts"
+            if (string.IsNullOrWhiteSpace(category))
+                return ""; // No subfolder for empty categories
+                
             if (category.StartsWith("InternalAutotext\\"))
             {
                 var path = category.Substring("InternalAutotext\\".Length);
                 // Convert underscores back to spaces in folder names
-                return path.Replace('_', ' ');
+                return string.IsNullOrWhiteSpace(path) ? "" : path.Replace('_', ' ');
             }
-            return category.Replace('_', ' ');
+            
+            // For categories that don't follow the InternalAutotext pattern,
+            // skip creating subfolders to avoid unwanted "General" folders
+            return "";
         }
 
         private string GetUniqueFilePath(string originalPath)
