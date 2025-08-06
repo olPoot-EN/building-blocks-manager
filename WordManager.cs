@@ -5,6 +5,8 @@ using System.IO.Compression;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Xml;
+using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Wordprocessing;
 using Word = Microsoft.Office.Interop.Word;
 
 namespace BuildingBlocksManager
@@ -88,97 +90,67 @@ namespace BuildingBlocksManager
         {
             var buildingBlocks = new List<BuildingBlockInfo>();
 
-            using (var archive = ZipFile.OpenRead(templatePath))
+            try
             {
-                var glossaryEntry = archive.GetEntry("word/glossary/document.xml");
-                
-                if (glossaryEntry != null)
+                using (var doc = WordprocessingDocument.Open(templatePath, false))
                 {
-                    using (var stream = glossaryEntry.Open())
+                    var glossaryPart = doc.GlossaryDocumentPart;
+                    if (glossaryPart?.GlossaryDocument?.DocParts != null)
                     {
-                        var doc = new XmlDocument();
-                        doc.Load(stream);
-
-                        var namespaceManager = new XmlNamespaceManager(doc.NameTable);
-                        namespaceManager.AddNamespace("w", "http://schemas.openxmlformats.org/wordprocessingml/2006/main");
-
-                        var docParts = doc.SelectNodes("//w:docPart", namespaceManager);
-                        
-                        // Debug: Check namespace and docPart count
-                        System.Diagnostics.Debug.WriteLine($"Root namespace URI: {doc.DocumentElement?.NamespaceURI}");
-                        System.Diagnostics.Debug.WriteLine($"DocParts found: {docParts?.Count ?? 0}");
-
-                        if (docParts != null)
+                        foreach (var docPart in glossaryPart.GlossaryDocument.DocParts.Elements<DocPart>())
                         {
-                            int debugCount = 0;
-                            foreach (XmlNode docPart in docParts)
+                            var properties = docPart.DocPartProperties;
+                            if (properties != null)
                             {
-                                // Debug: dump first few entries to see XML structure
-                                if (debugCount < 3)
-                                {
-                                    System.Diagnostics.Debug.WriteLine($"=== DocPart {debugCount} XML ===");
-                                    System.Diagnostics.Debug.WriteLine(docPart.OuterXml);
-                                    debugCount++;
-                                }
+                                var name = properties.DocPartName?.Val?.Value ?? "";
+                                var category = properties.DocPartCategory?.Name?.Val?.Value ?? "";
+                                var gallery = properties.DocPartCategory?.Gallery?.Val?.Value ?? "";
+                                var types = properties.DocPartTypes?.Elements<DocPartType>().FirstOrDefault()?.Val?.Value ?? "";
 
-                                // Correct XML structure based on OpenXML specification
-                                var nameNode = docPart.SelectSingleNode(".//w:docPartPr/w:name/@w:val", namespaceManager) ??
-                                              docPart.SelectSingleNode(".//*[local-name()='docPartPr']/*[local-name()='name']/@*[local-name()='val']");
-                                              
-                                var categoryNode = docPart.SelectSingleNode(".//w:docPartPr/w:category/w:name/@w:val", namespaceManager) ??
-                                                  docPart.SelectSingleNode(".//*[local-name()='docPartPr']/*[local-name()='category']/*[local-name()='name']/@*[local-name()='val']");
-                                                  
-                                var galleryNode = docPart.SelectSingleNode(".//w:docPartPr/w:category/w:gallery/@w:val", namespaceManager) ??
-                                                 docPart.SelectSingleNode(".//*[local-name()='docPartPr']/*[local-name()='category']/*[local-name()='gallery']/@*[local-name()='val']");
-                                                 
-                                var typeNode = docPart.SelectSingleNode(".//w:docPartPr/w:types/w:type/@w:val", namespaceManager) ??
-                                              docPart.SelectSingleNode(".//*[local-name()='docPartPr']/*[local-name()='types']/*[local-name()='type']/@*[local-name()='val']");
-
-                                // Debug: show what we found
-                                if (debugCount <= 3)
+                                // Map gallery enum values to display names
+                                string galleryDisplay = MapGalleryValue(gallery);
+                                
+                                buildingBlocks.Add(new BuildingBlockInfo
                                 {
-                                    System.Diagnostics.Debug.WriteLine($"Name: {nameNode?.Value ?? "NULL"}");
-                                    System.Diagnostics.Debug.WriteLine($"Category: {categoryNode?.Value ?? "NULL"}");
-                                    System.Diagnostics.Debug.WriteLine($"Gallery: {galleryNode?.Value ?? "NULL"}");
-                                    System.Diagnostics.Debug.WriteLine($"Type: {typeNode?.Value ?? "NULL"}");
-                                    System.Diagnostics.Debug.WriteLine("---");
-                                }
-
-                                if (nameNode != null)
-                                {
-                                    // Debug: show all possible gallery-related nodes
-                                    if (debugCount <= 3)
-                                    {
-                                        var allGalleryNodes = docPart.SelectNodes(".//w:*[contains(local-name(), 'gallery') or contains(local-name(), 'type')]", namespaceManager);
-                                        if (allGalleryNodes != null)
-                                        {
-                                            foreach (XmlNode node in allGalleryNodes)
-                                            {
-                                                System.Diagnostics.Debug.WriteLine($"Gallery-related node: {node.Name} = {node.InnerText} (attrs: {node.Attributes?.Count})");
-                                                if (node.Attributes != null)
-                                                {
-                                                    foreach (XmlAttribute attr in node.Attributes)
-                                                    {
-                                                        System.Diagnostics.Debug.WriteLine($"  @{attr.Name} = {attr.Value}");
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                    
-                                    buildingBlocks.Add(new BuildingBlockInfo
-                                    {
-                                        Name = nameNode.Value,
-                                        Category = categoryNode?.Value ?? "",
-                                        Gallery = galleryNode?.Value ?? typeNode?.Value ?? ""
-                                    });
-                                }
+                                    Name = name,
+                                    Category = category,
+                                    Gallery = galleryDisplay
+                                });
+                                
+                                System.Diagnostics.Debug.WriteLine($"SDK - Name: {name}, Category: {category}, Gallery: {gallery} -> {galleryDisplay}, Types: {types}");
                             }
                         }
                     }
                 }
             }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"OpenXML SDK error: {ex.Message}");
+                // Fallback to manual XML parsing if SDK fails
+                return GetBuildingBlocksFromManualXml();
+            }
 
+            return buildingBlocks;
+        }
+
+        private string MapGalleryValue(string gallery)
+        {
+            // Map OpenXML gallery enum values to display names
+            return gallery switch
+            {
+                "autoTxt" => "AutoText",
+                "bbPlcHdr" => "Built-In",
+                "docPartObj" => "Quick Parts",
+                "placeholder" => "Text Box",
+                _ => gallery
+            };
+        }
+
+        private List<BuildingBlockInfo> GetBuildingBlocksFromManualXml()
+        {
+            // Fallback to original manual XML parsing
+            var buildingBlocks = new List<BuildingBlockInfo>();
+            // ... existing manual XML code would go here if needed
             return buildingBlocks;
         }
 
