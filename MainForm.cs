@@ -1055,12 +1055,13 @@ namespace BuildingBlocksManager
 
         private System.Collections.Generic.List<BuildingBlockInfo> ShowBuildingBlockSelectionDialog()
         {
-            // Use already loaded building blocks if available
+            // Use currently filtered building blocks if available
             System.Collections.Generic.List<BuildingBlockInfo> availableBlocks;
             
             if (allBuildingBlocks.Count > 0)
             {
-                availableBlocks = allBuildingBlocks.Where(bb => !IsSystemEntry(bb)).ToList();
+                // Use the same filtering logic as the template display
+                availableBlocks = GetFilteredBuildingBlocks();
             }
             else
             {
@@ -1873,14 +1874,9 @@ BACKUP PROCESS:
                    (bb.Category != null && bb.Category.Contains("System"));
         }
 
-        private void ApplyTemplateFilter()
+        private List<BuildingBlockInfo> GetFilteredBuildingBlocks()
         {
-            listViewTemplate.Items.Clear();
-            
-            List<BuildingBlockInfo> filteredBlocks;
-            
-            // Always apply filtering logic - no special case for "show all"
-            filteredBlocks = new List<BuildingBlockInfo>();
+            List<BuildingBlockInfo> filteredBlocks = new List<BuildingBlockInfo>();
             
             foreach (var bb in allBuildingBlocks)
             {
@@ -1931,6 +1927,15 @@ BACKUP PROCESS:
                     filteredBlocks.Add(bb);
                 }
             }
+            
+            return filteredBlocks;
+        }
+
+        private void ApplyTemplateFilter()
+        {
+            listViewTemplate.Items.Clear();
+            
+            var filteredBlocks = GetFilteredBuildingBlocks();
 
             // Populate ListView with filtered building blocks
             foreach (var bb in filteredBlocks.OrderBy(bb => bb.Name))
