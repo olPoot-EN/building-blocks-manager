@@ -154,7 +154,7 @@ namespace BuildingBlocksManager
             {
                 Text = "Query",
                 Location = new System.Drawing.Point(20, 165),
-                Size = new System.Drawing.Size(80, 20),
+                Size = new System.Drawing.Size(100, 20),
                 Font = new System.Drawing.Font(Label.DefaultFont, System.Drawing.FontStyle.Bold)
             };
 
@@ -162,29 +162,29 @@ namespace BuildingBlocksManager
             {
                 Text = "Query Source Directory",
                 Location = new System.Drawing.Point(20, 190),
-                Size = new System.Drawing.Size(140, 30)
+                Size = new System.Drawing.Size(150, 30)
             };
 
             // Import group
             var lblImport = new Label
             {
                 Text = "Import (Folder -> Template)",
-                Location = new System.Drawing.Point(180, 165),
-                Size = new System.Drawing.Size(180, 20),
+                Location = new System.Drawing.Point(190, 165),
+                Size = new System.Drawing.Size(200, 20),
                 Font = new System.Drawing.Font(Label.DefaultFont, System.Drawing.FontStyle.Bold)
             };
 
             btnImportAll = new Button
             {
                 Text = "All",
-                Location = new System.Drawing.Point(180, 190),
+                Location = new System.Drawing.Point(190, 190),
                 Size = new System.Drawing.Size(80, 30)
             };
 
             btnImportSelected = new Button
             {
                 Text = "Selected",
-                Location = new System.Drawing.Point(180, 225),
+                Location = new System.Drawing.Point(190, 225),
                 Size = new System.Drawing.Size(80, 30)
             };
 
@@ -192,30 +192,30 @@ namespace BuildingBlocksManager
             var lblExport = new Label
             {
                 Text = "Export (Template -> Folder)",
-                Location = new System.Drawing.Point(280, 165),
-                Size = new System.Drawing.Size(180, 20),
+                Location = new System.Drawing.Point(300, 165),
+                Size = new System.Drawing.Size(200, 20),
                 Font = new System.Drawing.Font(Label.DefaultFont, System.Drawing.FontStyle.Bold)
             };
 
             btnExportAll = new Button
             {
                 Text = "All",
-                Location = new System.Drawing.Point(280, 190),
+                Location = new System.Drawing.Point(300, 190),
                 Size = new System.Drawing.Size(80, 30)
             };
 
             btnExportSelected = new Button
             {
                 Text = "Selected",
-                Location = new System.Drawing.Point(280, 225),
+                Location = new System.Drawing.Point(300, 225),
                 Size = new System.Drawing.Size(80, 30)
             };
 
             // Tab control section
             tabControl = new TabControl
             {
-                Location = new System.Drawing.Point(20, 270),
-                Size = new System.Drawing.Size(720, 255),
+                Location = new System.Drawing.Point(20, 275),
+                Size = new System.Drawing.Size(740, 250),
                 Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom
             };
 
@@ -224,7 +224,7 @@ namespace BuildingBlocksManager
             txtResults = new TextBox
             {
                 Location = new System.Drawing.Point(5, 5),
-                Size = new System.Drawing.Size(705, 220),
+                Size = new System.Drawing.Size(725, 215),
                 Multiline = true,
                 ScrollBars = ScrollBars.Vertical,
                 ReadOnly = true,
@@ -238,7 +238,7 @@ namespace BuildingBlocksManager
             treeDirectory = new TreeView
             {
                 Location = new System.Drawing.Point(5, 5),
-                Size = new System.Drawing.Size(705, 220),
+                Size = new System.Drawing.Size(725, 215),
                 Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom
             };
             tabDirectory.Controls.Add(treeDirectory);
@@ -270,7 +270,7 @@ namespace BuildingBlocksManager
             listTemplate = new ListBox
             {
                 Location = new System.Drawing.Point(5, 35),
-                Size = new System.Drawing.Size(705, 185),
+                Size = new System.Drawing.Size(725, 180),
                 Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom
             };
 
@@ -282,16 +282,16 @@ namespace BuildingBlocksManager
             // Progress and status section
             progressBar = new ProgressBar
             {
-                Location = new System.Drawing.Point(20, 545),
-                Size = new System.Drawing.Size(500, 23),
+                Location = new System.Drawing.Point(20, 540),
+                Size = new System.Drawing.Size(520, 23),
                 Style = ProgressBarStyle.Continuous
             };
 
             lblStatus = new Label
             {
                 Text = "Ready",
-                Location = new System.Drawing.Point(530, 545),
-                Size = new System.Drawing.Size(190, 23),
+                Location = new System.Drawing.Point(550, 540),
+                Size = new System.Drawing.Size(210, 23),
                 TextAlign = System.Drawing.ContentAlignment.MiddleLeft
             };
 
