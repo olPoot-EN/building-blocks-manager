@@ -1383,7 +1383,7 @@ namespace BuildingBlocksManager
         {
             var helpMessage = @"IMPORT/EXPORT RULES
 
-FILE TO CATEGORY CONVERSION:
+TEXT IMPORT (FILE -> TEMPLATE):
 • Files must start with 'AT_' to be processed
 • Directory structure converts to Building Block categories
 • Top-level source directory is ignored in category path
@@ -1406,18 +1406,10 @@ FLAT STRUCTURE OPTIONS:
 • Flat Export: All Building Blocks export to single folder (no subfolders)
 
 BACKUP PROCESS:
-• BEFORE importing, the entire template file is backed up
-• Process: MyTemplate.dotm → MyTemplate_Backup_20241208_143022.dotm
-• THEN new Building Blocks are added to original MyTemplate.dotm
-• Triggers: Only 'Import All' and 'Import Selected' buttons (NOT exports)
+• The template file is backed up before importing
 • Location: Same folder as your template file
 • Recovery: Use File → Rollback to restore from most recent backup
-• Cleanup: Last 5 backups kept, older ones deleted automatically
-
-IMPORTANT NOTES:
-• Only .docx files starting with 'AT_' are processed
-• Building Blocks are created in AutoText gallery within the template document
-• Export recreates the original folder structure from categories";
+• Cleanup: Last 5 backups kept, older ones deleted automatically";
 
             MessageBox.Show(helpMessage, "Import/Export Rules", 
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
