@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -26,10 +27,16 @@ namespace BuildingBlocksManager
         private TabPage tabTemplate;
         private TreeView treeDirectory;
         private ListView listViewTemplate;
+        private Button btnFilterTemplate;
+        private Label lblTemplateCount;
         private ProgressBar progressBar;
         private Label lblStatus;
         private Settings settings;
         private Logger logger;
+        
+        // Template filtering fields
+        private List<BuildingBlockInfo> allBuildingBlocks = new List<BuildingBlockInfo>();
+        private List<string> selectedCategories = new List<string>();
 
         public MainForm()
         {
@@ -252,10 +259,29 @@ namespace BuildingBlocksManager
             // Template tab
             tabTemplate = new TabPage("Template");
             
+            // Filter button
+            btnFilterTemplate = new Button
+            {
+                Text = "Filter",
+                Location = new System.Drawing.Point(5, 5),
+                Size = new System.Drawing.Size(80, 25)
+            };
+            btnFilterTemplate.Click += BtnFilterTemplate_Click;
+            
+            // Item count label
+            lblTemplateCount = new Label
+            {
+                Text = "",
+                Location = new System.Drawing.Point(95, 9),
+                Size = new System.Drawing.Size(300, 17),
+                TextAlign = System.Drawing.ContentAlignment.MiddleLeft
+            };
+            
+            // ListView (moved down to accommodate filter controls)
             listViewTemplate = new ListView
             {
-                Location = new System.Drawing.Point(5, 5),
-                Size = new System.Drawing.Size(725, 185),
+                Location = new System.Drawing.Point(5, 35),
+                Size = new System.Drawing.Size(725, 155),
                 View = View.Details,
                 FullRowSelect = true,
                 GridLines = true
@@ -265,6 +291,8 @@ namespace BuildingBlocksManager
             listViewTemplate.Columns.Add("Name", 350);
             listViewTemplate.Columns.Add("Category", 350);
 
+            tabTemplate.Controls.Add(btnFilterTemplate);
+            tabTemplate.Controls.Add(lblTemplateCount);
             tabTemplate.Controls.Add(listViewTemplate);
 
             // Add tabs to tab control
@@ -929,21 +957,29 @@ namespace BuildingBlocksManager
 
         private System.Collections.Generic.List<BuildingBlockInfo> ShowBuildingBlockSelectionDialog()
         {
-            // Get real Building Blocks from template
+            // Use already loaded building blocks if available
             System.Collections.Generic.List<BuildingBlockInfo> availableBlocks;
             
-            try
+            if (allBuildingBlocks.Count > 0)
             {
-                using (var wordManager = new WordManager(txtTemplatePath.Text))
-                {
-                    availableBlocks = wordManager.GetBuildingBlocks();
-                }
+                availableBlocks = allBuildingBlocks;
             }
-            catch (Exception ex)
+            else
             {
-                MessageBox.Show($"Failed to load Building Blocks from template: {ex.Message}", 
-                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return new System.Collections.Generic.List<BuildingBlockInfo>();
+                // Fallback to loading from template if not already loaded
+                try
+                {
+                    using (var wordManager = new WordManager(txtTemplatePath.Text))
+                    {
+                        availableBlocks = wordManager.GetBuildingBlocks();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Failed to load Building Blocks from template: {ex.Message}", 
+                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return new System.Collections.Generic.List<BuildingBlockInfo>();
+                }
             }
 
             if (availableBlocks.Count == 0)
@@ -1195,11 +1231,19 @@ namespace BuildingBlocksManager
                 {
                     var buildingBlocks = wordManager.GetBuildingBlocks();
                     
-                    // Clear previous data
-                    listViewTemplate.Items.Clear();
+                    // Store all building blocks for filtering
+                    allBuildingBlocks = buildingBlocks;
+                    
+                    // Reset filters when loading new template
+                    selectedCategories.Clear();
+                    UpdateFilterButtonText();
                     
                     if (buildingBlocks.Count == 0)
                     {
+                        // Clear previous data
+                        listViewTemplate.Items.Clear();
+                        lblTemplateCount.Text = "No Building Blocks found";
+                        
                         UpdateStatus("No Building Blocks found in template");
                         tabControl.SelectedTab = tabTemplate;
                         MessageBox.Show("No Building Blocks found in the template.\n\nThis could mean:\n• The template has no Building Blocks\n• The Building Blocks are not in the 'InternalAutotext' category", 
@@ -1207,14 +1251,8 @@ namespace BuildingBlocksManager
                         return;
                     }
 
-                    // Populate ListView with building blocks
-                    foreach (var bb in buildingBlocks.OrderBy(bb => bb.Name))
-                    {
-                        var item = new ListViewItem(bb.Name);
-                        item.SubItems.Add(bb.Category);
-                        item.Tag = bb; // Store the BuildingBlockInfo for later use
-                        listViewTemplate.Items.Add(item);
-                    }
+                    // Apply current filter (which will be "no filter" since we just reset)
+                    ApplyTemplateFilter();
 
                     // Switch to Template tab
                     tabControl.SelectedTab = tabTemplate;
@@ -1325,6 +1363,211 @@ namespace BuildingBlocksManager
             
             // Expand root node
             rootNode.Expand();
+        }
+
+        private void BtnFilterTemplate_Click(object sender, EventArgs e)
+        {
+            if (allBuildingBlocks.Count == 0)
+            {
+                MessageBox.Show("Please load building blocks from template first.", "No Data",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var filterDialog = CreateFilterDialog();
+            if (filterDialog.ShowDialog() == DialogResult.OK)
+            {
+                ApplyTemplateFilter();
+                UpdateFilterButtonText();
+            }
+            filterDialog.Dispose();
+        }
+
+        private Form CreateFilterDialog()
+        {
+            var categories = GetUniqueCategories();
+            
+            var form = new Form
+            {
+                Text = "Filter Building Blocks",
+                Size = new System.Drawing.Size(400, 450),
+                StartPosition = FormStartPosition.CenterScreen,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MaximizeBox = false,
+                MinimizeBox = false
+            };
+
+            var listBox = new CheckedListBox
+            {
+                Location = new System.Drawing.Point(20, 20),
+                Size = new System.Drawing.Size(340, 320),
+                CheckOnClick = true
+            };
+
+            // Add categories to the list
+            foreach (var category in categories)
+            {
+                bool isChecked = selectedCategories.Count == 0 || selectedCategories.Contains(category);
+                listBox.Items.Add(category, isChecked);
+            }
+
+            var btnSelectAll = new Button
+            {
+                Text = "Select All",
+                Location = new System.Drawing.Point(20, 360),
+                Size = new System.Drawing.Size(80, 25)
+            };
+
+            var btnSelectNone = new Button
+            {
+                Text = "Select None",
+                Location = new System.Drawing.Point(110, 360),
+                Size = new System.Drawing.Size(80, 25)
+            };
+
+            var btnOK = new Button
+            {
+                Text = "OK",
+                Location = new System.Drawing.Point(200, 360),
+                Size = new System.Drawing.Size(80, 25),
+                DialogResult = DialogResult.OK
+            };
+
+            var btnCancel = new Button
+            {
+                Text = "Cancel",
+                Location = new System.Drawing.Point(290, 360),
+                Size = new System.Drawing.Size(80, 25),
+                DialogResult = DialogResult.Cancel
+            };
+
+            btnSelectAll.Click += (s, e) => {
+                for (int i = 0; i < listBox.Items.Count; i++)
+                    listBox.SetItemChecked(i, true);
+            };
+
+            btnSelectNone.Click += (s, e) => {
+                for (int i = 0; i < listBox.Items.Count; i++)
+                    listBox.SetItemChecked(i, false);
+            };
+
+            btnOK.Click += (s, e) => {
+                selectedCategories.Clear();
+                foreach (string item in listBox.CheckedItems)
+                {
+                    selectedCategories.Add(item);
+                }
+            };
+
+            form.Controls.AddRange(new Control[] { listBox, btnSelectAll, btnSelectNone, btnOK, btnCancel });
+            form.AcceptButton = btnOK;
+            form.CancelButton = btnCancel;
+
+            return form;
+        }
+
+        private List<string> GetUniqueCategories()
+        {
+            var categories = allBuildingBlocks
+                .Select(bb => bb.Category)
+                .Where(cat => !string.IsNullOrEmpty(cat))
+                .Distinct()
+                .OrderBy(cat => cat)
+                .ToList();
+
+            // Add "System/Hex Entries" as a special category for filtering system entries
+            if (allBuildingBlocks.Any(bb => IsSystemEntry(bb)))
+            {
+                categories.Insert(0, "System/Hex Entries");
+            }
+
+            return categories;
+        }
+
+        private bool IsSystemEntry(BuildingBlockInfo bb)
+        {
+            // Identify system entries by checking for hex characters in name or certain patterns
+            return bb.Name.Any(c => "0123456789ABCDEF".Contains(char.ToUpper(c)) && bb.Name.Length > 10) ||
+                   bb.Name.StartsWith("_") ||
+                   bb.Category.Contains("System") ||
+                   bb.Gallery == "Equation";
+        }
+
+        private void ApplyTemplateFilter()
+        {
+            listViewTemplate.Items.Clear();
+            
+            List<BuildingBlockInfo> filteredBlocks;
+            
+            if (selectedCategories.Count == 0)
+            {
+                // No filter - show all
+                filteredBlocks = allBuildingBlocks;
+            }
+            else
+            {
+                filteredBlocks = new List<BuildingBlockInfo>();
+                
+                foreach (var bb in allBuildingBlocks)
+                {
+                    bool includeBlock = false;
+                    
+                    // Check if "System/Hex Entries" is selected and this is a system entry
+                    if (selectedCategories.Contains("System/Hex Entries") && IsSystemEntry(bb))
+                    {
+                        includeBlock = true;
+                    }
+                    // Check if the block's category is selected (and it's not a system entry being filtered out)
+                    else if (selectedCategories.Contains(bb.Category))
+                    {
+                        // Only include if "System/Hex Entries" is also selected, or this is not a system entry
+                        if (selectedCategories.Contains("System/Hex Entries") || !IsSystemEntry(bb))
+                        {
+                            includeBlock = true;
+                        }
+                    }
+                    
+                    if (includeBlock)
+                    {
+                        filteredBlocks.Add(bb);
+                    }
+                }
+            }
+
+            // Populate ListView with filtered building blocks
+            foreach (var bb in filteredBlocks.OrderBy(bb => bb.Name))
+            {
+                var item = new ListViewItem(bb.Name);
+                item.SubItems.Add(bb.Category);
+                item.Tag = bb;
+                listViewTemplate.Items.Add(item);
+            }
+
+            UpdateTemplateCount(filteredBlocks.Count);
+        }
+
+        private void UpdateFilterButtonText()
+        {
+            if (selectedCategories.Count == 0)
+            {
+                btnFilterTemplate.Text = "Filter";
+            }
+            else
+            {
+                btnFilterTemplate.Text = $"Filter: {selectedCategories.Count}";
+            }
+        }
+
+        private void UpdateTemplateCount(int filteredCount)
+        {
+            if (filteredCount == allBuildingBlocks.Count)
+            {
+                lblTemplateCount.Text = $"Showing {allBuildingBlocks.Count} Building Blocks";
+            }
+            else
+            {
+                lblTemplateCount.Text = $"Showing {filteredCount} of {allBuildingBlocks.Count} Building Blocks";
+            }
         }
     }
 }
