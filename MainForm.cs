@@ -273,8 +273,8 @@ namespace BuildingBlocksManager
             tabResults = new TabPage("Results");
             txtResults = new TextBox
             {
-                Location = new System.Drawing.Point(5, 5),
-                Size = new System.Drawing.Size(707, 168), // Calculated: 734-17-10 = 707px, 195-17-10 = 168px
+                Location = new System.Drawing.Point(3, 3),
+                Size = new System.Drawing.Size(725, 185), // More aggressive: leave minimal margin for scrollbars
                 Multiline = true,
                 ScrollBars = ScrollBars.Both, // Enable both horizontal and vertical scrollbars
                 ReadOnly = true,
@@ -287,8 +287,8 @@ namespace BuildingBlocksManager
             tabDirectory = new TabPage("Directory");
             treeDirectory = new TreeView
             {
-                Location = new System.Drawing.Point(5, 5),
-                Size = new System.Drawing.Size(707, 168), // Calculated: 734-17-10 = 707px, 195-17-10 = 168px
+                Location = new System.Drawing.Point(3, 3),
+                Size = new System.Drawing.Size(725, 185), // More aggressive: leave minimal margin for scrollbars
                 Scrollable = true,
                 HotTracking = true,
                 ShowLines = true,
@@ -331,8 +331,8 @@ namespace BuildingBlocksManager
             // ListView (moved down to accommodate filter controls)
             listViewTemplate = new ListView
             {
-                Location = new System.Drawing.Point(5, 35),
-                Size = new System.Drawing.Size(707, 138), // Calculated: 707px width, 168-30px for filter controls = 138px
+                Location = new System.Drawing.Point(3, 35),
+                Size = new System.Drawing.Size(725, 150), // More aggressive: 725px width, 185-35px for filter controls
                 View = View.Details,
                 FullRowSelect = true,
                 GridLines = true,
@@ -340,11 +340,11 @@ namespace BuildingBlocksManager
                 Scrollable = true // Explicitly enable scrolling
             };
 
-            // Add columns - calculated to fit 707px width with scrollbar space
-            listViewTemplate.Columns.Add("Name", 240);      // 240px
-            listViewTemplate.Columns.Add("Category", 240);  // 240px 
-            listViewTemplate.Columns.Add("Gallery", 180);   // 180px
-            // Total: 660px, leaving 47px buffer for scrollbars and borders
+            // Add columns - recalculated for 725px width with scrollbar space  
+            listViewTemplate.Columns.Add("Name", 250);      // 250px
+            listViewTemplate.Columns.Add("Category", 250);  // 250px 
+            listViewTemplate.Columns.Add("Gallery", 200);   // 200px
+            // Total: 700px, leaving 25px buffer for scrollbars
             
             // Enable column sorting
             listViewTemplate.ColumnClick += ListViewTemplate_ColumnClick;
@@ -1441,13 +1441,14 @@ FLAT STRUCTURE OPTIONS:
 • Flat Import: All files go into single specified category
 • Flat Export: All Building Blocks export to single folder (no subfolders)
 
-BACKUP INFORMATION:
-• Backups are automatically created before IMPORT operations only (not exports)
-• Triggers: 'Import All' and 'Import Selected' buttons
+BACKUP PROCESS:
+• BEFORE importing, the entire template file is backed up
+• Process: MyTemplate.dotm → MyTemplate_Backup_20241208_143022.dotm
+• THEN new Building Blocks are added to original MyTemplate.dotm
+• Triggers: Only 'Import All' and 'Import Selected' buttons (NOT exports)
 • Location: Same folder as your template file
-• Format: [TemplateName]_Backup_YYYYMMDD_HHMMSS.dotm
-• Example: MyTemplate_Backup_20241208_143022.dotm
-• Last 5 backups are kept, older ones are deleted automatically
+• Recovery: Use File → Rollback to restore from most recent backup
+• Cleanup: Last 5 backups kept, older ones deleted automatically
 
 IMPORTANT NOTES:
 • Only .docx files starting with 'AT_' are processed
