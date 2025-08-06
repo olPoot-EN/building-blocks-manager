@@ -240,13 +240,14 @@ namespace BuildingBlocksManager
             tabResults = new TabPage("Results");
             txtResults = new TextBox
             {
-                Location = new System.Drawing.Point(5, 5),
-                Size = new System.Drawing.Size(725, 185),
+                Location = new System.Drawing.Point(3, 3),
+                Size = new System.Drawing.Size(730, 188), // Adjusted to fit better in tab
                 Multiline = true,
                 ScrollBars = ScrollBars.Vertical,
                 ReadOnly = true,
                 Font = new System.Drawing.Font("Consolas", 9),
-                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom,
+                WordWrap = false // Prevent word wrapping which can cause display issues
             };
             tabResults.Controls.Add(txtResults);
 
@@ -254,8 +255,8 @@ namespace BuildingBlocksManager
             tabDirectory = new TabPage("Directory");
             treeDirectory = new TreeView
             {
-                Location = new System.Drawing.Point(5, 5),
-                Size = new System.Drawing.Size(725, 185),
+                Location = new System.Drawing.Point(3, 3),
+                Size = new System.Drawing.Size(730, 188), // Consistent sizing with results tab
                 Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom,
                 Scrollable = true,
                 HotTracking = true,
@@ -299,12 +300,13 @@ namespace BuildingBlocksManager
             // ListView (moved down to accommodate filter controls)
             listViewTemplate = new ListView
             {
-                Location = new System.Drawing.Point(5, 35),
-                Size = new System.Drawing.Size(725, 155),
+                Location = new System.Drawing.Point(3, 35),
+                Size = new System.Drawing.Size(730, 153), // Adjusted to match tab sizing
                 View = View.Details,
                 FullRowSelect = true,
                 GridLines = true,
-                Sorting = SortOrder.None
+                Sorting = SortOrder.None,
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom
             };
 
             // Add columns like Building Block Organizer
