@@ -1477,12 +1477,11 @@ IMPORTANT NOTES:
                         }
                     }
                     
-                    // Pre-select all galleries and templates by default (only categories are filtered for System/Hex)
+                    // Only pre-select galleries by default, let templates be manually selected
                     var galleries = GetUniqueGalleries();
                     selectedGalleries.AddRange(galleries);
                     
-                    var templates = GetUniqueTemplates();
-                    selectedTemplates.AddRange(templates);
+                    // Don't auto-select templates - let user choose which templates to show
                     
                     UpdateFilterButtonText();
                     
@@ -1639,7 +1638,7 @@ IMPORTANT NOTES:
             var form = new Form
             {
                 Text = "Filter Building Blocks",
-                Size = new System.Drawing.Size(480, 400),
+                Size = new System.Drawing.Size(420, 400),
                 StartPosition = FormStartPosition.CenterScreen,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
                 MaximizeBox = false,
@@ -1658,21 +1657,13 @@ IMPORTANT NOTES:
             var listBoxCategories = new CheckedListBox
             {
                 Location = new System.Drawing.Point(15, 30),
-                Size = new System.Drawing.Size(200, 250),
+                Size = new System.Drawing.Size(170, 250),
                 CheckOnClick = true
             };
 
             foreach (var category in categories)
             {
-                bool isChecked;
-                if (category == "System/Hex Entries")
-                {
-                    isChecked = selectedCategories.Contains(category);
-                }
-                else
-                {
-                    isChecked = selectedCategories.Count == 0 || selectedCategories.Contains(category);
-                }
+                bool isChecked = selectedCategories.Contains(category);
                 listBoxCategories.Items.Add(category, isChecked);
             }
 
@@ -1680,21 +1671,21 @@ IMPORTANT NOTES:
             var lblGalleries = new Label
             {
                 Text = "Galleries:",
-                Location = new System.Drawing.Point(230, 10),
-                Size = new System.Drawing.Size(70, 20),
+                Location = new System.Drawing.Point(200, 10),
+                Size = new System.Drawing.Size(60, 20),
                 Font = new System.Drawing.Font(Label.DefaultFont, System.Drawing.FontStyle.Bold)
             };
 
             var listBoxGalleries = new CheckedListBox
             {
-                Location = new System.Drawing.Point(230, 30),
-                Size = new System.Drawing.Size(220, 120),
+                Location = new System.Drawing.Point(200, 30),
+                Size = new System.Drawing.Size(190, 110),
                 CheckOnClick = true
             };
 
             foreach (var gallery in galleries)
             {
-                bool isChecked = selectedGalleries.Count == 0 || selectedGalleries.Contains(gallery);
+                bool isChecked = selectedGalleries.Contains(gallery);
                 listBoxGalleries.Items.Add(gallery, isChecked);
             }
 
@@ -1702,21 +1693,21 @@ IMPORTANT NOTES:
             var lblTemplates = new Label
             {
                 Text = "Templates:",
-                Location = new System.Drawing.Point(230, 160),
+                Location = new System.Drawing.Point(200, 170),
                 Size = new System.Drawing.Size(70, 20),
                 Font = new System.Drawing.Font(Label.DefaultFont, System.Drawing.FontStyle.Bold)
             };
 
             var listBoxTemplates = new CheckedListBox
             {
-                Location = new System.Drawing.Point(230, 180),
-                Size = new System.Drawing.Size(220, 100),
+                Location = new System.Drawing.Point(200, 190),
+                Size = new System.Drawing.Size(190, 90),
                 CheckOnClick = true
             };
 
             foreach (var template in templates)
             {
-                bool isChecked = selectedTemplates.Count == 0 || selectedTemplates.Contains(template);
+                bool isChecked = selectedTemplates.Contains(template);
                 listBoxTemplates.Items.Add(template, isChecked);
             }
 
@@ -1725,48 +1716,48 @@ IMPORTANT NOTES:
             {
                 Text = "All",
                 Location = new System.Drawing.Point(15, 285),
-                Size = new System.Drawing.Size(60, 25)
+                Size = new System.Drawing.Size(50, 25)
             };
 
             var btnSelectNoneCat = new Button
             {
                 Text = "None",
-                Location = new System.Drawing.Point(85, 285),
-                Size = new System.Drawing.Size(60, 25)
+                Location = new System.Drawing.Point(75, 285),
+                Size = new System.Drawing.Size(50, 25)
             };
 
             var btnSelectAllGal = new Button
             {
                 Text = "All",
-                Location = new System.Drawing.Point(230, 285),
-                Size = new System.Drawing.Size(60, 25)
+                Location = new System.Drawing.Point(200, 145),
+                Size = new System.Drawing.Size(50, 25)
             };
 
             var btnSelectNoneGal = new Button
             {
                 Text = "None",
-                Location = new System.Drawing.Point(300, 285),
-                Size = new System.Drawing.Size(60, 25)
+                Location = new System.Drawing.Point(260, 145),
+                Size = new System.Drawing.Size(50, 25)
             };
 
             var btnSelectAllTmp = new Button
             {
                 Text = "All",
-                Location = new System.Drawing.Point(370, 285),
-                Size = new System.Drawing.Size(40, 25)
+                Location = new System.Drawing.Point(200, 285),
+                Size = new System.Drawing.Size(50, 25)
             };
 
             var btnSelectNoneTmp = new Button
             {
                 Text = "None",
-                Location = new System.Drawing.Point(415, 285),
-                Size = new System.Drawing.Size(40, 25)
+                Location = new System.Drawing.Point(260, 285),
+                Size = new System.Drawing.Size(50, 25)
             };
 
             var btnOK = new Button
             {
                 Text = "OK",
-                Location = new System.Drawing.Point(300, 325),
+                Location = new System.Drawing.Point(240, 325),
                 Size = new System.Drawing.Size(75, 25),
                 DialogResult = DialogResult.OK
             };
@@ -1774,7 +1765,7 @@ IMPORTANT NOTES:
             var btnCancel = new Button
             {
                 Text = "Cancel",
-                Location = new System.Drawing.Point(385, 325),
+                Location = new System.Drawing.Point(325, 325),
                 Size = new System.Drawing.Size(75, 25),
                 DialogResult = DialogResult.Cancel
             };

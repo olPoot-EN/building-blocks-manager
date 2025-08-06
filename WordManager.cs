@@ -127,21 +127,37 @@ namespace BuildingBlocksManager
         {
             try
             {
-                // Common paths for Building Blocks.dotm/dotx
+                // Common paths for Building Blocks templates - check multiple versions and locations
                 var possiblePaths = new[]
                 {
+                    // Office 365/2019/2016
                     Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), 
                         "Microsoft", "Document Building Blocks", "1033", "16", "Building Blocks.dotx"),
                     Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), 
                         "Microsoft", "Document Building Blocks", "1033", "15", "Building Blocks.dotx"),
                     Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), 
-                        "Microsoft", "Document Building Blocks", "1033", "Building Blocks.dotx")
+                        "Microsoft", "Document Building Blocks", "1033", "14", "Building Blocks.dotx"),
+                    
+                    // Legacy versions
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), 
+                        "Microsoft", "Document Building Blocks", "1033", "Building Blocks.dotx"),
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), 
+                        "Microsoft", "Document Building Blocks", "Building Blocks.dotx"),
+                        
+                    // Alternative locations
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), 
+                        "Microsoft", "Document Building Blocks", "1033", "16", "Building Blocks.dotx"),
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), 
+                        "Microsoft Office", "root", "Document Themes 16", "Building Blocks.dotx")
                 };
                 
-                return possiblePaths.FirstOrDefault(File.Exists);
+                var foundPath = possiblePaths.FirstOrDefault(File.Exists);
+                System.Diagnostics.Debug.WriteLine($"Building Blocks template search: {(foundPath != null ? $"Found at {foundPath}" : "Not found")}");
+                return foundPath;
             }
-            catch
+            catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"Error finding Building Blocks template: {ex.Message}");
                 return null;
             }
         }
