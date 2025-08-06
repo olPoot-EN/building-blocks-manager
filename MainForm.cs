@@ -1754,7 +1754,7 @@ BACKUP PROCESS:
             var btnOK = new Button
             {
                 Text = "OK",
-                Location = new System.Drawing.Point(220, 325),
+                Location = new System.Drawing.Point(195, 325),
                 Size = new System.Drawing.Size(70, 25),
                 DialogResult = DialogResult.OK
             };
@@ -1762,7 +1762,7 @@ BACKUP PROCESS:
             var btnCancel = new Button
             {
                 Text = "Cancel",
-                Location = new System.Drawing.Point(300, 325),
+                Location = new System.Drawing.Point(275, 325),
                 Size = new System.Drawing.Size(70, 25),
                 DialogResult = DialogResult.Cancel
             };
