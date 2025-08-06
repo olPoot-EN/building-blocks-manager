@@ -20,6 +20,7 @@ namespace BuildingBlocksManager
         private Button btnImportSelected;
         private Button btnExportAll;
         private Button btnExportSelected;
+        private Button btnStop;
         private TextBox txtResults;
         private TabControl tabControl;
         private TabPage tabResults;
@@ -33,6 +34,7 @@ namespace BuildingBlocksManager
         private Label lblStatus;
         private Settings settings;
         private Logger logger;
+        private System.Threading.CancellationTokenSource cancellationTokenSource;
         
         // Template filtering fields
         private List<BuildingBlockInfo> allBuildingBlocks = new List<BuildingBlockInfo>();
@@ -235,6 +237,17 @@ namespace BuildingBlocksManager
                 Size = new System.Drawing.Size(80, 30)
             };
 
+            // Stop button (hidden by default)
+            btnStop = new Button
+            {
+                Text = "Stop",
+                Location = new System.Drawing.Point(450, 210),
+                Size = new System.Drawing.Size(80, 35),
+                Visible = false,
+                BackColor = System.Drawing.Color.LightCoral
+            };
+            btnStop.Click += BtnStop_Click;
+
             // Tab control section - Form width 800px - 40px margins = 760px max
             tabControl = new TabControl
             {
@@ -359,12 +372,31 @@ namespace BuildingBlocksManager
                 lblStructure, chkFlatImport, chkFlatExport,
                 lblQuery, btnQueryDirectory, btnQueryTemplate,
                 lblImport, btnImportAll, btnImportSelected,
-                lblExport, btnExportAll, btnExportSelected,
+                lblExport, btnExportAll, btnExportSelected, btnStop,
                 tabControl,
                 progressBar, lblStatus
             });
 
             ResumeLayout(false);
+        }
+
+        private void BtnStop_Click(object sender, EventArgs e)
+        {
+            cancellationTokenSource?.Cancel();
+            UpdateStatus("Operation cancelled by user");
+        }
+
+        private void ShowStopButton()
+        {
+            btnStop.Visible = true;
+            cancellationTokenSource = new System.Threading.CancellationTokenSource();
+        }
+
+        private void HideStopButton()
+        {
+            btnStop.Visible = false;
+            cancellationTokenSource?.Dispose();
+            cancellationTokenSource = null;
         }
 
         private void BtnBrowseTemplate_Click(object sender, EventArgs e)
@@ -505,6 +537,7 @@ namespace BuildingBlocksManager
             UpdateStatus("Importing all files...");
             progressBar.Style = ProgressBarStyle.Continuous;
             progressBar.Value = 0;
+            ShowStopButton();
             
             AppendResults("=== IMPORT ALL OPERATION ===");
             AppendResults($"Template: {Path.GetFileName(txtTemplatePath.Text)}");
@@ -523,7 +556,10 @@ namespace BuildingBlocksManager
             {
                 // Check if template file is locked and handle it
                 if (!HandleTemplateFileLock(txtTemplatePath.Text, "Import All"))
+                {
+                    HideStopButton();
                     return;
+                }
 
                 // Initialize managers
                 wordManager = new WordManager(txtTemplatePath.Text);
@@ -542,6 +578,7 @@ namespace BuildingBlocksManager
                 if (filesToImport.Count == 0)
                 {
                     AppendResults("No files require importing.");
+                    HideStopButton();
                     return;
                 }
 
@@ -551,6 +588,13 @@ namespace BuildingBlocksManager
                 // Import each file
                 for (int i = 0; i < filesToImport.Count; i++)
                 {
+                    // Check for cancellation
+                    if (cancellationTokenSource?.Token.IsCancellationRequested == true)
+                    {
+                        AppendResults("Import operation cancelled by user.");
+                        break;
+                    }
+
                     var file = filesToImport[i];
                     var fileName = Path.GetFileName(file.FilePath);
                     
@@ -591,6 +635,7 @@ namespace BuildingBlocksManager
                 AppendResults("");
                 AppendResults("Try closing Word completely and running the operation again.");
                 UpdateStatus("Import failed - file access error");
+                HideStopButton();
                 return;
             }
             catch (Exception ex)
@@ -602,6 +647,7 @@ namespace BuildingBlocksManager
             finally
             {
                 wordManager?.Dispose();
+                HideStopButton();
             }
 
             var processingTime = (DateTime.Now - startTime).TotalSeconds;
@@ -737,6 +783,7 @@ namespace BuildingBlocksManager
             UpdateStatus("Exporting all Building Blocks...");
             progressBar.Style = ProgressBarStyle.Continuous;
             progressBar.Value = 0;
+            ShowStopButton();
             
             AppendResults("=== EXPORT ALL OPERATION ===");
             AppendResults($"Template: {Path.GetFileName(txtTemplatePath.Text)}");
@@ -754,7 +801,10 @@ namespace BuildingBlocksManager
             {
                 // Check if template file is locked and handle it
                 if (!HandleTemplateFileLock(txtTemplatePath.Text, "Export"))
+                {
+                    HideStopButton();
                     return;
+                }
 
                 // Initialize WordManager
                 wordManager = new WordManager(txtTemplatePath.Text);
@@ -769,6 +819,7 @@ namespace BuildingBlocksManager
                 if (buildingBlocks.Count == 0)
                 {
                     AppendResults("No exportable Building Blocks found in template (only system entries found).");
+                    HideStopButton();
                     return;
                 }
 
@@ -778,6 +829,13 @@ namespace BuildingBlocksManager
                 // Export each Building Block
                 for (int i = 0; i < buildingBlocks.Count; i++)
                 {
+                    // Check for cancellation
+                    if (cancellationTokenSource?.Token.IsCancellationRequested == true)
+                    {
+                        AppendResults("Export operation cancelled by user.");
+                        break;
+                    }
+
                     var bb = buildingBlocks[i];
                     
                     try
@@ -843,6 +901,7 @@ namespace BuildingBlocksManager
             finally
             {
                 wordManager?.Dispose();
+                HideStopButton();
             }
 
             var processingTime = (DateTime.Now - startTime).TotalSeconds;
