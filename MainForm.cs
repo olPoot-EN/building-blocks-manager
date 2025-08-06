@@ -1244,6 +1244,7 @@ namespace BuildingBlocksManager
                     
                     // Reset filters when loading new template
                     selectedCategories.Clear();
+                    selectedGalleries.Clear();
                     UpdateFilterButtonText();
                     
                     if (buildingBlocks.Count == 0)
@@ -1394,49 +1395,94 @@ namespace BuildingBlocksManager
         private Form CreateFilterDialog()
         {
             var categories = GetUniqueCategories();
+            var galleries = GetUniqueGalleries();
             
             var form = new Form
             {
                 Text = "Filter Building Blocks",
-                Size = new System.Drawing.Size(400, 450),
+                Size = new System.Drawing.Size(600, 500),
                 StartPosition = FormStartPosition.CenterScreen,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
                 MaximizeBox = false,
                 MinimizeBox = false
             };
 
-            var listBox = new CheckedListBox
+            // Categories section
+            var lblCategories = new Label
             {
-                Location = new System.Drawing.Point(20, 20),
-                Size = new System.Drawing.Size(340, 320),
+                Text = "Categories:",
+                Location = new System.Drawing.Point(20, 10),
+                Size = new System.Drawing.Size(100, 20),
+                Font = new System.Drawing.Font(Label.DefaultFont, System.Drawing.FontStyle.Bold)
+            };
+
+            var listBoxCategories = new CheckedListBox
+            {
+                Location = new System.Drawing.Point(20, 35),
+                Size = new System.Drawing.Size(250, 280),
                 CheckOnClick = true
             };
 
-            // Add categories to the list
             foreach (var category in categories)
             {
                 bool isChecked = selectedCategories.Count == 0 || selectedCategories.Contains(category);
-                listBox.Items.Add(category, isChecked);
+                listBoxCategories.Items.Add(category, isChecked);
             }
 
-            var btnSelectAll = new Button
+            // Galleries section
+            var lblGalleries = new Label
             {
-                Text = "Select All",
-                Location = new System.Drawing.Point(20, 360),
-                Size = new System.Drawing.Size(80, 25)
+                Text = "Galleries:",
+                Location = new System.Drawing.Point(300, 10),
+                Size = new System.Drawing.Size(100, 20),
+                Font = new System.Drawing.Font(Label.DefaultFont, System.Drawing.FontStyle.Bold)
             };
 
-            var btnSelectNone = new Button
+            var listBoxGalleries = new CheckedListBox
             {
-                Text = "Select None",
-                Location = new System.Drawing.Point(110, 360),
-                Size = new System.Drawing.Size(80, 25)
+                Location = new System.Drawing.Point(300, 35),
+                Size = new System.Drawing.Size(250, 280),
+                CheckOnClick = true
+            };
+
+            foreach (var gallery in galleries)
+            {
+                bool isChecked = selectedGalleries.Count == 0 || selectedGalleries.Contains(gallery);
+                listBoxGalleries.Items.Add(gallery, isChecked);
+            }
+
+            var btnSelectAllCat = new Button
+            {
+                Text = "All Categories",
+                Location = new System.Drawing.Point(20, 330),
+                Size = new System.Drawing.Size(100, 25)
+            };
+
+            var btnSelectNoneCat = new Button
+            {
+                Text = "No Categories",
+                Location = new System.Drawing.Point(130, 330),
+                Size = new System.Drawing.Size(100, 25)
+            };
+
+            var btnSelectAllGal = new Button
+            {
+                Text = "All Galleries",
+                Location = new System.Drawing.Point(300, 330),
+                Size = new System.Drawing.Size(100, 25)
+            };
+
+            var btnSelectNoneGal = new Button
+            {
+                Text = "No Galleries",
+                Location = new System.Drawing.Point(410, 330),
+                Size = new System.Drawing.Size(100, 25)
             };
 
             var btnOK = new Button
             {
                 Text = "OK",
-                Location = new System.Drawing.Point(200, 360),
+                Location = new System.Drawing.Point(400, 420),
                 Size = new System.Drawing.Size(80, 25),
                 DialogResult = DialogResult.OK
             };
@@ -1444,30 +1490,46 @@ namespace BuildingBlocksManager
             var btnCancel = new Button
             {
                 Text = "Cancel",
-                Location = new System.Drawing.Point(290, 360),
+                Location = new System.Drawing.Point(490, 420),
                 Size = new System.Drawing.Size(80, 25),
                 DialogResult = DialogResult.Cancel
             };
 
-            btnSelectAll.Click += (s, e) => {
-                for (int i = 0; i < listBox.Items.Count; i++)
-                    listBox.SetItemChecked(i, true);
+            btnSelectAllCat.Click += (s, e) => {
+                for (int i = 0; i < listBoxCategories.Items.Count; i++)
+                    listBoxCategories.SetItemChecked(i, true);
             };
 
-            btnSelectNone.Click += (s, e) => {
-                for (int i = 0; i < listBox.Items.Count; i++)
-                    listBox.SetItemChecked(i, false);
+            btnSelectNoneCat.Click += (s, e) => {
+                for (int i = 0; i < listBoxCategories.Items.Count; i++)
+                    listBoxCategories.SetItemChecked(i, false);
+            };
+
+            btnSelectAllGal.Click += (s, e) => {
+                for (int i = 0; i < listBoxGalleries.Items.Count; i++)
+                    listBoxGalleries.SetItemChecked(i, true);
+            };
+
+            btnSelectNoneGal.Click += (s, e) => {
+                for (int i = 0; i < listBoxGalleries.Items.Count; i++)
+                    listBoxGalleries.SetItemChecked(i, false);
             };
 
             btnOK.Click += (s, e) => {
                 selectedCategories.Clear();
-                foreach (string item in listBox.CheckedItems)
+                foreach (string item in listBoxCategories.CheckedItems)
                 {
                     selectedCategories.Add(item);
                 }
+                selectedGalleries.Clear();
+                foreach (string item in listBoxGalleries.CheckedItems)
+                {
+                    selectedGalleries.Add(item);
+                }
             };
 
-            form.Controls.AddRange(new Control[] { listBox, btnSelectAll, btnSelectNone, btnOK, btnCancel });
+            form.Controls.AddRange(new Control[] { lblCategories, listBoxCategories, lblGalleries, listBoxGalleries, 
+                btnSelectAllCat, btnSelectNoneCat, btnSelectAllGal, btnSelectNoneGal, btnOK, btnCancel });
             form.AcceptButton = btnOK;
             form.CancelButton = btnCancel;
 
@@ -1491,6 +1553,17 @@ namespace BuildingBlocksManager
             return categories;
         }
 
+        private List<string> GetUniqueGalleries()
+        {
+            var galleries = allBuildingBlocks
+                .Select(bb => string.IsNullOrEmpty(bb.Gallery) ? "(No Gallery)" : bb.Gallery)
+                .Distinct()
+                .OrderBy(gal => gal)
+                .ToList();
+
+            return galleries;
+        }
+
         private bool IsSystemEntry(BuildingBlockInfo bb)
         {
             // More targeted system entry detection
@@ -1505,7 +1578,7 @@ namespace BuildingBlocksManager
             
             List<BuildingBlockInfo> filteredBlocks;
             
-            if (selectedCategories.Count == 0)
+            if (selectedCategories.Count == 0 && selectedGalleries.Count == 0)
             {
                 // No filter - show all
                 filteredBlocks = allBuildingBlocks;
@@ -1516,24 +1589,35 @@ namespace BuildingBlocksManager
                 
                 foreach (var bb in allBuildingBlocks)
                 {
-                    bool includeBlock = false;
+                    bool includeByCategory = selectedCategories.Count == 0;
+                    bool includeByGallery = selectedGalleries.Count == 0;
                     
-                    // Check if "System/Hex Entries" is selected and this is a system entry
-                    if (selectedCategories.Contains("System/Hex Entries") && IsSystemEntry(bb))
+                    // Check category filter
+                    if (selectedCategories.Count > 0)
                     {
-                        includeBlock = true;
-                    }
-                    // Check if the block's category is selected
-                    else if (selectedCategories.Contains(string.IsNullOrEmpty(bb.Category) ? "(No Category)" : bb.Category))
-                    {
-                        // Only include if "System/Hex Entries" is also selected, or this is not a system entry
-                        if (selectedCategories.Contains("System/Hex Entries") || !IsSystemEntry(bb))
+                        if (selectedCategories.Contains("System/Hex Entries") && IsSystemEntry(bb))
                         {
-                            includeBlock = true;
+                            includeByCategory = true;
+                        }
+                        else if (selectedCategories.Contains(string.IsNullOrEmpty(bb.Category) ? "(No Category)" : bb.Category))
+                        {
+                            if (selectedCategories.Contains("System/Hex Entries") || !IsSystemEntry(bb))
+                            {
+                                includeByCategory = true;
+                            }
                         }
                     }
                     
-                    if (includeBlock)
+                    // Check gallery filter
+                    if (selectedGalleries.Count > 0)
+                    {
+                        if (selectedGalleries.Contains(string.IsNullOrEmpty(bb.Gallery) ? "(No Gallery)" : bb.Gallery))
+                        {
+                            includeByGallery = true;
+                        }
+                    }
+                    
+                    if (includeByCategory && includeByGallery)
                     {
                         filteredBlocks.Add(bb);
                     }
@@ -1555,13 +1639,14 @@ namespace BuildingBlocksManager
 
         private void UpdateFilterButtonText()
         {
-            if (selectedCategories.Count == 0)
+            int totalFilters = selectedCategories.Count + selectedGalleries.Count;
+            if (totalFilters == 0)
             {
                 btnFilterTemplate.Text = "Filter";
             }
             else
             {
-                btnFilterTemplate.Text = $"Filter: {selectedCategories.Count}";
+                btnFilterTemplate.Text = $"Filter: {totalFilters}";
             }
         }
 
