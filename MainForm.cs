@@ -1477,9 +1477,9 @@ IMPORTANT NOTES:
                         }
                     }
                     
-                    // Pre-select galleries by default, except placeholder items (Text Box) like System/Hex entries
+                    // Pre-select galleries by default, except placeholder items like System/Hex entries
                     var galleries = GetUniqueGalleries();
-                    foreach (var gallery in galleries.Where(g => g != "Text Box"))
+                    foreach (var gallery in galleries.Where(g => g != "Placeholder"))
                     {
                         selectedGalleries.Add(gallery);
                     }

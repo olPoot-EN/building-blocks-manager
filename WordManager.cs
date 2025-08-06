@@ -194,7 +194,7 @@ namespace BuildingBlocksManager
             if (gallery == "autoTxt") return "AutoText";
             if (gallery == "bbPlcHdr") return "Built-In";
             if (gallery == "docPartObj") return "Quick Parts";
-            if (gallery == "placeholder") return "Text Box";
+            if (gallery == "placeholder") return "Placeholder";
             return gallery;
         }
         
