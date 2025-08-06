@@ -103,6 +103,10 @@ namespace BuildingBlocksManager
                         namespaceManager.AddNamespace("w", "http://schemas.openxmlformats.org/wordprocessingml/2006/main");
 
                         var docParts = doc.SelectNodes("//w:docPart", namespaceManager);
+                        
+                        // Debug: Check namespace and docPart count
+                        System.Diagnostics.Debug.WriteLine($"Root namespace URI: {doc.DocumentElement?.NamespaceURI}");
+                        System.Diagnostics.Debug.WriteLine($"DocParts found: {docParts?.Count ?? 0}");
 
                         if (docParts != null)
                         {
@@ -118,10 +122,17 @@ namespace BuildingBlocksManager
                                 }
 
                                 // Correct XML structure based on OpenXML specification
-                                var nameNode = docPart.SelectSingleNode(".//w:docPartPr/w:name/@w:val", namespaceManager);
-                                var categoryNode = docPart.SelectSingleNode(".//w:docPartPr/w:category/w:name/@w:val", namespaceManager);
-                                var galleryNode = docPart.SelectSingleNode(".//w:docPartPr/w:category/w:gallery/@w:val", namespaceManager);
-                                var typeNode = docPart.SelectSingleNode(".//w:docPartPr/w:types/w:type/@w:val", namespaceManager);
+                                var nameNode = docPart.SelectSingleNode(".//w:docPartPr/w:name/@w:val", namespaceManager) ??
+                                              docPart.SelectSingleNode(".//*[local-name()='docPartPr']/*[local-name()='name']/@*[local-name()='val']");
+                                              
+                                var categoryNode = docPart.SelectSingleNode(".//w:docPartPr/w:category/w:name/@w:val", namespaceManager) ??
+                                                  docPart.SelectSingleNode(".//*[local-name()='docPartPr']/*[local-name()='category']/*[local-name()='name']/@*[local-name()='val']");
+                                                  
+                                var galleryNode = docPart.SelectSingleNode(".//w:docPartPr/w:category/w:gallery/@w:val", namespaceManager) ??
+                                                 docPart.SelectSingleNode(".//*[local-name()='docPartPr']/*[local-name()='category']/*[local-name()='gallery']/@*[local-name()='val']");
+                                                 
+                                var typeNode = docPart.SelectSingleNode(".//w:docPartPr/w:types/w:type/@w:val", namespaceManager) ??
+                                              docPart.SelectSingleNode(".//*[local-name()='docPartPr']/*[local-name()='types']/*[local-name()='type']/@*[local-name()='val']");
 
                                 // Debug: show what we found
                                 if (debugCount <= 3)
