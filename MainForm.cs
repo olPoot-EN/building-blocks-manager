@@ -1484,7 +1484,9 @@ IMPORTANT NOTES:
                         selectedGalleries.Add(gallery);
                     }
                     
-                    // Don't auto-select templates - let user choose which templates to show
+                    // Pre-select templates by default so list populates initially
+                    var templates = GetUniqueTemplates();
+                    selectedTemplates.AddRange(templates);
                     
                     UpdateFilterButtonText();
                     
