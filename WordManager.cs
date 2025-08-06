@@ -108,9 +108,17 @@ namespace BuildingBlocksManager
                         {
                             foreach (XmlNode docPart in docParts)
                             {
-                                var nameNode = docPart.SelectSingleNode(".//w:docPartPr/w:name/@w:val", namespaceManager);
-                                var categoryNode = docPart.SelectSingleNode(".//w:docPartPr/w:category/@w:val", namespaceManager);
-                                var galleryNode = docPart.SelectSingleNode(".//w:docPartPr/w:types/w:type/@w:val", namespaceManager);
+                                // Try multiple possible XPath patterns for category
+                                var nameNode = docPart.SelectSingleNode(".//w:docPartPr/w:name/@w:val", namespaceManager) ??
+                                              docPart.SelectSingleNode(".//w:name/@w:val", namespaceManager);
+                                              
+                                var categoryNode = docPart.SelectSingleNode(".//w:docPartPr/w:category/@w:val", namespaceManager) ??
+                                                  docPart.SelectSingleNode(".//w:category/@w:val", namespaceManager) ??
+                                                  docPart.SelectSingleNode(".//w:docPartPr/w:category/w:name/@w:val", namespaceManager);
+                                                  
+                                var galleryNode = docPart.SelectSingleNode(".//w:docPartPr/w:types/w:type/@w:val", namespaceManager) ??
+                                                 docPart.SelectSingleNode(".//w:types/w:type/@w:val", namespaceManager) ??
+                                                 docPart.SelectSingleNode(".//w:type/@w:val", namespaceManager);
 
                                 if (nameNode != null)
                                 {
