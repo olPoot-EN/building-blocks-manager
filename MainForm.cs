@@ -24,9 +24,7 @@ namespace BuildingBlocksManager
         private TabPage tabDirectory;
         private TabPage tabTemplate;
         private TreeView treeDirectory;
-        private ListBox listTemplate;
-        private ComboBox cmbCategoryFilter;
-        private Button btnLoadTemplate;
+        private ListView listViewTemplate;
         private ProgressBar progressBar;
         private Label lblStatus;
         private Settings settings;
@@ -48,8 +46,6 @@ namespace BuildingBlocksManager
             btnImportSelected.Click += BtnImportSelected_Click;
             btnExportAll.Click += BtnExportAll_Click;
             btnExportSelected.Click += BtnExportSelected_Click;
-            btnLoadTemplate.Click += BtnLoadTemplate_Click;
-            cmbCategoryFilter.SelectedIndexChanged += CmbCategoryFilter_SelectedIndexChanged;
             
             // Load and apply settings
             LoadSettings();
@@ -171,7 +167,7 @@ namespace BuildingBlocksManager
                 Location = new System.Drawing.Point(20, 225),
                 Size = new System.Drawing.Size(100, 30)
             };
-            btnQueryTemplate.Click += BtnLoadTemplate_Click;
+            btnQueryTemplate.Click += BtnQueryTemplate_Click;
 
             // Import group
             var lblImport = new Label
@@ -225,8 +221,7 @@ namespace BuildingBlocksManager
             tabControl = new TabControl
             {
                 Location = new System.Drawing.Point(20, 275),
-                Size = new System.Drawing.Size(740, 220),
-                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom
+                Size = new System.Drawing.Size(740, 220)
             };
 
             // Results tab
@@ -256,35 +251,20 @@ namespace BuildingBlocksManager
             // Template tab
             tabTemplate = new TabPage("Template");
             
-            btnLoadTemplate = new Button
+            listViewTemplate = new ListView
             {
-                Text = "Load Template",
                 Location = new System.Drawing.Point(5, 5),
-                Size = new System.Drawing.Size(100, 25)
+                Size = new System.Drawing.Size(725, 185),
+                View = View.Details,
+                FullRowSelect = true,
+                GridLines = true
             };
 
-            var lblCategoryFilter = new Label
-            {
-                Text = "Category:",
-                Location = new System.Drawing.Point(115, 10),
-                Size = new System.Drawing.Size(60, 15)
-            };
+            // Add columns like Building Block Organizer
+            listViewTemplate.Columns.Add("Name", 350);
+            listViewTemplate.Columns.Add("Category", 350);
 
-            cmbCategoryFilter = new ComboBox
-            {
-                Location = new System.Drawing.Point(180, 7),
-                Size = new System.Drawing.Size(200, 23),
-                DropDownStyle = ComboBoxStyle.DropDownList
-            };
-
-            listTemplate = new ListBox
-            {
-                Location = new System.Drawing.Point(5, 35),
-                Size = new System.Drawing.Size(725, 150),
-                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom
-            };
-
-            tabTemplate.Controls.AddRange(new Control[] { btnLoadTemplate, lblCategoryFilter, cmbCategoryFilter, listTemplate });
+            tabTemplate.Controls.Add(listViewTemplate);
 
             // Add tabs to tab control
             tabControl.TabPages.AddRange(new TabPage[] { tabResults, tabDirectory, tabTemplate });
@@ -1153,7 +1133,7 @@ namespace BuildingBlocksManager
             }
         }
 
-        private void BtnLoadTemplate_Click(object sender, EventArgs e)
+        private void BtnQueryTemplate_Click(object sender, EventArgs e)
         {
             if (string.IsNullOrWhiteSpace(txtTemplatePath.Text))
             {
@@ -1179,8 +1159,7 @@ namespace BuildingBlocksManager
                     var buildingBlocks = wordManager.GetBuildingBlocks();
                     
                     // Clear previous data
-                    listTemplate.Items.Clear();
-                    cmbCategoryFilter.Items.Clear();
+                    listViewTemplate.Items.Clear();
                     
                     if (buildingBlocks.Count == 0)
                     {
@@ -1188,27 +1167,14 @@ namespace BuildingBlocksManager
                         return;
                     }
 
-                    // Extract unique categories
-                    var categories = buildingBlocks
-                        .Select(bb => bb.Category)
-                        .Where(c => !string.IsNullOrEmpty(c))
-                        .Distinct()
-                        .OrderBy(c => c)
-                        .ToList();
-
-                    // Populate category filter
-                    cmbCategoryFilter.Items.Add("All Categories");
-                    foreach (var category in categories)
+                    // Populate ListView with building blocks
+                    foreach (var bb in buildingBlocks.OrderBy(bb => bb.Name))
                     {
-                        cmbCategoryFilter.Items.Add(category);
+                        var item = new ListViewItem(bb.Name);
+                        item.SubItems.Add(bb.Category);
+                        item.Tag = bb; // Store the BuildingBlockInfo for later use
+                        listViewTemplate.Items.Add(item);
                     }
-                    cmbCategoryFilter.SelectedIndex = 0;
-
-                    // Store all building blocks for filtering
-                    listTemplate.Tag = buildingBlocks;
-
-                    // Populate list with all items initially
-                    PopulateTemplateList(buildingBlocks);
 
                     // Switch to Template tab
                     tabControl.SelectedTab = tabTemplate;
@@ -1229,33 +1195,6 @@ namespace BuildingBlocksManager
             }
         }
 
-        private void CmbCategoryFilter_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (listTemplate.Tag is System.Collections.Generic.List<BuildingBlockInfo> allBlocks)
-            {
-                var selectedCategory = cmbCategoryFilter.SelectedItem?.ToString();
-                
-                if (selectedCategory == "All Categories")
-                {
-                    PopulateTemplateList(allBlocks);
-                }
-                else
-                {
-                    var filteredBlocks = allBlocks.Where(bb => bb.Category == selectedCategory).ToList();
-                    PopulateTemplateList(filteredBlocks);
-                }
-            }
-        }
-
-        private void PopulateTemplateList(System.Collections.Generic.List<BuildingBlockInfo> buildingBlocks)
-        {
-            listTemplate.Items.Clear();
-            
-            foreach (var bb in buildingBlocks.OrderBy(bb => bb.Name))
-            {
-                listTemplate.Items.Add($"{bb.Category} - {bb.Name}");
-            }
-        }
 
         private void PopulateDirectoryTree(System.Collections.Generic.List<FileManager.FileInfo> files)
         {
