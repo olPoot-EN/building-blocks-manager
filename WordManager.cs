@@ -94,7 +94,7 @@ namespace BuildingBlocksManager
             {
                 using (var doc = WordprocessingDocument.Open(templatePath, false))
                 {
-                    var glossaryPart = doc.GlossaryDocumentPart;
+                    var glossaryPart = doc.MainDocumentPart?.GlossaryDocumentPart;
                     if (glossaryPart?.GlossaryDocument?.DocParts != null)
                     {
                         foreach (var docPart in glossaryPart.GlossaryDocument.DocParts.Elements<DocPart>())
