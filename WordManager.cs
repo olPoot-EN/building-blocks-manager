@@ -105,30 +105,38 @@ namespace BuildingBlocksManager
                             {
                                 var name = properties.DocPartName?.Val?.Value ?? "";
                                 
-                                // Debug: List all child elements to see what's actually available
-                                System.Diagnostics.Debug.WriteLine("Available properties:");
-                                foreach (var child in properties.ChildElements)
+                                // Debug: List all child elements in DocPart itself
+                                System.Diagnostics.Debug.WriteLine($"DocPart children for {name}:");
+                                foreach (var child in docPart.ChildElements)
                                 {
                                     System.Diagnostics.Debug.WriteLine($"  {child.GetType().Name}: {child.LocalName}");
                                 }
                                 
-                                // Use available properties - let's see what we actually have
-                                var category = properties.Category?.Name?.Val?.Value ?? "";
-                                var gallery = properties.Category?.Gallery?.Val?.HasValue == true ? properties.Category.Gallery.Val.Value.ToString() : "";
-                                var types = properties.DocPartTypes?.Elements<DocPartType>().FirstOrDefault()?.Val?.HasValue == true ? 
-                                           properties.DocPartTypes.Elements<DocPartType>().FirstOrDefault().Val.Value.ToString() : "";
-
-                                // Use gallery or fall back to types
-                                string galleryDisplay = MapGalleryValue(!string.IsNullOrEmpty(gallery) ? gallery : types);
+                                // Debug: List all child elements in DocPartProperties
+                                System.Diagnostics.Debug.WriteLine("DocPartProperties children:");
+                                foreach (var child in properties.ChildElements)
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"  {child.GetType().Name}: {child.LocalName}");
+                                    
+                                    // If this is category-related, show its children too
+                                    if (child.LocalName == "category")
+                                    {
+                                        System.Diagnostics.Debug.WriteLine($"    Category children:");
+                                        foreach (var grandchild in child.ChildElements)
+                                        {
+                                            System.Diagnostics.Debug.WriteLine($"      {grandchild.GetType().Name}: {grandchild.LocalName}");
+                                        }
+                                    }
+                                }
                                 
                                 buildingBlocks.Add(new BuildingBlockInfo
                                 {
                                     Name = name,
-                                    Category = category,
-                                    Gallery = galleryDisplay
+                                    Category = "",  // Will fix once we see the structure
+                                    Gallery = ""    // Will fix once we see the structure
                                 });
                                 
-                                System.Diagnostics.Debug.WriteLine($"SDK - Name: {name}, Category: {category}, Gallery: {gallery}, Types: {types} -> {galleryDisplay}");
+                                System.Diagnostics.Debug.WriteLine($"---");
                             }
                         }
                     }
