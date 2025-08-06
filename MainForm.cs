@@ -256,7 +256,8 @@ namespace BuildingBlocksManager
             {
                 Location = new System.Drawing.Point(5, 5),
                 Size = new System.Drawing.Size(725, 185),
-                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom,
+                Scrollable = true
             };
             tabDirectory.Controls.Add(treeDirectory);
 
