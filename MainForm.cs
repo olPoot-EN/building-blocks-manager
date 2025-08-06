@@ -20,6 +20,14 @@ namespace BuildingBlocksManager
         private Button btnExportSelected;
         private Button btnRollback;
         private TextBox txtResults;
+        private TabControl tabControl;
+        private TabPage tabResults;
+        private TabPage tabDirectory;
+        private TabPage tabTemplate;
+        private TreeView treeDirectory;
+        private ListBox listTemplate;
+        private ComboBox cmbCategoryFilter;
+        private Button btnLoadTemplate;
         private ProgressBar progressBar;
         private Label lblStatus;
         private Settings settings;
@@ -41,7 +49,8 @@ namespace BuildingBlocksManager
             btnImportSelected.Click += BtnImportSelected_Click;
             btnExportAll.Click += BtnExportAll_Click;
             btnExportSelected.Click += BtnExportSelected_Click;
-            btnRollback.Click += BtnRollback_Click;
+            btnLoadTemplate.Click += BtnLoadTemplate_Click;
+            cmbCategoryFilter.SelectedIndexChanged += CmbCategoryFilter_SelectedIndexChanged;
             
             // Load and apply settings
             LoadSettings();
@@ -63,6 +72,12 @@ namespace BuildingBlocksManager
             var viewLogMenuItem = new ToolStripMenuItem("View Log File");
             viewLogMenuItem.Click += ViewLogMenuItem_Click;
             fileMenu.DropDownItems.Add(viewLogMenuItem);
+            
+            fileMenu.DropDownItems.Add(new ToolStripSeparator());
+            
+            var rollbackMenuItem = new ToolStripMenuItem("Rollback");
+            rollbackMenuItem.Click += BtnRollback_Click;
+            fileMenu.DropDownItems.Add(rollbackMenuItem);
             
             menuStrip.Items.Add(fileMenu);
             
@@ -135,66 +150,135 @@ namespace BuildingBlocksManager
                 Size = new System.Drawing.Size(80, 23)
             };
 
-            // Action buttons
+            // Query group
+            var lblQuery = new Label
+            {
+                Text = "Query",
+                Location = new System.Drawing.Point(20, 165),
+                Size = new System.Drawing.Size(80, 20),
+                Font = new System.Drawing.Font(Label.DefaultFont, System.Drawing.FontStyle.Bold)
+            };
+
             btnQueryDirectory = new Button
             {
-                Text = "Query Directory",
-                Location = new System.Drawing.Point(20, 165),
-                Size = new System.Drawing.Size(120, 30)
+                Text = "Query Source Directory",
+                Location = new System.Drawing.Point(20, 190),
+                Size = new System.Drawing.Size(140, 30)
+            };
+
+            // Import group
+            var lblImport = new Label
+            {
+                Text = "Import (Folder -> Template)",
+                Location = new System.Drawing.Point(180, 165),
+                Size = new System.Drawing.Size(180, 20),
+                Font = new System.Drawing.Font(Label.DefaultFont, System.Drawing.FontStyle.Bold)
             };
 
             btnImportAll = new Button
             {
-                Text = "Import All",
-                Location = new System.Drawing.Point(150, 165),
-                Size = new System.Drawing.Size(100, 30)
+                Text = "All",
+                Location = new System.Drawing.Point(180, 190),
+                Size = new System.Drawing.Size(80, 30)
             };
 
             btnImportSelected = new Button
             {
-                Text = "Import Selected File",
-                Location = new System.Drawing.Point(260, 165),
-                Size = new System.Drawing.Size(130, 30)
+                Text = "Selected",
+                Location = new System.Drawing.Point(180, 225),
+                Size = new System.Drawing.Size(80, 30)
+            };
+
+            // Export group
+            var lblExport = new Label
+            {
+                Text = "Export (Template -> Folder)",
+                Location = new System.Drawing.Point(280, 165),
+                Size = new System.Drawing.Size(180, 20),
+                Font = new System.Drawing.Font(Label.DefaultFont, System.Drawing.FontStyle.Bold)
             };
 
             btnExportAll = new Button
             {
-                Text = "Export All",
-                Location = new System.Drawing.Point(400, 165),
-                Size = new System.Drawing.Size(100, 30)
+                Text = "All",
+                Location = new System.Drawing.Point(280, 190),
+                Size = new System.Drawing.Size(80, 30)
             };
 
             btnExportSelected = new Button
             {
-                Text = "Export Selected",
-                Location = new System.Drawing.Point(510, 165),
-                Size = new System.Drawing.Size(120, 30)
-            };
-
-            btnRollback = new Button
-            {
-                Text = "Rollback",
-                Location = new System.Drawing.Point(640, 165),
+                Text = "Selected",
+                Location = new System.Drawing.Point(280, 225),
                 Size = new System.Drawing.Size(80, 30)
             };
 
-            // Results section
-            var lblResults = new Label
+            // Tab control section
+            tabControl = new TabControl
             {
-                Text = "Results:",
-                Location = new System.Drawing.Point(20, 215),
-                Size = new System.Drawing.Size(100, 23)
+                Location = new System.Drawing.Point(20, 270),
+                Size = new System.Drawing.Size(720, 255),
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom
             };
 
+            // Results tab
+            tabResults = new TabPage("Results");
             txtResults = new TextBox
             {
-                Location = new System.Drawing.Point(20, 245),
-                Size = new System.Drawing.Size(700, 280),
+                Location = new System.Drawing.Point(5, 5),
+                Size = new System.Drawing.Size(705, 220),
                 Multiline = true,
                 ScrollBars = ScrollBars.Vertical,
                 ReadOnly = true,
-                Font = new System.Drawing.Font("Consolas", 9)
+                Font = new System.Drawing.Font("Consolas", 9),
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom
             };
+            tabResults.Controls.Add(txtResults);
+
+            // Directory tab
+            tabDirectory = new TabPage("Directory");
+            treeDirectory = new TreeView
+            {
+                Location = new System.Drawing.Point(5, 5),
+                Size = new System.Drawing.Size(705, 220),
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom
+            };
+            tabDirectory.Controls.Add(treeDirectory);
+
+            // Template tab
+            tabTemplate = new TabPage("Template");
+            
+            btnLoadTemplate = new Button
+            {
+                Text = "Load Template",
+                Location = new System.Drawing.Point(5, 5),
+                Size = new System.Drawing.Size(100, 25)
+            };
+
+            var lblCategoryFilter = new Label
+            {
+                Text = "Category:",
+                Location = new System.Drawing.Point(115, 10),
+                Size = new System.Drawing.Size(60, 15)
+            };
+
+            cmbCategoryFilter = new ComboBox
+            {
+                Location = new System.Drawing.Point(180, 7),
+                Size = new System.Drawing.Size(200, 23),
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+
+            listTemplate = new ListBox
+            {
+                Location = new System.Drawing.Point(5, 35),
+                Size = new System.Drawing.Size(705, 185),
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom
+            };
+
+            tabTemplate.Controls.AddRange(new Control[] { btnLoadTemplate, lblCategoryFilter, cmbCategoryFilter, listTemplate });
+
+            // Add tabs to tab control
+            tabControl.TabPages.AddRange(new TabPage[] { tabResults, tabDirectory, tabTemplate });
 
             // Progress and status section
             progressBar = new ProgressBar
@@ -218,9 +302,10 @@ namespace BuildingBlocksManager
                 lblTemplate, txtTemplatePath, btnBrowseTemplate,
                 lblDirectory, txtSourceDirectory, btnBrowseDirectory,
                 lblStructure, chkFlatImport, chkFlatExport,
-                btnQueryDirectory, btnImportAll, btnImportSelected,
-                btnExportAll, btnExportSelected, btnRollback,
-                lblResults, txtResults,
+                lblQuery, btnQueryDirectory, 
+                lblImport, btnImportAll, btnImportSelected,
+                lblExport, btnExportAll, btnExportSelected,
+                tabControl,
                 progressBar, lblStatus
             });
 
@@ -313,6 +398,9 @@ namespace BuildingBlocksManager
             UpdateStatus("Querying directory...");
             progressBar.Style = ProgressBarStyle.Marquee;
             
+            // Clear previous directory tree
+            treeDirectory.Nodes.Clear();
+            
             AppendResults("=== DIRECTORY QUERY ===");
             AppendResults($"Scanning directory: {txtSourceDirectory.Text}");
             
@@ -323,30 +411,17 @@ namespace BuildingBlocksManager
                 
                 AppendResults("");
                 AppendResults(summary);
-                AppendResults("");
-                AppendResults("Detailed Listing:");
                 
                 var files = fileManager.ScanDirectory();
-                foreach (var file in files.Take(10)) // Show first 10 files
-                {
-                    var fileName = Path.GetFileName(file.FilePath);
-                    var status = file.IsNew ? "New (Never imported)" :
-                                file.IsModified ? $"Modified (Last: {file.LastModified:yyyy-MM-dd}, Imported: {file.LastImported:yyyy-MM-dd})" :
-                                "Up-to-date";
-                    
-                    if (!file.IsValid)
-                        status += $" - INVALID CHARACTERS: {string.Join(", ", file.InvalidCharacters)}";
-                    
-                    var relativePath = Path.GetRelativePath(txtSourceDirectory.Text, file.FilePath);
-                    AppendResults($"{relativePath} - {status}");
-                }
                 
-                if (files.Count > 10)
-                {
-                    AppendResults($"... and {files.Count - 10} more files");
-                }
+                // Populate Directory tab tree view
+                PopulateDirectoryTree(files);
+                
+                // Switch to Directory tab
+                tabControl.SelectedTab = tabDirectory;
                 
                 AppendResults("");
+                AppendResults($"Directory tree populated with {files.Count} files.");
                 AppendResults("Query completed successfully.");
             }
             catch (Exception ex)
@@ -1067,6 +1142,183 @@ namespace BuildingBlocksManager
                 MessageBox.Show($"Failed to open log file: {ex.Message}", "Error", 
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private void BtnLoadTemplate_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtTemplatePath.Text))
+            {
+                MessageBox.Show("Please select a template file first.", "Validation Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (!File.Exists(txtTemplatePath.Text))
+            {
+                MessageBox.Show("The selected template file does not exist.", "Validation Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            UpdateStatus("Loading Building Blocks from template...");
+            progressBar.Style = ProgressBarStyle.Marquee;
+
+            try
+            {
+                using (var wordManager = new WordManager(txtTemplatePath.Text))
+                {
+                    var buildingBlocks = wordManager.GetBuildingBlocks();
+                    
+                    // Clear previous data
+                    listTemplate.Items.Clear();
+                    cmbCategoryFilter.Items.Clear();
+                    
+                    if (buildingBlocks.Count == 0)
+                    {
+                        UpdateStatus("No Building Blocks found in template");
+                        return;
+                    }
+
+                    // Extract unique categories
+                    var categories = buildingBlocks
+                        .Select(bb => bb.Category)
+                        .Where(c => !string.IsNullOrEmpty(c))
+                        .Distinct()
+                        .OrderBy(c => c)
+                        .ToList();
+
+                    // Populate category filter
+                    cmbCategoryFilter.Items.Add("All Categories");
+                    foreach (var category in categories)
+                    {
+                        cmbCategoryFilter.Items.Add(category);
+                    }
+                    cmbCategoryFilter.SelectedIndex = 0;
+
+                    // Store all building blocks for filtering
+                    listTemplate.Tag = buildingBlocks;
+
+                    // Populate list with all items initially
+                    PopulateTemplateList(buildingBlocks);
+
+                    // Switch to Template tab
+                    tabControl.SelectedTab = tabTemplate;
+
+                    UpdateStatus($"Loaded {buildingBlocks.Count} Building Blocks from template");
+                }
+            }
+            catch (Exception ex)
+            {
+                UpdateStatus("Failed to load Building Blocks");
+                MessageBox.Show($"Failed to load Building Blocks from template: {ex.Message}", 
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                progressBar.Style = ProgressBarStyle.Continuous;
+                progressBar.Value = 0;
+            }
+        }
+
+        private void CmbCategoryFilter_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (listTemplate.Tag is System.Collections.Generic.List<BuildingBlockInfo> allBlocks)
+            {
+                var selectedCategory = cmbCategoryFilter.SelectedItem?.ToString();
+                
+                if (selectedCategory == "All Categories")
+                {
+                    PopulateTemplateList(allBlocks);
+                }
+                else
+                {
+                    var filteredBlocks = allBlocks.Where(bb => bb.Category == selectedCategory).ToList();
+                    PopulateTemplateList(filteredBlocks);
+                }
+            }
+        }
+
+        private void PopulateTemplateList(System.Collections.Generic.List<BuildingBlockInfo> buildingBlocks)
+        {
+            listTemplate.Items.Clear();
+            
+            foreach (var bb in buildingBlocks.OrderBy(bb => bb.Name))
+            {
+                listTemplate.Items.Add($"{bb.Category} - {bb.Name}");
+            }
+        }
+
+        private void PopulateDirectoryTree(System.Collections.Generic.List<FileInfo> files)
+        {
+            treeDirectory.Nodes.Clear();
+            
+            // Create root node
+            var rootNode = new TreeNode(Path.GetFileName(txtSourceDirectory.Text))
+            {
+                Tag = txtSourceDirectory.Text
+            };
+            treeDirectory.Nodes.Add(rootNode);
+            
+            // Group files by directory
+            var directoryGroups = files.GroupBy(f => Path.GetDirectoryName(f.FilePath))
+                                      .OrderBy(g => g.Key);
+            
+            foreach (var group in directoryGroups)
+            {
+                var dirPath = group.Key;
+                var relativePath = Path.GetRelativePath(txtSourceDirectory.Text, dirPath);
+                
+                TreeNode parentNode = rootNode;
+                
+                // Create nested folder structure
+                if (relativePath != ".")
+                {
+                    var pathParts = relativePath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                    foreach (var part in pathParts)
+                    {
+                        var existingNode = parentNode.Nodes.Cast<TreeNode>()
+                            .FirstOrDefault(n => n.Text == part && n.Tag is string);
+                        
+                        if (existingNode == null)
+                        {
+                            existingNode = new TreeNode(part)
+                            {
+                                Tag = Path.Combine((string)parentNode.Tag, part)
+                            };
+                            parentNode.Nodes.Add(existingNode);
+                        }
+                        
+                        parentNode = existingNode;
+                    }
+                }
+                
+                // Add files to the appropriate folder node
+                foreach (var file in group.OrderBy(f => Path.GetFileName(f.FilePath)))
+                {
+                    var fileName = Path.GetFileName(file.FilePath);
+                    var status = file.IsNew ? " (New)" :
+                                file.IsModified ? " (Modified)" :
+                                file.IsValid ? " (Up-to-date)" : " (Invalid)";
+                    
+                    var fileNode = new TreeNode($"{fileName}{status}")
+                    {
+                        Tag = file
+                    };
+                    
+                    // Color code the nodes
+                    if (!file.IsValid)
+                        fileNode.ForeColor = System.Drawing.Color.Red;
+                    else if (file.IsNew)
+                        fileNode.ForeColor = System.Drawing.Color.Green;
+                    else if (file.IsModified)
+                        fileNode.ForeColor = System.Drawing.Color.Blue;
+                    
+                    parentNode.Nodes.Add(fileNode);
+                }
+            }
+            
+            // Expand root node
+            rootNode.Expand();
         }
     }
 }
