@@ -119,8 +119,6 @@ namespace BuildingBlocksManager
                 allBuildingBlocks.AddRange(GetBuildingBlocksFromTemplate(buildingBlocksDotmPath));
             }
             
-            // Scan other associated templates via Word COM
-            allBuildingBlocks.AddRange(GetBuildingBlocksFromWordCOM());
             
             return allBuildingBlocks;
         }
@@ -148,48 +146,6 @@ namespace BuildingBlocksManager
             }
         }
         
-        private List<BuildingBlockInfo> GetBuildingBlocksFromWordCOM()
-        {
-            var buildingBlocks = new List<BuildingBlockInfo>();
-            try
-            {
-                OpenTemplate();
-                Word.Template template = (Word.Template)templateDoc.get_AttachedTemplate();
-                
-                // Get all building blocks from all available templates
-                foreach (Word.BuildingBlock bb in template.BuildingBlockEntries)
-                {
-                    string templateName = "Built-In";
-                    try
-                    {
-                        // Try to get the template name from the building block
-                        var templatePath = bb.Category?.Name ?? "";
-                        if (!string.IsNullOrEmpty(templatePath))
-                        {
-                            templateName = Path.GetFileNameWithoutExtension(templatePath);
-                        }
-                    }
-                    catch
-                    {
-                        templateName = "Built-In";
-                    }
-                    
-                    buildingBlocks.Add(new BuildingBlockInfo
-                    {
-                        Name = bb.Name,
-                        Category = bb.Category?.Name ?? "",
-                        Gallery = MapGalleryValue(bb.Type.ToString()),
-                        Template = templateName
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Word COM error: {ex.Message}");
-            }
-            
-            return buildingBlocks;
-        }
         
         private List<BuildingBlockInfo> GetBuildingBlocksFromTemplate(string templateFilePath)
         {
