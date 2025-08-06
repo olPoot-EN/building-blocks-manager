@@ -105,27 +105,30 @@ namespace BuildingBlocksManager
                             {
                                 var name = properties.DocPartName?.Val?.Value ?? "";
                                 
-                                // Get category - check if Category element exists and has Name
-                                var categoryElement = properties.Elements().FirstOrDefault(e => e.LocalName == "category");
+                                // Get category using Open XML SDK proper syntax
                                 var category = "";
                                 var gallery = "";
                                 
-                                if (categoryElement != null)
+                                var categoryProp = properties.GetFirstChild<Category>();
+                                if (categoryProp != null)
                                 {
-                                    var nameAttr = categoryElement.Attributes().FirstOrDefault(a => a.LocalName == "name");
-                                    var galleryAttr = categoryElement.Attributes().FirstOrDefault(a => a.LocalName == "gallery");
-                                    category = nameAttr?.Value ?? "";
-                                    gallery = galleryAttr?.Value ?? "";
+                                    var categoryName = categoryProp.GetFirstChild<CategoryName>();
+                                    if (categoryName != null && categoryName.Val != null)
+                                        category = categoryName.Val.Value;
+                                    
+                                    var galleryProp = categoryProp.GetFirstChild<Gallery>();
+                                    if (galleryProp != null && galleryProp.Val != null)
+                                        gallery = galleryProp.Val.Value.ToString();
                                 }
 
                                 // Get types as fallback
-                                var typesElement = properties.Elements().FirstOrDefault(e => e.LocalName == "types");
                                 var types = "";
-                                if (typesElement != null)
+                                var typesProp = properties.GetFirstChild<DocPartTypes>();
+                                if (typesProp != null)
                                 {
-                                    var typeElement = typesElement.Elements().FirstOrDefault(e => e.LocalName == "type");
-                                    var typeAttr = typeElement?.Attributes().FirstOrDefault(a => a.LocalName == "val");
-                                    types = typeAttr?.Value ?? "";
+                                    var typeProp = typesProp.GetFirstChild<DocPartType>();
+                                    if (typeProp != null && typeProp.Val != null)
+                                        types = typeProp.Val.Value.ToString();
                                 }
 
                                 // Use gallery or fall back to types
