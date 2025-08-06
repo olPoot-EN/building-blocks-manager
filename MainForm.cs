@@ -13,8 +13,6 @@ namespace BuildingBlocksManager
         private TextBox txtSourceDirectory;
         private CheckBox chkFlatImport;
         private CheckBox chkFlatExport;
-        private ComboBox cmbTargetGallery;
-        private Label lblTargetGallery;
         private Button btnBrowseTemplate;
         private Button btnBrowseDirectory;
         private Button btnQueryDirectory;
@@ -164,31 +162,6 @@ namespace BuildingBlocksManager
                 Location = new System.Drawing.Point(370, 125),
                 Size = new System.Drawing.Size(80, 23)
             };
-
-            // Gallery selection section
-            lblTargetGallery = new Label
-            {
-                Text = "Import to Gallery:",
-                Location = new System.Drawing.Point(470, 125),
-                Size = new System.Drawing.Size(110, 23)
-            };
-
-            cmbTargetGallery = new ComboBox
-            {
-                Location = new System.Drawing.Point(590, 125),
-                Size = new System.Drawing.Size(130, 23),
-                DropDownStyle = ComboBoxStyle.DropDownList
-            };
-            
-            // Populate gallery options
-            cmbTargetGallery.Items.Add("AutoText");
-            cmbTargetGallery.Items.Add("Quick Parts");
-            cmbTargetGallery.Items.Add("Custom Gallery 1");
-            cmbTargetGallery.Items.Add("Custom Gallery 2");
-            cmbTargetGallery.Items.Add("Custom Gallery 3");
-            cmbTargetGallery.Items.Add("Custom Gallery 4");
-            cmbTargetGallery.Items.Add("Custom Gallery 5");
-            cmbTargetGallery.SelectedIndex = 0; // Default to AutoText
 
             // Query group
             var lblQuery = new Label
@@ -379,7 +352,6 @@ namespace BuildingBlocksManager
                 lblTemplate, txtTemplatePath, btnBrowseTemplate,
                 lblDirectory, txtSourceDirectory, btnBrowseDirectory,
                 lblStructure, chkFlatImport, chkFlatExport,
-                lblTargetGallery, cmbTargetGallery,
                 lblQuery, btnQueryDirectory, btnQueryTemplate,
                 lblImport, btnImportAll, btnImportSelected,
                 lblExport, btnExportAll, btnExportSelected,
@@ -522,7 +494,7 @@ namespace BuildingBlocksManager
                 flatCategory = PromptForInput("Flat Import Category", 
                     "Enter category name for all imported Building Blocks:");
                 if (string.IsNullOrWhiteSpace(flatCategory)) return;
-                AppendResults($"Using flat import category: InternalAutotext\\{flatCategory}");
+                AppendResults($"Using flat import category: {flatCategory}");
             }
 
             UpdateStatus("Importing all files...");
@@ -584,11 +556,10 @@ namespace BuildingBlocksManager
                         AppendResults($"Processing {fileName}...");
 
                         // Use flat category if specified, otherwise use extracted category
-                        var category = chkFlatImport.Checked ? $"InternalAutotext\\{flatCategory}" : file.Category;
+                        var category = chkFlatImport.Checked ? flatCategory : file.Category;
                         
-                        // Import the Building Block with selected gallery
-                        var selectedGallery = cmbTargetGallery.SelectedItem?.ToString() ?? "AutoText";
-                        wordManager.ImportBuildingBlock(file.FilePath, category, file.Name, selectedGallery);
+                        // Import the Building Block to AutoText gallery
+                        wordManager.ImportBuildingBlock(file.FilePath, category, file.Name, "AutoText");
                         
                         // Update import tracking
                         importTracker.UpdateImportTime(file.FilePath);
@@ -702,12 +673,11 @@ namespace BuildingBlocksManager
                                 AppendResults("Import cancelled - no category specified.");
                                 return;
                             }
-                            category = $"InternalAutotext\\{flatCategory}";
+                            category = flatCategory;
                         }
 
-                        // Import the Building Block with selected gallery
-                        var selectedGallery = cmbTargetGallery.SelectedItem?.ToString() ?? "AutoText";
-                        wordManager.ImportBuildingBlock(dialog.FileName, category, name, selectedGallery);
+                        // Import the Building Block to AutoText gallery
+                        wordManager.ImportBuildingBlock(dialog.FileName, category, name, "AutoText");
                         
                         // Update import tracking
                         importTracker.UpdateImportTime(dialog.FileName);
@@ -1227,20 +1197,12 @@ namespace BuildingBlocksManager
 
         private string ConvertCategoryToPath(string category)
         {
-            // Convert "InternalAutotext\Legal\Contracts" to "Legal\Contracts"
+            // Convert category back to folder path structure
             if (string.IsNullOrWhiteSpace(category))
                 return ""; // No subfolder for empty categories
                 
-            if (category.StartsWith("InternalAutotext\\"))
-            {
-                var path = category.Substring("InternalAutotext\\".Length);
-                // Convert underscores back to spaces in folder names
-                return string.IsNullOrWhiteSpace(path) ? "" : path.Replace('_', ' ');
-            }
-            
-            // For categories that don't follow the InternalAutotext pattern,
-            // skip creating subfolders to avoid unwanted "General" folders
-            return "";
+            // Convert underscores back to spaces in folder names
+            return category.Replace('_', ' ');
         }
 
         private string GetUniqueFilePath(string originalPath)
@@ -1421,21 +1383,18 @@ FILE TO CATEGORY CONVERSION:
 • Directory structure converts to Building Block categories
 • Top-level source directory is ignored in category path
 
-EXAMPLE:
-File: C:\MyDocs\Legal\Contracts\AT_Standard_Agreement.docx
-→ Category: InternalAutotext\Legal\Contracts  
-→ Name: Standard_Agreement
-→ Result: Building Block appears as 'Standard_Agreement' in category 'InternalAutotext\Legal\Contracts'
+IMPORT EXAMPLE:
+• File: C:\MyDocs\AutotextRepo\Legal\Contracts\AT_Agreement.docx
+• Selected source directory: AutotextRepo
+• Imported autotext name: Agreement
+• Imported autotext category: Legal\Contracts
+• Imported gallery: AutoText (default)
+• Stored in: Selected template file
 
 SPECIAL CHARACTERS:
 • Spaces in folder names become underscores in categories
 • Invalid filename characters are flagged but processing continues
 • Case is preserved in both folder names and Building Block names
-
-GALLERY SELECTION:
-• Choose target gallery: AutoText, Quick Parts, or Custom Gallery 1-5
-• AutoText is the most commonly used gallery (default selection)
-• Gallery selection affects where Building Blocks appear in Word's interface
 
 FLAT STRUCTURE OPTIONS:
 • Flat Import: All files go into single specified category
@@ -1452,7 +1411,7 @@ BACKUP PROCESS:
 
 IMPORTANT NOTES:
 • Only .docx files starting with 'AT_' are processed
-• Building Blocks are created in the selected gallery within the template document
+• Building Blocks are created in AutoText gallery within the template document
 • Export recreates the original folder structure from categories";
 
             MessageBox.Show(helpMessage, "Import/Export Rules", 
@@ -1522,7 +1481,7 @@ IMPORTANT NOTES:
                         
                         UpdateStatus("No Building Blocks found in template");
                         tabControl.SelectedTab = tabTemplate;
-                        MessageBox.Show("No Building Blocks found in the template.\n\nThis could mean:\n• The template has no Building Blocks\n• The Building Blocks are not in the 'InternalAutotext' category", 
+                        MessageBox.Show("No Building Blocks found in the template.\n\nThis could mean:\n• The template has no Building Blocks\n• The Building Blocks are in a different format", 
                             "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         return;
                     }

@@ -115,8 +115,8 @@ namespace BuildingBlocksManager
 
                 if (string.IsNullOrEmpty(directory) || directory == ".")
                 {
-                    // File is in root directory
-                    return "InternalAutotext";
+                    // File is in root directory - no category
+                    return "";
                 }
 
                 // Convert folder path to category
@@ -132,7 +132,7 @@ namespace BuildingBlocksManager
                 }
                 category = string.Join("\\", parts);
 
-                return $"InternalAutotext\\{category}";
+                return category;
             }
             catch (Exception ex)
             {
