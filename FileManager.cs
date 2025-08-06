@@ -110,7 +110,7 @@ namespace BuildingBlocksManager
         {
             try
             {
-                var relativePath = Path.GetRelativePath(sourceDirectory, filePath);
+                var relativePath = GetRelativePath(sourceDirectory, filePath);
                 var directory = Path.GetDirectoryName(relativePath);
 
                 if (string.IsNullOrEmpty(directory) || directory == ".")
@@ -242,6 +242,36 @@ namespace BuildingBlocksManager
             {
                 return $"Error scanning directory: {ex.Message}";
             }
+        }
+
+        private string GetRelativePath(string fromPath, string toPath)
+        {
+            if (string.IsNullOrEmpty(fromPath)) return toPath;
+            if (string.IsNullOrEmpty(toPath)) return string.Empty;
+
+            Uri fromUri = new Uri(AppendDirectorySeparatorChar(fromPath));
+            Uri toUri = new Uri(toPath);
+
+            if (fromUri.Scheme != toUri.Scheme) return toPath;
+
+            Uri relativeUri = fromUri.MakeRelativeUri(toUri);
+            string relativePath = Uri.UnescapeDataString(relativeUri.ToString());
+
+            if (string.Equals(toUri.Scheme, Uri.UriSchemeFile, StringComparison.OrdinalIgnoreCase))
+            {
+                relativePath = relativePath.Replace('/', Path.DirectorySeparatorChar);
+            }
+
+            return relativePath;
+        }
+
+        private string AppendDirectorySeparatorChar(string path)
+        {
+            if (!Path.HasExtension(path) && !path.EndsWith(Path.DirectorySeparatorChar.ToString()))
+            {
+                return path + Path.DirectorySeparatorChar;
+            }
+            return path;
         }
     }
 }
