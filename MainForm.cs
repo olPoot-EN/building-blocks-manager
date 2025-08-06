@@ -86,7 +86,13 @@ namespace BuildingBlocksManager
             rollbackMenuItem.Click += BtnRollback_Click;
             fileMenu.DropDownItems.Add(rollbackMenuItem);
             
+            var helpMenu = new ToolStripMenuItem("Help");
+            var importRulesMenuItem = new ToolStripMenuItem("Import/Export Rules");
+            importRulesMenuItem.Click += ImportRulesMenuItem_Click;
+            helpMenu.DropDownItems.Add(importRulesMenuItem);
+            
             menuStrip.Items.Add(fileMenu);
+            menuStrip.Items.Add(helpMenu);
             
             this.MainMenuStrip = menuStrip;
             this.Controls.Add(menuStrip);
@@ -241,9 +247,9 @@ namespace BuildingBlocksManager
             txtResults = new TextBox
             {
                 Location = new System.Drawing.Point(3, 3),
-                Size = new System.Drawing.Size(730, 188), // Adjusted to fit better in tab
+                Size = new System.Drawing.Size(715, 185), // Reduced width/height to ensure scrollbars are visible
                 Multiline = true,
-                ScrollBars = ScrollBars.Vertical,
+                ScrollBars = ScrollBars.Both, // Enable both horizontal and vertical scrollbars
                 ReadOnly = true,
                 Font = new System.Drawing.Font("Consolas", 9),
                 Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom,
@@ -256,7 +262,7 @@ namespace BuildingBlocksManager
             treeDirectory = new TreeView
             {
                 Location = new System.Drawing.Point(3, 3),
-                Size = new System.Drawing.Size(730, 188), // Consistent sizing with results tab
+                Size = new System.Drawing.Size(715, 185), // Reduced size to ensure scrollbars are visible
                 Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom,
                 Scrollable = true,
                 HotTracking = true,
@@ -301,11 +307,12 @@ namespace BuildingBlocksManager
             listViewTemplate = new ListView
             {
                 Location = new System.Drawing.Point(3, 35),
-                Size = new System.Drawing.Size(730, 153), // Adjusted to match tab sizing
+                Size = new System.Drawing.Size(715, 150), // Reduced size to ensure scrollbars are visible
                 View = View.Details,
                 FullRowSelect = true,
                 GridLines = true,
                 Sorting = SortOrder.None,
+                Scrollable = true, // Explicitly enable scrolling
                 Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom
             };
 
@@ -1375,6 +1382,44 @@ namespace BuildingBlocksManager
                 MessageBox.Show($"Failed to open log file: {ex.Message}", "Error", 
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private void ImportRulesMenuItem_Click(object sender, EventArgs e)
+        {
+            var helpMessage = @"IMPORT/EXPORT RULES
+
+FILE TO CATEGORY CONVERSION:
+• Files must start with 'AT_' to be processed
+• Directory structure converts to Building Block categories
+• Top-level source directory is ignored in category path
+
+EXAMPLES:
+Folder Path: C:\MyDocs\Legal\Contracts\AT_Standard.docx
+→ Category: InternalAutotext\Legal\Contracts
+→ Name: Standard
+
+Folder Path: C:\MyDocs\Forms\AT_Invoice.docx  
+→ Category: InternalAutotext\Forms
+→ Name: Invoice
+
+SPECIAL CHARACTERS:
+• Spaces in folder names become underscores in categories
+• Invalid filename characters are flagged but processing continues
+• Case is preserved in both folder names and Building Block names
+
+FLAT STRUCTURE OPTIONS:
+• Flat Import: All files go into single specified category
+• Flat Export: All Building Blocks export to single folder (no subfolders)
+
+IMPORTANT NOTES:
+• Only .docx files starting with 'AT_' are processed
+• Building Blocks are always created in 'InternalAutotext' gallery
+• Category structure: InternalAutotext\[folder path without root]
+• Export recreates the original folder structure
+• Backups are automatically created before import operations";
+
+            MessageBox.Show(helpMessage, "Import/Export Rules", 
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void BtnQueryTemplate_Click(object sender, EventArgs e)
