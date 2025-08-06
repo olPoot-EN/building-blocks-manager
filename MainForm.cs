@@ -1413,10 +1413,11 @@ FLAT STRUCTURE OPTIONS:
 
 IMPORTANT NOTES:
 • Only .docx files starting with 'AT_' are processed
-• Building Blocks are always created in 'InternalAutotext' gallery
+• Building Blocks are created in the template document (not InternalAutotext gallery)
 • Category structure: InternalAutotext\[folder path without root]
 • Export recreates the original folder structure
-• Backups are automatically created before import operations";
+• Backups are automatically created in the same folder as your template file
+• Backup filename format: TemplateName_Backup_YYYYMMDD_HHMMSS.dotm";
 
             MessageBox.Show(helpMessage, "Import/Export Rules", 
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
