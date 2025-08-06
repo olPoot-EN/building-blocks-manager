@@ -141,11 +141,16 @@ namespace BuildingBlocksManager
 
                                 if (nameNode != null)
                                 {
+                                    // Normalize gallery value - map common variations to standard names
+                                    string gallery = galleryNode?.Value ?? "AutoText";
+                                    if (gallery.Equals("autoTxt", StringComparison.OrdinalIgnoreCase))
+                                        gallery = "AutoText";
+                                    
                                     buildingBlocks.Add(new BuildingBlockInfo
                                     {
                                         Name = nameNode.Value,
                                         Category = categoryNode?.Value ?? "",
-                                        Gallery = galleryNode?.Value ?? "AutoText"
+                                        Gallery = gallery
                                     });
                                 }
                             }
