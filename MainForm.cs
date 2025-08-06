@@ -1469,8 +1469,7 @@ namespace BuildingBlocksManager
         private List<string> GetUniqueCategories()
         {
             var categories = allBuildingBlocks
-                .Select(bb => bb.Category)
-                .Where(cat => !string.IsNullOrEmpty(cat))
+                .Select(bb => string.IsNullOrEmpty(bb.Category) ? "(No Category)" : bb.Category)
                 .Distinct()
                 .OrderBy(cat => cat)
                 .ToList();
@@ -1486,11 +1485,10 @@ namespace BuildingBlocksManager
 
         private bool IsSystemEntry(BuildingBlockInfo bb)
         {
-            // Identify system entries by checking for hex characters in name or certain patterns
-            return bb.Name.Any(c => "0123456789ABCDEF".Contains(char.ToUpper(c)) && bb.Name.Length > 10) ||
+            // More targeted system entry detection
+            return bb.Name.Length > 15 && bb.Name.All(c => "0123456789ABCDEF-".Contains(char.ToUpper(c))) ||
                    bb.Name.StartsWith("_") ||
-                   bb.Category.Contains("System") ||
-                   bb.Gallery == "Equation";
+                   (bb.Category != null && bb.Category.Contains("System"));
         }
 
         private void ApplyTemplateFilter()
@@ -1517,8 +1515,8 @@ namespace BuildingBlocksManager
                     {
                         includeBlock = true;
                     }
-                    // Check if the block's category is selected (and it's not a system entry being filtered out)
-                    else if (selectedCategories.Contains(bb.Category))
+                    // Check if the block's category is selected
+                    else if (selectedCategories.Contains(string.IsNullOrEmpty(bb.Category) ? "(No Category)" : bb.Category))
                     {
                         // Only include if "System/Hex Entries" is also selected, or this is not a system entry
                         if (selectedCategories.Contains("System/Hex Entries") || !IsSystemEntry(bb))
