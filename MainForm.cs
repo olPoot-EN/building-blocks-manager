@@ -509,6 +509,28 @@ namespace BuildingBlocksManager
 
             try
             {
+                // Check for hanging Word processes first
+                if (WordManager.IsWordRunning())
+                {
+                    var result = MessageBox.Show(
+                        "Word processes are currently running. This may cause file access errors.\n\nDo you want to force close Word processes and continue?",
+                        "Word Process Detected",
+                        MessageBoxButtons.YesNoCancel,
+                        MessageBoxIcon.Warning);
+                        
+                    if (result == DialogResult.Yes)
+                    {
+                        AppendResults("Force closing Word processes...");
+                        WordManager.ForceKillWordProcesses();
+                        System.Threading.Thread.Sleep(1000); // Wait for processes to close
+                    }
+                    else if (result == DialogResult.Cancel)
+                    {
+                        return;
+                    }
+                    // If No, continue anyway
+                }
+
                 // Initialize managers
                 wordManager = new WordManager(txtTemplatePath.Text);
                 var fileManager = new FileManager(txtSourceDirectory.Text);
@@ -564,6 +586,18 @@ namespace BuildingBlocksManager
                         logger.Error($"Failed to import {fileName}: {ex.Message}");
                     }
                 }
+            }
+            catch (IOException ex) when (ex.Message.Contains("locked") || ex.Message.Contains("in use"))
+            {
+                AppendResults($"File access error: {ex.Message}");
+                AppendResults("This usually means:");
+                AppendResults("• The template file is open in Word");
+                AppendResults("• A previous Word process is still running");
+                AppendResults("• The file is being used by another application");
+                AppendResults("");
+                AppendResults("Try closing Word completely and running the operation again.");
+                UpdateStatus("Import failed - file access error");
+                return;
             }
             catch (Exception ex)
             {
@@ -716,6 +750,28 @@ namespace BuildingBlocksManager
 
             try
             {
+                // Check for hanging Word processes first
+                if (WordManager.IsWordRunning())
+                {
+                    var result = MessageBox.Show(
+                        "Word processes are currently running. This may cause file access errors.\n\nDo you want to force close Word processes and continue?",
+                        "Word Process Detected",
+                        MessageBoxButtons.YesNoCancel,
+                        MessageBoxIcon.Warning);
+                        
+                    if (result == DialogResult.Yes)
+                    {
+                        AppendResults("Force closing Word processes...");
+                        WordManager.ForceKillWordProcesses();
+                        System.Threading.Thread.Sleep(1000); // Wait for processes to close
+                    }
+                    else if (result == DialogResult.Cancel)
+                    {
+                        return;
+                    }
+                    // If No, continue anyway
+                }
+
                 // Initialize WordManager
                 wordManager = new WordManager(txtTemplatePath.Text);
                 
@@ -846,6 +902,28 @@ namespace BuildingBlocksManager
 
             try
             {
+                // Check for hanging Word processes first
+                if (WordManager.IsWordRunning())
+                {
+                    var result = MessageBox.Show(
+                        "Word processes are currently running. This may cause file access errors.\n\nDo you want to force close Word processes and continue?",
+                        "Word Process Detected",
+                        MessageBoxButtons.YesNoCancel,
+                        MessageBoxIcon.Warning);
+                        
+                    if (result == DialogResult.Yes)
+                    {
+                        AppendResults("Force closing Word processes...");
+                        WordManager.ForceKillWordProcesses();
+                        System.Threading.Thread.Sleep(1000); // Wait for processes to close
+                    }
+                    else if (result == DialogResult.Cancel)
+                    {
+                        return;
+                    }
+                    // If No, continue anyway
+                }
+
                 // Initialize WordManager
                 wordManager = new WordManager(txtTemplatePath.Text);
 

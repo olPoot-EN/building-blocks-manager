@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -50,6 +51,10 @@ namespace BuildingBlocksManager
             if (!File.Exists(templatePath))
                 throw new FileNotFoundException($"Template file not found: {templatePath}");
 
+            // Check if template file is accessible before proceeding
+            if (!IsFileAccessible(templatePath))
+                throw new IOException($"Template file is locked or in use by another process: {templatePath}");
+
             var directory = Path.GetDirectoryName(templatePath);
             var fileName = Path.GetFileNameWithoutExtension(templatePath);
             var extension = Path.GetExtension(templatePath);
@@ -60,6 +65,25 @@ namespace BuildingBlocksManager
 
             // Clean up old backups (keep only last 5)
             CleanupOldBackups(directory, fileName, extension);
+        }
+        
+        private bool IsFileAccessible(string filePath)
+        {
+            try
+            {
+                using (var fileStream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    return true;
+                }
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
         }
 
         private void CleanupOldBackups(string directory, string fileName, string extension)
@@ -346,14 +370,38 @@ namespace BuildingBlocksManager
                     // Dispose managed resources
                 }
 
-                // Dispose COM objects
+                // Dispose COM objects aggressively
                 CloseTemplate();
                 
                 if (wordApp != null)
                 {
-                    wordApp.Quit();
-                    Marshal.ReleaseComObject(wordApp);
-                    wordApp = null;
+                    try
+                    {
+                        // Force close any remaining documents
+                        while (wordApp.Documents.Count > 0)
+                        {
+                            wordApp.Documents[1].Close(false);
+                        }
+                        
+                        // Quit Word
+                        wordApp.Quit(false);
+                        
+                        // Wait a moment for Word to close
+                        System.Threading.Thread.Sleep(500);
+                    }
+                    catch (COMException)
+                    {
+                        // Word might have already been closed
+                    }
+                    finally
+                    {
+                        Marshal.ReleaseComObject(wordApp);
+                        wordApp = null;
+                        
+                        // Force garbage collection to clean up COM references
+                        GC.Collect();
+                        GC.WaitForPendingFinalizers();
+                    }
                 }
 
                 disposed = true;
@@ -363,6 +411,49 @@ namespace BuildingBlocksManager
         ~WordManager()
         {
             Dispose(false);
+        }
+        
+        /// <summary>
+        /// Force kill all Word processes - use as last resort when Word is hanging
+        /// </summary>
+        public static void ForceKillWordProcesses()
+        {
+            try
+            {
+                var wordProcesses = Process.GetProcessesByName("WINWORD");
+                foreach (var process in wordProcesses)
+                {
+                    try
+                    {
+                        process.Kill();
+                        process.WaitForExit(2000);
+                    }
+                    catch
+                    {
+                        // Ignore errors when killing individual processes
+                    }
+                }
+            }
+            catch
+            {
+                // Ignore errors in process enumeration
+            }
+        }
+        
+        /// <summary>
+        /// Check if any Word processes are running
+        /// </summary>
+        public static bool IsWordRunning()
+        {
+            try
+            {
+                var wordProcesses = Process.GetProcessesByName("WINWORD");
+                return wordProcesses.Length > 0;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 
