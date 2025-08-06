@@ -1438,7 +1438,17 @@ namespace BuildingBlocksManager
 
             foreach (var category in categories)
             {
-                bool isChecked = selectedCategories.Count == 0 || selectedCategories.Contains(category);
+                bool isChecked;
+                if (category == "System/Hex Entries")
+                {
+                    // System/Hex Entries should default to unchecked
+                    isChecked = selectedCategories.Contains(category);
+                }
+                else
+                {
+                    // Other categories default to checked if no filters are applied
+                    isChecked = selectedCategories.Count == 0 || selectedCategories.Contains(category);
+                }
                 listBoxCategories.Items.Add(category, isChecked);
             }
 
