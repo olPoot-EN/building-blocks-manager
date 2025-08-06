@@ -1252,15 +1252,14 @@ namespace BuildingBlocksManager
                     message += $"• ... and {wordProcesses.Count - 3} more\n";
                 }
                 
-                message += $"\nTo proceed with {operationName}, choose an option:\n\n";
-                message += "YES = Force close Word processes\n";
-                message += "NO = Continue anyway (may fail)\n";
-                message += "CANCEL = Abort operation";
+                message += $"\nTo proceed with {operationName}, the Word processes must be closed.\n\n";
+                message += "Do you want to force close these Word processes?\n\n";
+                message += "WARNING: This will close Word and any unsaved documents will be lost.";
                 
                 var result = MessageBox.Show(
                     message,
-                    "Template File Locked",
-                    MessageBoxButtons.YesNoCancel,
+                    "Template File Locked - Force Close Word?",
+                    MessageBoxButtons.YesNo,
                     MessageBoxIcon.Warning);
                 
                 if (result == DialogResult.Yes) // Kill processes
@@ -1279,19 +1278,15 @@ namespace BuildingBlocksManager
                         {
                             AppendResults("Warning: File may still be locked by another process.");
                         }
+                        return true; // Proceed with operation
                     }
                     else
                     {
-                        AppendResults("Warning: Some Word processes could not be closed.");
+                        AppendResults("Error: Some Word processes could not be closed. Operation cancelled.");
+                        return false; // Abort if we couldn't kill processes
                     }
-                    return true; // Proceed with operation
                 }
-                else if (result == DialogResult.No)
-                {
-                    AppendResults("Continuing with locked file (operation may fail)...");
-                    return true; // Continue anyway
-                }
-                else // Cancel
+                else // No = Cancel
                 {
                     return false; // Abort operation
                 }
