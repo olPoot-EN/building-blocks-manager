@@ -141,16 +141,31 @@ namespace BuildingBlocksManager
 
                                 if (nameNode != null)
                                 {
-                                    // Normalize gallery value - map common variations to standard names
-                                    string gallery = galleryNode?.Value ?? "AutoText";
-                                    if (gallery.Equals("autoTxt", StringComparison.OrdinalIgnoreCase))
-                                        gallery = "AutoText";
+                                    // Debug: show all possible gallery-related nodes
+                                    if (debugCount <= 3)
+                                    {
+                                        var allGalleryNodes = docPart.SelectNodes(".//w:*[contains(local-name(), 'gallery') or contains(local-name(), 'type')]", namespaceManager);
+                                        if (allGalleryNodes != null)
+                                        {
+                                            foreach (XmlNode node in allGalleryNodes)
+                                            {
+                                                System.Diagnostics.Debug.WriteLine($"Gallery-related node: {node.Name} = {node.InnerText} (attrs: {node.Attributes?.Count})");
+                                                if (node.Attributes != null)
+                                                {
+                                                    foreach (XmlAttribute attr in node.Attributes)
+                                                    {
+                                                        System.Diagnostics.Debug.WriteLine($"  @{attr.Name} = {attr.Value}");
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
                                     
                                     buildingBlocks.Add(new BuildingBlockInfo
                                     {
                                         Name = nameNode.Value,
                                         Category = categoryNode?.Value ?? "",
-                                        Gallery = gallery
+                                        Gallery = galleryNode?.Value ?? ""
                                     });
                                 }
                             }
