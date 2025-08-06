@@ -167,6 +167,12 @@ namespace BuildingBlocksManager
                                 string galleryValue = !string.IsNullOrEmpty(gallery) ? gallery : types;
                                 string galleryDisplay = MapGalleryValue(galleryValue);
                                 
+                                // Ensure we always have a gallery - default to AutoText if empty
+                                if (string.IsNullOrEmpty(galleryDisplay))
+                                {
+                                    galleryDisplay = "AutoText";
+                                }
+                                
                                 buildingBlocks.Add(new BuildingBlockInfo
                                 {
                                     Name = name,
