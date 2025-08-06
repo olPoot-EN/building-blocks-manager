@@ -125,9 +125,10 @@ namespace BuildingBlocksManager
                                                   docPart.SelectSingleNode(".//w:category/@w:val", namespaceManager) ??
                                                   docPart.SelectSingleNode(".//w:docPartPr/w:category/w:name/@w:val", namespaceManager);
                                                   
-                                var galleryNode = docPart.SelectSingleNode(".//w:docPartPr/w:types/w:type/@w:val", namespaceManager) ??
-                                                 docPart.SelectSingleNode(".//w:types/w:type/@w:val", namespaceManager) ??
-                                                 docPart.SelectSingleNode(".//w:type/@w:val", namespaceManager);
+                                var galleryNode = docPart.SelectSingleNode(".//w:docPartPr/w:gallery/@w:val", namespaceManager) ??
+                                                 docPart.SelectSingleNode(".//w:gallery/@w:val", namespaceManager) ??
+                                                 docPart.SelectSingleNode(".//w:docPartPr/w:types/w:type/@w:val", namespaceManager) ??
+                                                 docPart.SelectSingleNode(".//w:types/w:type/@w:val", namespaceManager);
 
                                 // Debug: show what we found
                                 if (debugCount <= 3)
