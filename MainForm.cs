@@ -29,7 +29,6 @@ namespace BuildingBlocksManager
         private ListView listViewTemplate;
         private Button btnFilterTemplate;
         private Label lblTemplateCount;
-        private CheckBox chkTemplateTextsOnly;
         private ProgressBar progressBar;
         private Label lblStatus;
         private Settings settings;
@@ -292,15 +291,15 @@ namespace BuildingBlocksManager
                 TextAlign = System.Drawing.ContentAlignment.MiddleLeft
             };
             
-            // Template texts only checkbox
-            chkTemplateTextsOnly = new CheckBox
+            // Delete tip label
+            var lblDeleteTip = new Label
             {
-                Text = "Template texts only",
-                Location = new System.Drawing.Point(305, 7),
-                Size = new System.Drawing.Size(140, 20),
-                Checked = false
+                Text = "Right-click to delete autotext",
+                Location = new System.Drawing.Point(305, 9),
+                Size = new System.Drawing.Size(140, 17),
+                Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, Label.DefaultFont.Size, System.Drawing.FontStyle.Italic),
+                ForeColor = System.Drawing.Color.Gray
             };
-            chkTemplateTextsOnly.CheckedChanged += ChkTemplateTextsOnly_CheckedChanged;
             
             // ListView (moved down to accommodate filter controls)
             listViewTemplate = new ListView
@@ -330,7 +329,7 @@ namespace BuildingBlocksManager
 
             tabTemplate.Controls.Add(btnFilterTemplate);
             tabTemplate.Controls.Add(lblTemplateCount);
-            tabTemplate.Controls.Add(chkTemplateTextsOnly);
+            tabTemplate.Controls.Add(lblDeleteTip);
             tabTemplate.Controls.Add(listViewTemplate);
 
             // Add tabs to tab control
@@ -1466,7 +1465,7 @@ IMPORTANT NOTES:
                     selectedGalleries.Clear();
                     selectedTemplates.Clear();
                     
-                    // Apply default filter: exclude System/Hex Entries if they exist
+                    // Apply default filter: exclude System/Hex Entries if they exist, but include all templates and galleries by default
                     var hasSystemEntries = buildingBlocks.Any(bb => IsSystemEntry(bb));
                     if (hasSystemEntries)
                     {
@@ -1477,6 +1476,13 @@ IMPORTANT NOTES:
                             selectedCategories.Add(category);
                         }
                     }
+                    
+                    // Pre-select all galleries and templates by default (only categories are filtered for System/Hex)
+                    var galleries = GetUniqueGalleries();
+                    selectedGalleries.AddRange(galleries);
+                    
+                    var templates = GetUniqueTemplates();
+                    selectedTemplates.AddRange(templates);
                     
                     UpdateFilterButtonText();
                     
@@ -1899,14 +1905,6 @@ IMPORTANT NOTES:
                     bool includeByCategory = selectedCategories.Count == 0;
                     bool includeByGallery = selectedGalleries.Count == 0;
                     bool includeByTemplate = selectedTemplates.Count == 0;
-                    bool includeByTemplateOnly = true;
-                    
-                    // Check "Template texts only" filter
-                    if (chkTemplateTextsOnly.Checked)
-                    {
-                        // Only include AutoText gallery items (exclude Built-In, etc.)
-                        includeByTemplateOnly = bb.Gallery == "AutoText";
-                    }
                     
                     // Check category filter
                     if (selectedCategories.Count > 0)
@@ -1942,7 +1940,7 @@ IMPORTANT NOTES:
                         }
                     }
                     
-                    if (includeByCategory && includeByGallery && includeByTemplate && includeByTemplateOnly)
+                    if (includeByCategory && includeByGallery && includeByTemplate)
                     {
                         filteredBlocks.Add(bb);
                     }
@@ -2004,11 +2002,6 @@ IMPORTANT NOTES:
             listViewTemplate.Sort();
         }
 
-        private void ChkTemplateTextsOnly_CheckedChanged(object sender, EventArgs e)
-        {
-            // Re-apply current filters when template texts only checkbox changes
-            ApplyTemplateFilter();
-        }
 
         private ContextMenuStrip CreateTemplateContextMenu()
         {

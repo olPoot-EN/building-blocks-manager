@@ -107,16 +107,97 @@ namespace BuildingBlocksManager
 
         public List<BuildingBlockInfo> GetBuildingBlocks()
         {
-            return GetBuildingBlocksFromXml();
+            var allBuildingBlocks = new List<BuildingBlockInfo>();
+            
+            // Scan the selected template
+            allBuildingBlocks.AddRange(GetBuildingBlocksFromTemplate(templatePath));
+            
+            // Scan Building Blocks.dotm (built-in templates)
+            var buildingBlocksDotmPath = GetBuildingBlocksDotmPath();
+            if (!string.IsNullOrEmpty(buildingBlocksDotmPath) && File.Exists(buildingBlocksDotmPath))
+            {
+                allBuildingBlocks.AddRange(GetBuildingBlocksFromTemplate(buildingBlocksDotmPath));
+            }
+            
+            // Scan other associated templates via Word COM
+            allBuildingBlocks.AddRange(GetBuildingBlocksFromWordCOM());
+            
+            return allBuildingBlocks;
         }
 
-        private List<BuildingBlockInfo> GetBuildingBlocksFromXml()
+        private string GetBuildingBlocksDotmPath()
+        {
+            try
+            {
+                // Common paths for Building Blocks.dotm/dotx
+                var possiblePaths = new[]
+                {
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), 
+                        "Microsoft", "Document Building Blocks", "1033", "16", "Building Blocks.dotx"),
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), 
+                        "Microsoft", "Document Building Blocks", "1033", "15", "Building Blocks.dotx"),
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), 
+                        "Microsoft", "Document Building Blocks", "1033", "Building Blocks.dotx")
+                };
+                
+                return possiblePaths.FirstOrDefault(File.Exists);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+        
+        private List<BuildingBlockInfo> GetBuildingBlocksFromWordCOM()
+        {
+            var buildingBlocks = new List<BuildingBlockInfo>();
+            try
+            {
+                OpenTemplate();
+                Word.Template template = (Word.Template)templateDoc.get_AttachedTemplate();
+                
+                // Get all building blocks from all available templates
+                foreach (Word.BuildingBlock bb in template.BuildingBlockEntries)
+                {
+                    string templateName = "Built-In";
+                    try
+                    {
+                        // Try to get the template name from the building block
+                        var templatePath = bb.Category?.Name ?? "";
+                        if (!string.IsNullOrEmpty(templatePath))
+                        {
+                            templateName = Path.GetFileNameWithoutExtension(templatePath);
+                        }
+                    }
+                    catch
+                    {
+                        templateName = "Built-In";
+                    }
+                    
+                    buildingBlocks.Add(new BuildingBlockInfo
+                    {
+                        Name = bb.Name,
+                        Category = bb.Category?.Name ?? "",
+                        Gallery = MapGalleryValue(bb.Type.ToString()),
+                        Template = templateName
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Word COM error: {ex.Message}");
+            }
+            
+            return buildingBlocks;
+        }
+        
+        private List<BuildingBlockInfo> GetBuildingBlocksFromTemplate(string templateFilePath)
         {
             var buildingBlocks = new List<BuildingBlockInfo>();
 
             try
             {
-                using (var doc = WordprocessingDocument.Open(templatePath, false))
+                using (var doc = WordprocessingDocument.Open(templateFilePath, false))
                 {
                     var glossaryPart = doc.MainDocumentPart?.GlossaryDocumentPart;
                     if (glossaryPart?.GlossaryDocument?.DocParts != null)
@@ -163,7 +244,7 @@ namespace BuildingBlocksManager
                                     Name = name,
                                     Category = category,
                                     Gallery = galleryDisplay,
-                                    Template = Path.GetFileNameWithoutExtension(templatePath)
+                                    Template = Path.GetFileNameWithoutExtension(templateFilePath)
                                 });
                                 
                             }
@@ -173,9 +254,7 @@ namespace BuildingBlocksManager
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"OpenXML SDK error: {ex.Message}");
-                // Fallback to manual XML parsing if SDK fails
-                return GetBuildingBlocksFromManualXml();
+                System.Diagnostics.Debug.WriteLine($"OpenXML SDK error for {templateFilePath}: {ex.Message}");
             }
 
             return buildingBlocks;
