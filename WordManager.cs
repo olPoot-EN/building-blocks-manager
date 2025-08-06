@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Xml;
 using Word = Microsoft.Office.Interop.Word;
 
 namespace BuildingBlocksManager
@@ -78,6 +80,66 @@ namespace BuildingBlocksManager
         }
 
         public List<BuildingBlockInfo> GetBuildingBlocks()
+        {
+            // Try the fast XML approach first (like VB version)
+            try
+            {
+                return GetBuildingBlocksFromXml();
+            }
+            catch (Exception xmlEx)
+            {
+                // Fall back to COM approach if XML fails
+                return GetBuildingBlocksFromCom();
+            }
+        }
+
+        private List<BuildingBlockInfo> GetBuildingBlocksFromXml()
+        {
+            var buildingBlocks = new List<BuildingBlockInfo>();
+
+            using (var archive = ZipFile.OpenRead(templatePath))
+            {
+                var glossaryEntry = archive.GetEntry("word/glossary/document.xml");
+                
+                if (glossaryEntry != null)
+                {
+                    using (var stream = glossaryEntry.Open())
+                    {
+                        var doc = new XmlDocument();
+                        doc.Load(stream);
+
+                        var namespaceManager = new XmlNamespaceManager(doc.NameTable);
+                        namespaceManager.AddNamespace("w", "http://schemas.openxmlformats.org/wordprocessingml/2006/main");
+
+                        var docParts = doc.SelectNodes("//w:docPart", namespaceManager);
+
+                        if (docParts != null)
+                        {
+                            foreach (XmlNode docPart in docParts)
+                            {
+                                var nameNode = docPart.SelectSingleNode(".//w:name/@w:val", namespaceManager);
+                                var categoryNode = docPart.SelectSingleNode(".//w:category/@w:val", namespaceManager);
+                                var typeNode = docPart.SelectSingleNode(".//w:types//w:type/@w:val", namespaceManager);
+
+                                if (nameNode != null)
+                                {
+                                    buildingBlocks.Add(new BuildingBlockInfo
+                                    {
+                                        Name = nameNode.Value,
+                                        Category = categoryNode?.Value ?? "General",
+                                        Gallery = typeNode?.Value ?? "AutoText"
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return buildingBlocks;
+        }
+
+        private List<BuildingBlockInfo> GetBuildingBlocksFromCom()
         {
             var buildingBlocks = new List<BuildingBlockInfo>();
             

@@ -11,6 +11,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Office.Interop.Word" Version="15.0.4797.1003" />
     <PackageReference Include="Microsoft.VisualBasic" Version="10.3.0" />
+    <PackageReference Include="System.IO.Compression" Version="4.3.0" />
   </ItemGroup>
 
 </Project>
