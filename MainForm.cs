@@ -1263,8 +1263,9 @@ namespace BuildingBlocksManager
         private string ConvertCategoryToPath(string category)
         {
             // Convert category back to folder path structure
-            if (string.IsNullOrWhiteSpace(category))
-                return ""; // No subfolder for empty categories
+            if (string.IsNullOrWhiteSpace(category) || 
+                category.Equals("General", StringComparison.OrdinalIgnoreCase))
+                return ""; // No subfolder for empty categories or "General"
                 
             // Convert underscores back to spaces in folder names
             return category.Replace('_', ' ');
