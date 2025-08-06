@@ -5,6 +5,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Xml;
+using System.Xml.Linq;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
 using Word = Microsoft.Office.Interop.Word;
@@ -103,12 +104,32 @@ namespace BuildingBlocksManager
                             if (properties != null)
                             {
                                 var name = properties.DocPartName?.Val?.Value ?? "";
-                                var category = properties.DocPartCategory?.Name?.Val?.Value ?? "";
-                                var gallery = properties.DocPartCategory?.Gallery?.Val?.Value ?? "";
-                                var types = properties.DocPartTypes?.Elements<DocPartType>().FirstOrDefault()?.Val?.Value ?? "";
+                                
+                                // Get category - check if Category element exists and has Name
+                                var categoryElement = properties.Elements().FirstOrDefault(e => e.LocalName == "category");
+                                var category = "";
+                                var gallery = "";
+                                
+                                if (categoryElement != null)
+                                {
+                                    var nameAttr = categoryElement.Attributes().FirstOrDefault(a => a.LocalName == "name");
+                                    var galleryAttr = categoryElement.Attributes().FirstOrDefault(a => a.LocalName == "gallery");
+                                    category = nameAttr?.Value ?? "";
+                                    gallery = galleryAttr?.Value ?? "";
+                                }
 
-                                // Map gallery enum values to display names
-                                string galleryDisplay = MapGalleryValue(gallery);
+                                // Get types as fallback
+                                var typesElement = properties.Elements().FirstOrDefault(e => e.LocalName == "types");
+                                var types = "";
+                                if (typesElement != null)
+                                {
+                                    var typeElement = typesElement.Elements().FirstOrDefault(e => e.LocalName == "type");
+                                    var typeAttr = typeElement?.Attributes().FirstOrDefault(a => a.LocalName == "val");
+                                    types = typeAttr?.Value ?? "";
+                                }
+
+                                // Use gallery or fall back to types
+                                string galleryDisplay = MapGalleryValue(!string.IsNullOrEmpty(gallery) ? gallery : types);
                                 
                                 buildingBlocks.Add(new BuildingBlockInfo
                                 {
@@ -117,7 +138,7 @@ namespace BuildingBlocksManager
                                     Gallery = galleryDisplay
                                 });
                                 
-                                System.Diagnostics.Debug.WriteLine($"SDK - Name: {name}, Category: {category}, Gallery: {gallery} -> {galleryDisplay}, Types: {types}");
+                                System.Diagnostics.Debug.WriteLine($"SDK - Name: {name}, Category: {category}, Gallery: {gallery}, Types: {types} -> {galleryDisplay}");
                             }
                         }
                     }
