@@ -81,16 +81,7 @@ namespace BuildingBlocksManager
 
         public List<BuildingBlockInfo> GetBuildingBlocks()
         {
-            // Try the fast XML approach first (like VB version)
-            try
-            {
-                return GetBuildingBlocksFromXml();
-            }
-            catch (Exception xmlEx)
-            {
-                // Fall back to COM approach if XML fails
-                return GetBuildingBlocksFromCom();
-            }
+            return GetBuildingBlocksFromXml();
         }
 
         private List<BuildingBlockInfo> GetBuildingBlocksFromXml()
@@ -139,47 +130,6 @@ namespace BuildingBlocksManager
             return buildingBlocks;
         }
 
-        private List<BuildingBlockInfo> GetBuildingBlocksFromCom()
-        {
-            var buildingBlocks = new List<BuildingBlockInfo>();
-            
-            try
-            {
-                OpenTemplate();
-                
-                // Access Building Blocks through the template's BuildingBlockEntries
-                Word.Template template = (Word.Template)templateDoc.get_AttachedTemplate();
-                
-                // Use proper COM collection access with Item() method
-                for (int i = 1; i <= template.BuildingBlockEntries.Count; i++)
-                {
-                    try
-                    {
-                        Word.BuildingBlock bb = template.BuildingBlockEntries.Item(i);
-                        if (bb != null)
-                        {
-                            buildingBlocks.Add(new BuildingBlockInfo
-                            {
-                                Name = bb.Name ?? "Unknown",
-                                Category = bb.Category?.Name ?? "Unknown", 
-                                Gallery = bb.Type?.ToString() ?? "Unknown"
-                            });
-                        }
-                    }
-                    catch (Exception itemEx)
-                    {
-                        // Skip this item and continue - some items might not be accessible
-                        continue;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"Failed to retrieve Building Blocks: {ex.Message}", ex);
-            }
-
-            return buildingBlocks;
-        }
 
         public void ImportBuildingBlock(string sourceFile, string category, string name)
         {
