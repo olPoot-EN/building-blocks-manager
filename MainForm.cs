@@ -1383,7 +1383,7 @@ namespace BuildingBlocksManager
         {
             var helpMessage = @"IMPORT/EXPORT RULES
 
-TEXT IMPORT (FILE -> TEMPLATE):
+IMPORT (FILE -> TEMPLATE):
 • Files must start with 'AT_' to be processed
 • Directory structure converts to Building Block categories
 • Top-level source directory is ignored in category path
