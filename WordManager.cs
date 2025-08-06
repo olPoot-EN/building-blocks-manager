@@ -105,38 +105,44 @@ namespace BuildingBlocksManager
                             {
                                 var name = properties.DocPartName?.Val?.Value ?? "";
                                 
-                                // Debug: List all child elements in DocPart itself
-                                System.Diagnostics.Debug.WriteLine($"DocPart children for {name}:");
-                                foreach (var child in docPart.ChildElements)
+                                // Extract category and gallery using the discovered structure
+                                var category = "";
+                                var gallery = "";
+                                var types = "";
+                                
+                                var categoryElement = properties.GetFirstChild<Category>();
+                                if (categoryElement != null)
                                 {
-                                    System.Diagnostics.Debug.WriteLine($"  {child.GetType().Name}: {child.LocalName}");
+                                    var categoryName = categoryElement.GetFirstChild<DocumentFormat.OpenXml.Wordprocessing.Name>();
+                                    if (categoryName?.Val != null)
+                                        category = categoryName.Val.Value;
+                                    
+                                    var galleryElement = categoryElement.GetFirstChild<Gallery>();
+                                    if (galleryElement?.Val != null)
+                                        gallery = galleryElement.Val.Value.ToString();
                                 }
                                 
-                                // Debug: List all child elements in DocPartProperties
-                                System.Diagnostics.Debug.WriteLine("DocPartProperties children:");
-                                foreach (var child in properties.ChildElements)
+                                // Get DocPartTypes as fallback
+                                var docPartTypes = properties.GetFirstChild<DocPartTypes>();
+                                if (docPartTypes != null)
                                 {
-                                    System.Diagnostics.Debug.WriteLine($"  {child.GetType().Name}: {child.LocalName}");
-                                    
-                                    // If this is category-related, show its children too
-                                    if (child.LocalName == "category")
-                                    {
-                                        System.Diagnostics.Debug.WriteLine($"    Category children:");
-                                        foreach (var grandchild in child.ChildElements)
-                                        {
-                                            System.Diagnostics.Debug.WriteLine($"      {grandchild.GetType().Name}: {grandchild.LocalName}");
-                                        }
-                                    }
+                                    var docPartType = docPartTypes.GetFirstChild<DocPartType>();
+                                    if (docPartType?.Val != null)
+                                        types = docPartType.Val.Value.ToString();
                                 }
+
+                                // Use gallery or fall back to types, then map to display names
+                                string galleryValue = !string.IsNullOrEmpty(gallery) ? gallery : types;
+                                string galleryDisplay = MapGalleryValue(galleryValue);
                                 
                                 buildingBlocks.Add(new BuildingBlockInfo
                                 {
                                     Name = name,
-                                    Category = "",  // Will fix once we see the structure
-                                    Gallery = ""    // Will fix once we see the structure
+                                    Category = category,
+                                    Gallery = galleryDisplay
                                 });
                                 
-                                System.Diagnostics.Debug.WriteLine($"---");
+                                System.Diagnostics.Debug.WriteLine($"SDK - Name: {name}, Category: {category}, Gallery: {gallery}, Types: {types} -> {galleryDisplay}");
                             }
                         }
                     }
