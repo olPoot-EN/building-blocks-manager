@@ -39,6 +39,7 @@ namespace BuildingBlocksManager
         private List<BuildingBlockInfo> allBuildingBlocks = new List<BuildingBlockInfo>();
         private List<string> selectedCategories = new List<string>();
         private List<string> selectedGalleries = new List<string>();
+        private List<string> selectedTemplates = new List<string>();
         private int sortColumn = -1;
         private SortOrder sortOrder = SortOrder.None;
 
@@ -313,14 +314,19 @@ namespace BuildingBlocksManager
                 Scrollable = true // Explicitly enable scrolling
             };
 
-            // Add columns - recalculated for 725px width with scrollbar space  
-            listViewTemplate.Columns.Add("Name", 250);      // 250px
-            listViewTemplate.Columns.Add("Category", 250);  // 250px 
-            listViewTemplate.Columns.Add("Gallery", 200);   // 200px
+            // Add columns - match building block organizer layout (Name/Gallery/Category/Template)
+            listViewTemplate.Columns.Add("Name", 180);      // 180px
+            listViewTemplate.Columns.Add("Gallery", 180);   // 180px 
+            listViewTemplate.Columns.Add("Category", 180);  // 180px
+            listViewTemplate.Columns.Add("Template", 160);  // 160px
             // Total: 700px, leaving 25px buffer for scrollbars
             
             // Enable column sorting
             listViewTemplate.ColumnClick += ListViewTemplate_ColumnClick;
+            
+            // Enable context menu for template management
+            listViewTemplate.ContextMenuStrip = CreateTemplateContextMenu();
+            listViewTemplate.KeyDown += ListViewTemplate_KeyDown;
 
             tabTemplate.Controls.Add(btnFilterTemplate);
             tabTemplate.Controls.Add(lblTemplateCount);
@@ -1458,6 +1464,7 @@ IMPORTANT NOTES:
                     // Reset filters when loading new template and set System/Hex to unchecked by default
                     selectedCategories.Clear();
                     selectedGalleries.Clear();
+                    selectedTemplates.Clear();
                     
                     // Apply default filter: exclude System/Hex Entries if they exist
                     var hasSystemEntries = buildingBlocks.Any(bb => IsSystemEntry(bb));
@@ -1621,30 +1628,31 @@ IMPORTANT NOTES:
         {
             var categories = GetUniqueCategories();
             var galleries = GetUniqueGalleries();
+            var templates = GetUniqueTemplates();
             
             var form = new Form
             {
                 Text = "Filter Building Blocks",
-                Size = new System.Drawing.Size(600, 500),
+                Size = new System.Drawing.Size(480, 400),
                 StartPosition = FormStartPosition.CenterScreen,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
                 MaximizeBox = false,
                 MinimizeBox = false
             };
 
-            // Categories section
+            // Categories section (left side)
             var lblCategories = new Label
             {
                 Text = "Categories:",
-                Location = new System.Drawing.Point(20, 10),
-                Size = new System.Drawing.Size(100, 20),
+                Location = new System.Drawing.Point(15, 10),
+                Size = new System.Drawing.Size(70, 20),
                 Font = new System.Drawing.Font(Label.DefaultFont, System.Drawing.FontStyle.Bold)
             };
 
             var listBoxCategories = new CheckedListBox
             {
-                Location = new System.Drawing.Point(20, 35),
-                Size = new System.Drawing.Size(250, 280),
+                Location = new System.Drawing.Point(15, 30),
+                Size = new System.Drawing.Size(200, 250),
                 CheckOnClick = true
             };
 
@@ -1653,30 +1661,28 @@ IMPORTANT NOTES:
                 bool isChecked;
                 if (category == "System/Hex Entries")
                 {
-                    // System/Hex Entries should default to unchecked
                     isChecked = selectedCategories.Contains(category);
                 }
                 else
                 {
-                    // Other categories default to checked if no filters are applied
                     isChecked = selectedCategories.Count == 0 || selectedCategories.Contains(category);
                 }
                 listBoxCategories.Items.Add(category, isChecked);
             }
 
-            // Galleries section
+            // Galleries section (top right)
             var lblGalleries = new Label
             {
                 Text = "Galleries:",
-                Location = new System.Drawing.Point(300, 10),
-                Size = new System.Drawing.Size(100, 20),
+                Location = new System.Drawing.Point(230, 10),
+                Size = new System.Drawing.Size(70, 20),
                 Font = new System.Drawing.Font(Label.DefaultFont, System.Drawing.FontStyle.Bold)
             };
 
             var listBoxGalleries = new CheckedListBox
             {
-                Location = new System.Drawing.Point(300, 35),
-                Size = new System.Drawing.Size(250, 280),
+                Location = new System.Drawing.Point(230, 30),
+                Size = new System.Drawing.Size(220, 120),
                 CheckOnClick = true
             };
 
@@ -1686,50 +1692,88 @@ IMPORTANT NOTES:
                 listBoxGalleries.Items.Add(gallery, isChecked);
             }
 
+            // Templates section (bottom right)
+            var lblTemplates = new Label
+            {
+                Text = "Templates:",
+                Location = new System.Drawing.Point(230, 160),
+                Size = new System.Drawing.Size(70, 20),
+                Font = new System.Drawing.Font(Label.DefaultFont, System.Drawing.FontStyle.Bold)
+            };
+
+            var listBoxTemplates = new CheckedListBox
+            {
+                Location = new System.Drawing.Point(230, 180),
+                Size = new System.Drawing.Size(220, 100),
+                CheckOnClick = true
+            };
+
+            foreach (var template in templates)
+            {
+                bool isChecked = selectedTemplates.Count == 0 || selectedTemplates.Contains(template);
+                listBoxTemplates.Items.Add(template, isChecked);
+            }
+
+            // Buttons
             var btnSelectAllCat = new Button
             {
-                Text = "All Categories",
-                Location = new System.Drawing.Point(20, 330),
-                Size = new System.Drawing.Size(100, 25)
+                Text = "All",
+                Location = new System.Drawing.Point(15, 285),
+                Size = new System.Drawing.Size(60, 25)
             };
 
             var btnSelectNoneCat = new Button
             {
-                Text = "No Categories",
-                Location = new System.Drawing.Point(130, 330),
-                Size = new System.Drawing.Size(100, 25)
+                Text = "None",
+                Location = new System.Drawing.Point(85, 285),
+                Size = new System.Drawing.Size(60, 25)
             };
 
             var btnSelectAllGal = new Button
             {
-                Text = "All Galleries",
-                Location = new System.Drawing.Point(300, 330),
-                Size = new System.Drawing.Size(100, 25)
+                Text = "All",
+                Location = new System.Drawing.Point(230, 285),
+                Size = new System.Drawing.Size(60, 25)
             };
 
             var btnSelectNoneGal = new Button
             {
-                Text = "No Galleries",
-                Location = new System.Drawing.Point(410, 330),
-                Size = new System.Drawing.Size(100, 25)
+                Text = "None",
+                Location = new System.Drawing.Point(300, 285),
+                Size = new System.Drawing.Size(60, 25)
+            };
+
+            var btnSelectAllTmp = new Button
+            {
+                Text = "All",
+                Location = new System.Drawing.Point(370, 285),
+                Size = new System.Drawing.Size(40, 25)
+            };
+
+            var btnSelectNoneTmp = new Button
+            {
+                Text = "None",
+                Location = new System.Drawing.Point(415, 285),
+                Size = new System.Drawing.Size(40, 25)
             };
 
             var btnOK = new Button
             {
                 Text = "OK",
-                Location = new System.Drawing.Point(400, 420),
-                Size = new System.Drawing.Size(80, 25),
+                Location = new System.Drawing.Point(300, 325),
+                Size = new System.Drawing.Size(75, 25),
                 DialogResult = DialogResult.OK
             };
 
             var btnCancel = new Button
             {
                 Text = "Cancel",
-                Location = new System.Drawing.Point(490, 420),
-                Size = new System.Drawing.Size(80, 25),
+                Location = new System.Drawing.Point(385, 325),
+                Size = new System.Drawing.Size(75, 25),
                 DialogResult = DialogResult.Cancel
             };
 
+            // Event handlers
             btnSelectAllCat.Click += (s, e) => {
                 for (int i = 0; i < listBoxCategories.Items.Count; i++)
                     listBoxCategories.SetItemChecked(i, true);
@@ -1750,6 +1794,16 @@ IMPORTANT NOTES:
                     listBoxGalleries.SetItemChecked(i, false);
             };
 
+            btnSelectAllTmp.Click += (s, e) => {
+                for (int i = 0; i < listBoxTemplates.Items.Count; i++)
+                    listBoxTemplates.SetItemChecked(i, true);
+            };
+
+            btnSelectNoneTmp.Click += (s, e) => {
+                for (int i = 0; i < listBoxTemplates.Items.Count; i++)
+                    listBoxTemplates.SetItemChecked(i, false);
+            };
+
             btnOK.Click += (s, e) => {
                 selectedCategories.Clear();
                 foreach (string item in listBoxCategories.CheckedItems)
@@ -1761,10 +1815,17 @@ IMPORTANT NOTES:
                 {
                     selectedGalleries.Add(item);
                 }
+                selectedTemplates.Clear();
+                foreach (string item in listBoxTemplates.CheckedItems)
+                {
+                    selectedTemplates.Add(item);
+                }
             };
 
-            form.Controls.AddRange(new Control[] { lblCategories, listBoxCategories, lblGalleries, listBoxGalleries, 
-                btnSelectAllCat, btnSelectNoneCat, btnSelectAllGal, btnSelectNoneGal, btnOK, btnCancel });
+            form.Controls.AddRange(new Control[] { 
+                lblCategories, listBoxCategories, lblGalleries, listBoxGalleries, lblTemplates, listBoxTemplates,
+                btnSelectAllCat, btnSelectNoneCat, btnSelectAllGal, btnSelectNoneGal, btnSelectAllTmp, btnSelectNoneTmp,
+                btnOK, btnCancel });
             form.AcceptButton = btnOK;
             form.CancelButton = btnCancel;
 
@@ -1799,6 +1860,17 @@ IMPORTANT NOTES:
             return galleries;
         }
 
+        private List<string> GetUniqueTemplates()
+        {
+            var templates = allBuildingBlocks
+                .Select(bb => string.IsNullOrEmpty(bb.Template) ? "(No Template)" : bb.Template)
+                .Distinct()
+                .OrderBy(tmp => tmp)
+                .ToList();
+
+            return templates;
+        }
+
         private bool IsSystemEntry(BuildingBlockInfo bb)
         {
             // More targeted system entry detection
@@ -1813,7 +1885,7 @@ IMPORTANT NOTES:
             
             List<BuildingBlockInfo> filteredBlocks;
             
-            if (selectedCategories.Count == 0 && selectedGalleries.Count == 0)
+            if (selectedCategories.Count == 0 && selectedGalleries.Count == 0 && selectedTemplates.Count == 0)
             {
                 // No filter - show all
                 filteredBlocks = allBuildingBlocks;
@@ -1826,6 +1898,7 @@ IMPORTANT NOTES:
                 {
                     bool includeByCategory = selectedCategories.Count == 0;
                     bool includeByGallery = selectedGalleries.Count == 0;
+                    bool includeByTemplate = selectedTemplates.Count == 0;
                     bool includeByTemplateOnly = true;
                     
                     // Check "Template texts only" filter
@@ -1860,7 +1933,16 @@ IMPORTANT NOTES:
                         }
                     }
                     
-                    if (includeByCategory && includeByGallery && includeByTemplateOnly)
+                    // Check template filter
+                    if (selectedTemplates.Count > 0)
+                    {
+                        if (selectedTemplates.Contains(string.IsNullOrEmpty(bb.Template) ? "(No Template)" : bb.Template))
+                        {
+                            includeByTemplate = true;
+                        }
+                    }
+                    
+                    if (includeByCategory && includeByGallery && includeByTemplate && includeByTemplateOnly)
                     {
                         filteredBlocks.Add(bb);
                     }
@@ -1871,8 +1953,9 @@ IMPORTANT NOTES:
             foreach (var bb in filteredBlocks.OrderBy(bb => bb.Name))
             {
                 var item = new ListViewItem(bb.Name);
-                item.SubItems.Add(bb.Category);
                 item.SubItems.Add(bb.Gallery);
+                item.SubItems.Add(bb.Category);
+                item.SubItems.Add(bb.Template);
                 item.Tag = bb;
                 listViewTemplate.Items.Add(item);
             }
@@ -1882,7 +1965,7 @@ IMPORTANT NOTES:
 
         private void UpdateFilterButtonText()
         {
-            int totalFilters = selectedCategories.Count + selectedGalleries.Count;
+            int totalFilters = selectedCategories.Count + selectedGalleries.Count + selectedTemplates.Count;
             if (totalFilters == 0)
             {
                 btnFilterTemplate.Text = "Filter";
@@ -1925,6 +2008,86 @@ IMPORTANT NOTES:
         {
             // Re-apply current filters when template texts only checkbox changes
             ApplyTemplateFilter();
+        }
+
+        private ContextMenuStrip CreateTemplateContextMenu()
+        {
+            var contextMenu = new ContextMenuStrip();
+            
+            var deleteMenuItem = new ToolStripMenuItem("Delete Building Block")
+            {
+                ShortcutKeys = Keys.Delete
+            };
+            deleteMenuItem.Click += (sender, e) => DeleteSelectedTemplate();
+            
+            contextMenu.Items.Add(deleteMenuItem);
+            
+            return contextMenu;
+        }
+
+        private void ListViewTemplate_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Delete)
+            {
+                DeleteSelectedTemplate();
+                e.Handled = true;
+            }
+        }
+
+
+        private void DeleteSelectedTemplate()
+        {
+            if (listViewTemplate.SelectedItems.Count == 0)
+            {
+                MessageBox.Show("Please select a Building Block to delete.", "No Selection",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var selectedItem = listViewTemplate.SelectedItems[0];
+            var buildingBlock = selectedItem.Tag as BuildingBlockInfo;
+            
+            if (buildingBlock == null)
+            {
+                MessageBox.Show("Invalid Building Block selection.", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            var result = MessageBox.Show(
+                $"Are you sure you want to delete the Building Block '{buildingBlock.Name}' from category '{buildingBlock.Category}'?\n\nThis action cannot be undone.",
+                "Confirm Delete",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+
+            if (result != DialogResult.Yes)
+                return;
+
+            try
+            {
+                using (var wordManager = new WordManager(txtTemplatePath.Text))
+                {
+                    // Create backup before deleting
+                    wordManager.CreateBackup();
+                    
+                    wordManager.DeleteBuildingBlock(buildingBlock.Name, buildingBlock.Category);
+                    
+                    AppendResults($"Deleted Building Block: {buildingBlock.Name} from category {buildingBlock.Category}");
+                    UpdateStatus($"Deleted {buildingBlock.Name}");
+                    
+                    // Remove from the current list and update allBuildingBlocks
+                    allBuildingBlocks.RemoveAll(bb => bb.Name == buildingBlock.Name && bb.Category == buildingBlock.Category);
+                    
+                    // Refresh the display
+                    ApplyTemplateFilter();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to delete Building Block: {ex.Message}", "Delete Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                AppendResults($"Failed to delete {buildingBlock.Name}: {ex.Message}");
+            }
         }
     }
 

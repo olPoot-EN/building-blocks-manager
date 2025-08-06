@@ -162,7 +162,8 @@ namespace BuildingBlocksManager
                                 {
                                     Name = name,
                                     Category = category,
-                                    Gallery = galleryDisplay
+                                    Gallery = galleryDisplay,
+                                    Template = Path.GetFileNameWithoutExtension(templatePath)
                                 });
                                 
                             }
@@ -376,6 +377,34 @@ namespace BuildingBlocksManager
             }
         }
 
+
+        public void DeleteBuildingBlock(string buildingBlockName, string category)
+        {
+            try
+            {
+                OpenTemplate();
+                Word.Template template = (Word.Template)templateDoc.get_AttachedTemplate();
+                
+                // Find and delete the Building Block
+                for (int i = 1; i <= template.BuildingBlockEntries.Count; i++)
+                {
+                    Word.BuildingBlock bb = template.BuildingBlockEntries.Item(i);
+                    if (bb.Name == buildingBlockName && bb.Category.Name == category)
+                    {
+                        bb.Delete();
+                        templateDoc.Save();
+                        return;
+                    }
+                }
+
+                throw new InvalidOperationException($"Building Block '{buildingBlockName}' not found in category '{category}'");
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Failed to delete Building Block '{buildingBlockName}': {ex.Message}", ex);
+            }
+        }
+
         private void CloseTemplate()
         {
             if (templateDoc != null)
@@ -538,6 +567,7 @@ namespace BuildingBlocksManager
         public string Name { get; set; }
         public string Category { get; set; }
         public string Gallery { get; set; }
+        public string Template { get; set; }
         
         public override string ToString()
         {
