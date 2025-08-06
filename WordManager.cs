@@ -105,31 +105,18 @@ namespace BuildingBlocksManager
                             {
                                 var name = properties.DocPartName?.Val?.Value ?? "";
                                 
-                                // Get category using Open XML SDK proper syntax
-                                var category = "";
-                                var gallery = "";
+                                // Debug: List all child elements to see what's actually available
+                                System.Diagnostics.Debug.WriteLine("Available properties:");
+                                foreach (var child in properties.ChildElements)
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"  {child.GetType().Name}: {child.LocalName}");
+                                }
                                 
-                                var categoryProp = properties.GetFirstChild<Category>();
-                                if (categoryProp != null)
-                                {
-                                    var categoryName = categoryProp.GetFirstChild<CategoryName>();
-                                    if (categoryName != null && categoryName.Val != null)
-                                        category = categoryName.Val.Value;
-                                    
-                                    var galleryProp = categoryProp.GetFirstChild<Gallery>();
-                                    if (galleryProp != null && galleryProp.Val != null)
-                                        gallery = galleryProp.Val.Value.ToString();
-                                }
-
-                                // Get types as fallback
-                                var types = "";
-                                var typesProp = properties.GetFirstChild<DocPartTypes>();
-                                if (typesProp != null)
-                                {
-                                    var typeProp = typesProp.GetFirstChild<DocPartType>();
-                                    if (typeProp != null && typeProp.Val != null)
-                                        types = typeProp.Val.Value.ToString();
-                                }
+                                // Use available properties - let's see what we actually have
+                                var category = properties.Category?.Name?.Val?.Value ?? "";
+                                var gallery = properties.Category?.Gallery?.Val?.HasValue == true ? properties.Category.Gallery.Val.Value.ToString() : "";
+                                var types = properties.DocPartTypes?.Elements<DocPartType>().FirstOrDefault()?.Val?.HasValue == true ? 
+                                           properties.DocPartTypes.Elements<DocPartType>().FirstOrDefault().Val.Value.ToString() : "";
 
                                 // Use gallery or fall back to types
                                 string galleryDisplay = MapGalleryValue(!string.IsNullOrEmpty(gallery) ? gallery : types);
