@@ -257,7 +257,11 @@ namespace BuildingBlocksManager
                 Location = new System.Drawing.Point(5, 5),
                 Size = new System.Drawing.Size(725, 185),
                 Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom,
-                Scrollable = true
+                Scrollable = true,
+                HotTracking = true,
+                ShowLines = true,
+                ShowPlusMinus = true,
+                ShowRootLines = true
             };
             tabDirectory.Controls.Add(treeDirectory);
 
@@ -1255,9 +1259,22 @@ namespace BuildingBlocksManager
                     // Store all building blocks for filtering
                     allBuildingBlocks = buildingBlocks;
                     
-                    // Reset filters when loading new template
+                    // Reset filters when loading new template and set System/Hex to unchecked by default
                     selectedCategories.Clear();
                     selectedGalleries.Clear();
+                    
+                    // Apply default filter: exclude System/Hex Entries if they exist
+                    var hasSystemEntries = buildingBlocks.Any(bb => IsSystemEntry(bb));
+                    if (hasSystemEntries)
+                    {
+                        // Add all categories except System/Hex Entries to selected list
+                        var categories = GetUniqueCategories();
+                        foreach (var category in categories.Where(c => c != "System/Hex Entries"))
+                        {
+                            selectedCategories.Add(category);
+                        }
+                    }
+                    
                     UpdateFilterButtonText();
                     
                     if (buildingBlocks.Count == 0)
@@ -1273,7 +1290,7 @@ namespace BuildingBlocksManager
                         return;
                     }
 
-                    // Apply current filter (which will be "no filter" since we just reset)
+                    // Apply current filter (which will exclude System/Hex entries by default)
                     ApplyTemplateFilter();
 
                     // Switch to Template tab
@@ -1318,73 +1335,92 @@ namespace BuildingBlocksManager
         {
             treeDirectory.Nodes.Clear();
             
-            // Create root node
-            var rootNode = new TreeNode(Path.GetFileName(txtSourceDirectory.Text))
+            // Create root node with proper root directory name
+            var rootDirName = Path.GetFileName(txtSourceDirectory.Text);
+            if (string.IsNullOrEmpty(rootDirName))
             {
-                Tag = txtSourceDirectory.Text
+                rootDirName = txtSourceDirectory.Text; // Use full path if GetFileName returns empty
+            }
+            
+            var rootNode = new TreeNode(rootDirName)
+            {
+                Tag = txtSourceDirectory.Text,
+                ImageIndex = 0 // Folder icon if you add an ImageList later
             };
             treeDirectory.Nodes.Add(rootNode);
             
-            // Group files by directory
-            var directoryGroups = files.GroupBy(f => Path.GetDirectoryName(f.FilePath))
-                                      .OrderBy(g => g.Key);
-            
-            foreach (var group in directoryGroups)
+            // Create a dictionary to track created directory nodes
+            var directoryNodes = new Dictionary<string, TreeNode>
             {
-                var dirPath = group.Key;
-                var relativePath = GetRelativePath(txtSourceDirectory.Text, dirPath);
+                { txtSourceDirectory.Text, rootNode }
+            };
+            
+            // Process files and create directory structure
+            foreach (var file in files.OrderBy(f => f.FilePath))
+            {
+                var filePath = file.FilePath;
+                var directory = Path.GetDirectoryName(filePath);
                 
-                TreeNode parentNode = rootNode;
+                // Ensure all parent directories exist in the tree
+                TreeNode parentNode = EnsureDirectoryNodes(directory, directoryNodes, rootNode);
                 
-                // Create nested folder structure
-                if (relativePath != ".")
+                // Add file node
+                var fileName = Path.GetFileName(filePath);
+                var status = file.IsNew ? " (New)" :
+                            file.IsModified ? " (Modified)" :
+                            file.IsValid ? " (Up-to-date)" : " (Invalid)";
+                
+                var fileNode = new TreeNode($"{fileName}{status}")
                 {
-                    var pathParts = relativePath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-                    foreach (var part in pathParts)
-                    {
-                        var existingNode = parentNode.Nodes.Cast<TreeNode>()
-                            .FirstOrDefault(n => n.Text == part && n.Tag is string);
-                        
-                        if (existingNode == null)
-                        {
-                            existingNode = new TreeNode(part)
-                            {
-                                Tag = Path.Combine((string)parentNode.Tag, part)
-                            };
-                            parentNode.Nodes.Add(existingNode);
-                        }
-                        
-                        parentNode = existingNode;
-                    }
-                }
+                    Tag = file
+                };
                 
-                // Add files to the appropriate folder node
-                foreach (var file in group.OrderBy(f => Path.GetFileName(f.FilePath)))
-                {
-                    var fileName = Path.GetFileName(file.FilePath);
-                    var status = file.IsNew ? " (New)" :
-                                file.IsModified ? " (Modified)" :
-                                file.IsValid ? " (Up-to-date)" : " (Invalid)";
-                    
-                    var fileNode = new TreeNode($"{fileName}{status}")
-                    {
-                        Tag = file
-                    };
-                    
-                    // Color code the nodes
-                    if (!file.IsValid)
-                        fileNode.ForeColor = System.Drawing.Color.Red;
-                    else if (file.IsNew)
-                        fileNode.ForeColor = System.Drawing.Color.Green;
-                    else if (file.IsModified)
-                        fileNode.ForeColor = System.Drawing.Color.Blue;
-                    
-                    parentNode.Nodes.Add(fileNode);
-                }
+                // Color code the file nodes
+                if (!file.IsValid)
+                    fileNode.ForeColor = System.Drawing.Color.Red;
+                else if (file.IsNew)
+                    fileNode.ForeColor = System.Drawing.Color.Green;
+                else if (file.IsModified)
+                    fileNode.ForeColor = System.Drawing.Color.Blue;
+                else
+                    fileNode.ForeColor = System.Drawing.Color.Black;
+                
+                parentNode.Nodes.Add(fileNode);
             }
             
-            // Expand root node
+            // Expand root node only
             rootNode.Expand();
+        }
+        
+        private TreeNode EnsureDirectoryNodes(string directoryPath, Dictionary<string, TreeNode> directoryNodes, TreeNode rootNode)
+        {
+            if (directoryNodes.ContainsKey(directoryPath))
+                return directoryNodes[directoryPath];
+            
+            // Get parent directory and ensure it exists first
+            var parentDir = Path.GetDirectoryName(directoryPath);
+            TreeNode parentNode;
+            
+            if (parentDir == null || string.Equals(parentDir, txtSourceDirectory.Text, StringComparison.OrdinalIgnoreCase))
+            {
+                parentNode = rootNode;
+            }
+            else
+            {
+                parentNode = EnsureDirectoryNodes(parentDir, directoryNodes, rootNode);
+            }
+            
+            // Create this directory node
+            var dirName = Path.GetFileName(directoryPath);
+            var dirNode = new TreeNode(dirName)
+            {
+                Tag = directoryPath
+            };
+            
+            parentNode.Nodes.Add(dirNode);
+            directoryNodes[directoryPath] = dirNode;
+            
+            return dirNode;
         }
 
         private void BtnFilterTemplate_Click(object sender, EventArgs e)
