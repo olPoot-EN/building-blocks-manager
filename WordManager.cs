@@ -90,15 +90,13 @@ namespace BuildingBlocksManager
                 for (int i = 1; i <= template.BuildingBlockEntries.Count; i++)
                 {
                     Word.BuildingBlock bb = template.BuildingBlockEntries.Item(i);
-                    if (bb.Category.Name.StartsWith("InternalAutotext"))
+                    // Show ALL building blocks, not just InternalAutotext
+                    buildingBlocks.Add(new BuildingBlockInfo
                     {
-                        buildingBlocks.Add(new BuildingBlockInfo
-                        {
-                            Name = bb.Name,
-                            Category = bb.Category.Name,
-                            Gallery = bb.Type.ToString()
-                        });
-                    }
+                        Name = bb.Name,
+                        Category = bb.Category.Name,
+                        Gallery = bb.Type.ToString()
+                    });
                 }
             }
             catch (Exception ex)
