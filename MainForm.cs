@@ -509,26 +509,50 @@ namespace BuildingBlocksManager
 
             try
             {
-                // Check for hanging Word processes first
-                if (WordManager.IsWordRunning())
+                // Check if template file is locked first
+                if (WordManager.IsTemplateFileLocked(txtTemplatePath.Text))
                 {
+                    var wordProcesses = WordManager.GetWordProcessesUsingFile(txtTemplatePath.Text);
+                    
+                    string message = "The template file appears to be locked or in use.\n\n";
+                    
+                    if (wordProcesses.Count > 0)
+                    {
+                        message += $"Found {wordProcesses.Count} Word process(es) that might be using the file:\n";
+                        foreach (var process in wordProcesses.Take(3)) // Show max 3 processes
+                        {
+                            try
+                            {
+                                message += $"• Word (PID: {process.Id})\n";
+                            }
+                            catch
+                            {
+                                message += "• Word (process info unavailable)\n";
+                            }
+                        }
+                        if (wordProcesses.Count > 3)
+                        {
+                            message += $"• ... and {wordProcesses.Count - 3} more\n";
+                        }
+                        message += "\nPlease close the template file in Word and try again.";
+                    }
+                    else
+                    {
+                        message += "Please ensure the template file is not open in Word or another application.";
+                    }
+                    
                     var result = MessageBox.Show(
-                        "Word processes are currently running. This may cause file access errors.\n\nDo you want to force close Word processes and continue?",
-                        "Word Process Detected",
-                        MessageBoxButtons.YesNoCancel,
+                        message + "\n\nDo you want to continue anyway?",
+                        "Template File Locked",
+                        MessageBoxButtons.YesNo,
                         MessageBoxIcon.Warning);
                         
-                    if (result == DialogResult.Yes)
-                    {
-                        AppendResults("Force closing Word processes...");
-                        WordManager.ForceKillWordProcesses();
-                        System.Threading.Thread.Sleep(1000); // Wait for processes to close
-                    }
-                    else if (result == DialogResult.Cancel)
+                    if (result == DialogResult.No)
                     {
                         return;
                     }
-                    // If No, continue anyway
+                    
+                    AppendResults("Warning: Template file may be locked, continuing anyway...");
                 }
 
                 // Initialize managers
@@ -750,26 +774,50 @@ namespace BuildingBlocksManager
 
             try
             {
-                // Check for hanging Word processes first
-                if (WordManager.IsWordRunning())
+                // Check if template file is locked first
+                if (WordManager.IsTemplateFileLocked(txtTemplatePath.Text))
                 {
+                    var wordProcesses = WordManager.GetWordProcessesUsingFile(txtTemplatePath.Text);
+                    
+                    string message = "The template file appears to be locked or in use.\n\n";
+                    
+                    if (wordProcesses.Count > 0)
+                    {
+                        message += $"Found {wordProcesses.Count} Word process(es) that might be using the file:\n";
+                        foreach (var process in wordProcesses.Take(3)) // Show max 3 processes
+                        {
+                            try
+                            {
+                                message += $"• Word (PID: {process.Id})\n";
+                            }
+                            catch
+                            {
+                                message += "• Word (process info unavailable)\n";
+                            }
+                        }
+                        if (wordProcesses.Count > 3)
+                        {
+                            message += $"• ... and {wordProcesses.Count - 3} more\n";
+                        }
+                        message += "\nPlease close the template file in Word and try again.";
+                    }
+                    else
+                    {
+                        message += "Please ensure the template file is not open in Word or another application.";
+                    }
+                    
                     var result = MessageBox.Show(
-                        "Word processes are currently running. This may cause file access errors.\n\nDo you want to force close Word processes and continue?",
-                        "Word Process Detected",
-                        MessageBoxButtons.YesNoCancel,
+                        message + "\n\nDo you want to continue anyway?",
+                        "Template File Locked",
+                        MessageBoxButtons.YesNo,
                         MessageBoxIcon.Warning);
                         
-                    if (result == DialogResult.Yes)
-                    {
-                        AppendResults("Force closing Word processes...");
-                        WordManager.ForceKillWordProcesses();
-                        System.Threading.Thread.Sleep(1000); // Wait for processes to close
-                    }
-                    else if (result == DialogResult.Cancel)
+                    if (result == DialogResult.No)
                     {
                         return;
                     }
-                    // If No, continue anyway
+                    
+                    AppendResults("Warning: Template file may be locked, continuing anyway...");
                 }
 
                 // Initialize WordManager
@@ -902,26 +950,50 @@ namespace BuildingBlocksManager
 
             try
             {
-                // Check for hanging Word processes first
-                if (WordManager.IsWordRunning())
+                // Check if template file is locked first
+                if (WordManager.IsTemplateFileLocked(txtTemplatePath.Text))
                 {
+                    var wordProcesses = WordManager.GetWordProcessesUsingFile(txtTemplatePath.Text);
+                    
+                    string message = "The template file appears to be locked or in use.\n\n";
+                    
+                    if (wordProcesses.Count > 0)
+                    {
+                        message += $"Found {wordProcesses.Count} Word process(es) that might be using the file:\n";
+                        foreach (var process in wordProcesses.Take(3)) // Show max 3 processes
+                        {
+                            try
+                            {
+                                message += $"• Word (PID: {process.Id})\n";
+                            }
+                            catch
+                            {
+                                message += "• Word (process info unavailable)\n";
+                            }
+                        }
+                        if (wordProcesses.Count > 3)
+                        {
+                            message += $"• ... and {wordProcesses.Count - 3} more\n";
+                        }
+                        message += "\nPlease close the template file in Word and try again.";
+                    }
+                    else
+                    {
+                        message += "Please ensure the template file is not open in Word or another application.";
+                    }
+                    
                     var result = MessageBox.Show(
-                        "Word processes are currently running. This may cause file access errors.\n\nDo you want to force close Word processes and continue?",
-                        "Word Process Detected",
-                        MessageBoxButtons.YesNoCancel,
+                        message + "\n\nDo you want to continue anyway?",
+                        "Template File Locked",
+                        MessageBoxButtons.YesNo,
                         MessageBoxIcon.Warning);
                         
-                    if (result == DialogResult.Yes)
-                    {
-                        AppendResults("Force closing Word processes...");
-                        WordManager.ForceKillWordProcesses();
-                        System.Threading.Thread.Sleep(1000); // Wait for processes to close
-                    }
-                    else if (result == DialogResult.Cancel)
+                    if (result == DialogResult.No)
                     {
                         return;
                     }
-                    // If No, continue anyway
+                    
+                    AppendResults("Warning: Template file may be locked, continuing anyway...");
                 }
 
                 // Initialize WordManager

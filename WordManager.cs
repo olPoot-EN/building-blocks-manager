@@ -19,6 +19,7 @@ namespace BuildingBlocksManager
         private Word.Application wordApp;
         private Word.Document templateDoc;
         private bool disposed = false;
+        private int wordProcessId = -1; // Track our specific Word process
 
         public WordManager(string templatePath)
         {
@@ -33,9 +34,24 @@ namespace BuildingBlocksManager
                 wordApp.Visible = false;
                 wordApp.ScreenUpdating = false;
                 wordApp.DisplayAlerts = Word.WdAlertLevel.wdAlertsNone;
-                // EnableEvents doesn't exist in Word COM - remove it
+                
+                // Get the process ID of our Word instance for targeted cleanup
+                try
+                {
+                    // Get the HWND of the Word application
+                    var hwnd = new IntPtr(wordApp.Hwnd);
+                    GetWindowThreadProcessId(hwnd, out wordProcessId);
+                }
+                catch
+                {
+                    // If we can't get the process ID, fall back to -1
+                    wordProcessId = -1;
+                }
             }
         }
+        
+        [DllImport("user32.dll")]
+        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out int processId);
 
         private void OpenTemplate()
         {
@@ -377,21 +393,23 @@ namespace BuildingBlocksManager
                 {
                     try
                     {
-                        // Force close any remaining documents
+                        // Force close any remaining documents in our Word instance
                         while (wordApp.Documents.Count > 0)
                         {
                             wordApp.Documents[1].Close(false);
                         }
                         
-                        // Quit Word
+                        // Quit Word gracefully first
                         wordApp.Quit(false);
                         
-                        // Wait a moment for Word to close
-                        System.Threading.Thread.Sleep(500);
+                        // Wait a moment for Word to close gracefully
+                        System.Threading.Thread.Sleep(1000);
                     }
                     catch (COMException)
                     {
-                        // Word might have already been closed
+                        // Word might have already been closed or become unresponsive
+                        // In this case, try to force kill our specific process
+                        ForceKillOurWordProcess();
                     }
                     finally
                     {
@@ -414,23 +432,76 @@ namespace BuildingBlocksManager
         }
         
         /// <summary>
-        /// Force kill all Word processes - use as last resort when Word is hanging
+        /// Force kill only our specific Word process
         /// </summary>
-        public static void ForceKillWordProcesses()
+        private void ForceKillOurWordProcess()
         {
+            if (wordProcessId <= 0) return;
+            
+            try
+            {
+                var process = Process.GetProcessById(wordProcessId);
+                if (process != null && !process.HasExited)
+                {
+                    process.Kill();
+                    process.WaitForExit(2000);
+                }
+            }
+            catch
+            {
+                // Ignore errors - process may have already exited
+            }
+        }
+        
+        /// <summary>
+        /// Check if the template file might be locked by checking for Word processes with the file open
+        /// </summary>
+        public static bool IsTemplateFileLocked(string templatePath)
+        {
+            // First try to open the file directly
+            try
+            {
+                using (var fileStream = File.Open(templatePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    return false; // File is accessible
+                }
+            }
+            catch (IOException)
+            {
+                return true; // File is locked
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return true; // File is locked
+            }
+        }
+        
+        /// <summary>
+        /// Get Word processes that might be using our template (for informational purposes)
+        /// </summary>
+        public static List<Process> GetWordProcessesUsingFile(string templatePath)
+        {
+            var suspiciousProcesses = new List<Process>();
+            
             try
             {
                 var wordProcesses = Process.GetProcessesByName("WINWORD");
+                
+                // We can't easily determine which specific Word process has a file open
+                // but we can return all Word processes for user information
                 foreach (var process in wordProcesses)
                 {
                     try
                     {
-                        process.Kill();
-                        process.WaitForExit(2000);
+                        // Only add processes that are still running
+                        if (!process.HasExited)
+                        {
+                            suspiciousProcesses.Add(process);
+                        }
                     }
                     catch
                     {
-                        // Ignore errors when killing individual processes
+                        // Process may have exited while we were checking
                     }
                 }
             }
@@ -438,22 +509,8 @@ namespace BuildingBlocksManager
             {
                 // Ignore errors in process enumeration
             }
-        }
-        
-        /// <summary>
-        /// Check if any Word processes are running
-        /// </summary>
-        public static bool IsWordRunning()
-        {
-            try
-            {
-                var wordProcesses = Process.GetProcessesByName("WINWORD");
-                return wordProcesses.Length > 0;
-            }
-            catch
-            {
-                return false;
-            }
+            
+            return suspiciousProcesses;
         }
     }
 
