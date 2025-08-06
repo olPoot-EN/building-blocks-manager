@@ -19,7 +19,6 @@ namespace BuildingBlocksManager
         private Word.Application wordApp;
         private Word.Document templateDoc;
         private bool disposed = false;
-        private int wordProcessId = -1; // Track our specific Word process
 
         public WordManager(string templatePath)
         {
@@ -34,24 +33,8 @@ namespace BuildingBlocksManager
                 wordApp.Visible = false;
                 wordApp.ScreenUpdating = false;
                 wordApp.DisplayAlerts = Word.WdAlertLevel.wdAlertsNone;
-                
-                // Get the process ID of our Word instance for targeted cleanup
-                try
-                {
-                    // Get the HWND of the Word application
-                    var hwnd = new IntPtr(wordApp.Hwnd);
-                    GetWindowThreadProcessId(hwnd, out wordProcessId);
-                }
-                catch
-                {
-                    // If we can't get the process ID, fall back to -1
-                    wordProcessId = -1;
-                }
             }
         }
-        
-        [DllImport("user32.dll")]
-        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out int processId);
 
         private void OpenTemplate()
         {
@@ -408,8 +391,7 @@ namespace BuildingBlocksManager
                     catch (COMException)
                     {
                         // Word might have already been closed or become unresponsive
-                        // In this case, try to force kill our specific process
-                        ForceKillOurWordProcess();
+                        // Just ignore - the finally block will handle cleanup
                     }
                     finally
                     {
@@ -431,27 +413,6 @@ namespace BuildingBlocksManager
             Dispose(false);
         }
         
-        /// <summary>
-        /// Force kill only our specific Word process
-        /// </summary>
-        private void ForceKillOurWordProcess()
-        {
-            if (wordProcessId <= 0) return;
-            
-            try
-            {
-                var process = Process.GetProcessById(wordProcessId);
-                if (process != null && !process.HasExited)
-                {
-                    process.Kill();
-                    process.WaitForExit(2000);
-                }
-            }
-            catch
-            {
-                // Ignore errors - process may have already exited
-            }
-        }
         
         /// <summary>
         /// Check if the template file might be locked by checking for Word processes with the file open
