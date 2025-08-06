@@ -473,6 +473,32 @@ namespace BuildingBlocksManager
             
             return suspiciousProcesses;
         }
+        
+        /// <summary>
+        /// Force kill specific Word processes
+        /// </summary>
+        public static bool KillWordProcesses(List<Process> processesToKill)
+        {
+            bool allKilled = true;
+            
+            foreach (var process in processesToKill)
+            {
+                try
+                {
+                    if (!process.HasExited)
+                    {
+                        process.Kill();
+                        process.WaitForExit(3000); // Wait up to 3 seconds
+                    }
+                }
+                catch
+                {
+                    allKilled = false;
+                }
+            }
+            
+            return allKilled;
+        }
     }
 
     public class BuildingBlockInfo
