@@ -721,15 +721,18 @@ namespace BuildingBlocksManager
                 
                 // Get all Building Blocks from template
                 AppendResults("Loading Building Blocks from template...");
-                var buildingBlocks = wordManager.GetBuildingBlocks();
+                var allBuildingBlocks = wordManager.GetBuildingBlocks();
+                
+                // Filter out system/hex entries
+                var buildingBlocks = allBuildingBlocks.Where(bb => !IsSystemEntry(bb)).ToList();
 
                 if (buildingBlocks.Count == 0)
                 {
-                    AppendResults("No Building Blocks found in template.");
+                    AppendResults("No exportable Building Blocks found in template (only system entries found).");
                     return;
                 }
 
-                AppendResults($"Found {buildingBlocks.Count} Building Blocks to export");
+                AppendResults($"Found {allBuildingBlocks.Count} total Building Blocks, {buildingBlocks.Count} exportable (excluding system/hex entries)");
                 AppendResults("");
 
                 // Export each Building Block
@@ -987,7 +990,7 @@ namespace BuildingBlocksManager
             
             if (allBuildingBlocks.Count > 0)
             {
-                availableBlocks = allBuildingBlocks;
+                availableBlocks = allBuildingBlocks.Where(bb => !IsSystemEntry(bb)).ToList();
             }
             else
             {
@@ -996,7 +999,8 @@ namespace BuildingBlocksManager
                 {
                     using (var wordManager = new WordManager(txtTemplatePath.Text))
                     {
-                        availableBlocks = wordManager.GetBuildingBlocks();
+                        var allBlocks = wordManager.GetBuildingBlocks();
+                        availableBlocks = allBlocks.Where(bb => !IsSystemEntry(bb)).ToList();
                     }
                 }
                 catch (Exception ex)
@@ -1009,7 +1013,7 @@ namespace BuildingBlocksManager
 
             if (availableBlocks.Count == 0)
             {
-                MessageBox.Show("No Building Blocks found in the template.", 
+                MessageBox.Show("No exportable Building Blocks found in the template (only system/hex entries found).", 
                     "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return new System.Collections.Generic.List<BuildingBlockInfo>();
             }
