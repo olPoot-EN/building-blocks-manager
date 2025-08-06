@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace BuildingBlocksManager
@@ -1154,6 +1155,12 @@ namespace BuildingBlocksManager
 
             try
             {
+                // Check if file is accessible
+                using (var fileStream = File.Open(txtTemplatePath.Text, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    // File is accessible
+                }
+
                 using (var wordManager = new WordManager(txtTemplatePath.Text))
                 {
                     var buildingBlocks = wordManager.GetBuildingBlocks();
@@ -1164,6 +1171,9 @@ namespace BuildingBlocksManager
                     if (buildingBlocks.Count == 0)
                     {
                         UpdateStatus("No Building Blocks found in template");
+                        tabControl.SelectedTab = tabTemplate;
+                        MessageBox.Show("No Building Blocks found in the template.\n\nThis could mean:\n• The template has no Building Blocks\n• The Building Blocks are not in the 'InternalAutotext' category", 
+                            "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         return;
                     }
 
@@ -1182,10 +1192,28 @@ namespace BuildingBlocksManager
                     UpdateStatus($"Loaded {buildingBlocks.Count} Building Blocks from template");
                 }
             }
+            catch (UnauthorizedAccessException)
+            {
+                UpdateStatus("Template file access denied");
+                MessageBox.Show("Cannot access the template file. Make sure:\n• The file is not open in Word\n• You have permission to read the file", 
+                    "Access Denied", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            catch (IOException ex)
+            {
+                UpdateStatus("Template file I/O error");
+                MessageBox.Show($"File I/O error: {ex.Message}\n\nMake sure the template file is not corrupted and not open in another application.", 
+                    "File Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            catch (COMException ex)
+            {
+                UpdateStatus("Word COM error");
+                MessageBox.Show($"Word COM error: {ex.Message}\n\nThis could mean:\n• Word is not installed or not working properly\n• The template file is corrupted\n• Word COM components need repair", 
+                    "Word Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
             catch (Exception ex)
             {
                 UpdateStatus("Failed to load Building Blocks");
-                MessageBox.Show($"Failed to load Building Blocks from template: {ex.Message}", 
+                MessageBox.Show($"Unexpected error: {ex.Message}\n\nFull details:\n{ex}", 
                     "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
