@@ -584,7 +584,7 @@ namespace BuildingBlocksManager
         
         public override string ToString()
         {
-            return $"{Category} - {Name}";
+            return Name;
         }
     }
 }
