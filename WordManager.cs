@@ -29,7 +29,7 @@ namespace BuildingBlocksManager
                 wordApp.Visible = false;
                 wordApp.ScreenUpdating = false;
                 wordApp.DisplayAlerts = Word.WdAlertLevel.wdAlertsNone;
-                wordApp.EnableEvents = false;
+                // EnableEvents doesn't exist in Word COM - remove it
             }
         }
 
@@ -150,45 +150,26 @@ namespace BuildingBlocksManager
                 // Access Building Blocks through the template's BuildingBlockEntries
                 Word.Template template = (Word.Template)templateDoc.get_AttachedTemplate();
                 
-                // Try different approach - use foreach with proper COM enumeration
-                try
+                // Use proper COM collection access with Item() method
+                for (int i = 1; i <= template.BuildingBlockEntries.Count; i++)
                 {
-                    foreach (Word.BuildingBlock bb in template.BuildingBlockEntries)
+                    try
                     {
+                        Word.BuildingBlock bb = template.BuildingBlockEntries.Item(i);
                         if (bb != null)
                         {
                             buildingBlocks.Add(new BuildingBlockInfo
                             {
                                 Name = bb.Name ?? "Unknown",
-                                Category = bb.Category?.Name ?? "Unknown",
+                                Category = bb.Category?.Name ?? "Unknown", 
                                 Gallery = bb.Type?.ToString() ?? "Unknown"
                             });
                         }
                     }
-                }
-                catch (Exception innerEx)
-                {
-                    // If foreach fails, try 0-based indexing instead of 1-based
-                    for (int i = 0; i < template.BuildingBlockEntries.Count; i++)
+                    catch (Exception itemEx)
                     {
-                        try
-                        {
-                            Word.BuildingBlock bb = template.BuildingBlockEntries[i];
-                            if (bb != null)
-                            {
-                                buildingBlocks.Add(new BuildingBlockInfo
-                                {
-                                    Name = bb.Name ?? "Unknown",
-                                    Category = bb.Category?.Name ?? "Unknown", 
-                                    Gallery = bb.Type?.ToString() ?? "Unknown"
-                                });
-                            }
-                        }
-                        catch (Exception itemEx)
-                        {
-                            // Skip this item and continue
-                            continue;
-                        }
+                        // Skip this item and continue - some items might not be accessible
+                        continue;
                     }
                 }
             }
