@@ -37,6 +37,9 @@ namespace BuildingBlocksManager
         // Template filtering fields
         private List<BuildingBlockInfo> allBuildingBlocks = new List<BuildingBlockInfo>();
         private List<string> selectedCategories = new List<string>();
+        private List<string> selectedGalleries = new List<string>();
+        private int sortColumn = -1;
+        private SortOrder sortOrder = SortOrder.None;
 
         public MainForm()
         {
@@ -284,12 +287,17 @@ namespace BuildingBlocksManager
                 Size = new System.Drawing.Size(725, 155),
                 View = View.Details,
                 FullRowSelect = true,
-                GridLines = true
+                GridLines = true,
+                Sorting = SortOrder.None
             };
 
             // Add columns like Building Block Organizer
-            listViewTemplate.Columns.Add("Name", 350);
-            listViewTemplate.Columns.Add("Category", 350);
+            listViewTemplate.Columns.Add("Name", 250);
+            listViewTemplate.Columns.Add("Category", 250);
+            listViewTemplate.Columns.Add("Gallery", 200);
+            
+            // Enable column sorting
+            listViewTemplate.ColumnClick += ListViewTemplate_ColumnClick;
 
             tabTemplate.Controls.Add(btnFilterTemplate);
             tabTemplate.Controls.Add(lblTemplateCount);
@@ -1537,6 +1545,7 @@ namespace BuildingBlocksManager
             {
                 var item = new ListViewItem(bb.Name);
                 item.SubItems.Add(bb.Category);
+                item.SubItems.Add(bb.Gallery);
                 item.Tag = bb;
                 listViewTemplate.Items.Add(item);
             }
@@ -1566,6 +1575,41 @@ namespace BuildingBlocksManager
             {
                 lblTemplateCount.Text = $"Showing {filteredCount} of {allBuildingBlocks.Count} Building Blocks";
             }
+        }
+
+        private void ListViewTemplate_ColumnClick(object sender, ColumnClickEventArgs e)
+        {
+            if (e.Column == sortColumn)
+            {
+                sortOrder = sortOrder == SortOrder.Ascending ? SortOrder.Descending : SortOrder.Ascending;
+            }
+            else
+            {
+                sortColumn = e.Column;
+                sortOrder = SortOrder.Ascending;
+            }
+
+            listViewTemplate.ListViewItemSorter = new ListViewItemComparer(e.Column, sortOrder);
+            listViewTemplate.Sort();
+        }
+    }
+
+    public class ListViewItemComparer : System.Collections.IComparer
+    {
+        private int column;
+        private SortOrder order;
+
+        public ListViewItemComparer(int column, SortOrder order)
+        {
+            this.column = column;
+            this.order = order;
+        }
+
+        public int Compare(object x, object y)
+        {
+            int returnVal = String.Compare(((ListViewItem)x).SubItems[column].Text, 
+                                         ((ListViewItem)y).SubItems[column].Text);
+            return order == SortOrder.Descending ? -returnVal : returnVal;
         }
     }
 }
