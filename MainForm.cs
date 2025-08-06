@@ -1335,92 +1335,72 @@ namespace BuildingBlocksManager
         {
             treeDirectory.Nodes.Clear();
             
-            // Create root node with proper root directory name
-            var rootDirName = Path.GetFileName(txtSourceDirectory.Text);
-            if (string.IsNullOrEmpty(rootDirName))
-            {
-                rootDirName = txtSourceDirectory.Text; // Use full path if GetFileName returns empty
-            }
+            if (!Directory.Exists(txtSourceDirectory.Text))
+                return;
+                
+            // Use standard DirectoryInfo approach
+            var rootDir = new DirectoryInfo(txtSourceDirectory.Text);
+            var rootNode = CreateDirectoryNode(rootDir, files);
             
-            var rootNode = new TreeNode(rootDirName)
-            {
-                Tag = txtSourceDirectory.Text,
-                ImageIndex = 0 // Folder icon if you add an ImageList later
-            };
             treeDirectory.Nodes.Add(rootNode);
-            
-            // Create a dictionary to track created directory nodes
-            var directoryNodes = new Dictionary<string, TreeNode>
-            {
-                { txtSourceDirectory.Text, rootNode }
-            };
-            
-            // Process files and create directory structure
-            foreach (var file in files.OrderBy(f => f.FilePath))
-            {
-                var filePath = file.FilePath;
-                var directory = Path.GetDirectoryName(filePath);
-                
-                // Ensure all parent directories exist in the tree
-                TreeNode parentNode = EnsureDirectoryNodes(directory, directoryNodes, rootNode);
-                
-                // Add file node
-                var fileName = Path.GetFileName(filePath);
-                var status = file.IsNew ? " (New)" :
-                            file.IsModified ? " (Modified)" :
-                            file.IsValid ? " (Up-to-date)" : " (Invalid)";
-                
-                var fileNode = new TreeNode($"{fileName}{status}")
-                {
-                    Tag = file
-                };
-                
-                // Color code the file nodes
-                if (!file.IsValid)
-                    fileNode.ForeColor = System.Drawing.Color.Red;
-                else if (file.IsNew)
-                    fileNode.ForeColor = System.Drawing.Color.Green;
-                else if (file.IsModified)
-                    fileNode.ForeColor = System.Drawing.Color.Blue;
-                else
-                    fileNode.ForeColor = System.Drawing.Color.Black;
-                
-                parentNode.Nodes.Add(fileNode);
-            }
-            
-            // Expand root node only
             rootNode.Expand();
         }
         
-        private TreeNode EnsureDirectoryNodes(string directoryPath, Dictionary<string, TreeNode> directoryNodes, TreeNode rootNode)
+        private TreeNode CreateDirectoryNode(DirectoryInfo directory, System.Collections.Generic.List<FileManager.FileInfo> scannedFiles)
         {
-            if (directoryNodes.ContainsKey(directoryPath))
-                return directoryNodes[directoryPath];
-            
-            // Get parent directory and ensure it exists first
-            var parentDir = Path.GetDirectoryName(directoryPath);
-            TreeNode parentNode;
-            
-            if (parentDir == null || string.Equals(parentDir, txtSourceDirectory.Text, StringComparison.OrdinalIgnoreCase))
+            var node = new TreeNode(directory.Name)
             {
-                parentNode = rootNode;
-            }
-            else
-            {
-                parentNode = EnsureDirectoryNodes(parentDir, directoryNodes, rootNode);
-            }
-            
-            // Create this directory node
-            var dirName = Path.GetFileName(directoryPath);
-            var dirNode = new TreeNode(dirName)
-            {
-                Tag = directoryPath
+                Tag = directory.FullName
             };
             
-            parentNode.Nodes.Add(dirNode);
-            directoryNodes[directoryPath] = dirNode;
+            try
+            {
+                // Add subdirectories
+                var subdirs = directory.GetDirectories().OrderBy(d => d.Name);
+                foreach (var subdir in subdirs)
+                {
+                    var childNode = CreateDirectoryNode(subdir, scannedFiles);
+                    node.Nodes.Add(childNode);
+                }
+                
+                // Add files - only show AT_ files that were scanned
+                var relevantFiles = scannedFiles.Where(f => 
+                    Path.GetDirectoryName(f.FilePath).Equals(directory.FullName, StringComparison.OrdinalIgnoreCase))
+                    .OrderBy(f => Path.GetFileName(f.FilePath));
+                
+                foreach (var file in relevantFiles)
+                {
+                    var fileName = Path.GetFileName(file.FilePath);
+                    var status = file.IsNew ? " (New)" :
+                                file.IsModified ? " (Modified)" :
+                                file.IsValid ? " (Up-to-date)" : " (Invalid)";
+                    
+                    var fileNode = new TreeNode($"{fileName}{status}")
+                    {
+                        Tag = file
+                    };
+                    
+                    // Color code the file nodes
+                    if (!file.IsValid)
+                        fileNode.ForeColor = System.Drawing.Color.Red;
+                    else if (file.IsNew)
+                        fileNode.ForeColor = System.Drawing.Color.Green;
+                    else if (file.IsModified)
+                        fileNode.ForeColor = System.Drawing.Color.Blue;
+                    else
+                        fileNode.ForeColor = System.Drawing.Color.Black;
+                    
+                    node.Nodes.Add(fileNode);
+                }
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Skip directories we can't access
+                node.Text += " (Access Denied)";
+                node.ForeColor = System.Drawing.Color.Gray;
+            }
             
-            return dirNode;
+            return node;
         }
 
         private void BtnFilterTemplate_Click(object sender, EventArgs e)
