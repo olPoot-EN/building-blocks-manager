@@ -1180,22 +1180,22 @@ namespace BuildingBlocksManager
 
             var btnSelectAll = new Button
             {
-                Text = "Select All",
+                Text = "All",
                 Location = new System.Drawing.Point(20, 360),
-                Size = new System.Drawing.Size(80, 25)
+                Size = new System.Drawing.Size(50, 25)
             };
 
             var btnSelectNone = new Button
             {
-                Text = "Select None",
-                Location = new System.Drawing.Point(110, 360),
-                Size = new System.Drawing.Size(80, 25)
+                Text = "None",
+                Location = new System.Drawing.Point(80, 360),
+                Size = new System.Drawing.Size(50, 25)
             };
 
             var btnOK = new Button
             {
                 Text = "OK",
-                Location = new System.Drawing.Point(220, 360),
+                Location = new System.Drawing.Point(198, 360),
                 Size = new System.Drawing.Size(80, 25),
                 DialogResult = DialogResult.OK
             };
@@ -1203,7 +1203,7 @@ namespace BuildingBlocksManager
             var btnCancel = new Button
             {
                 Text = "Cancel",
-                Location = new System.Drawing.Point(310, 360),
+                Location = new System.Drawing.Point(288, 360),
                 Size = new System.Drawing.Size(80, 25),
                 DialogResult = DialogResult.Cancel
             };
