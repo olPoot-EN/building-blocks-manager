@@ -108,17 +108,17 @@ namespace BuildingBlocksManager
                         {
                             foreach (XmlNode docPart in docParts)
                             {
-                                var nameNode = docPart.SelectSingleNode(".//w:name/@w:val", namespaceManager);
-                                var categoryNode = docPart.SelectSingleNode(".//w:category/@w:val", namespaceManager);
-                                var typeNode = docPart.SelectSingleNode(".//w:types//w:type/@w:val", namespaceManager);
+                                var nameNode = docPart.SelectSingleNode(".//w:docPartPr/w:name/@w:val", namespaceManager);
+                                var categoryNode = docPart.SelectSingleNode(".//w:docPartPr/w:category/@w:val", namespaceManager);
+                                var galleryNode = docPart.SelectSingleNode(".//w:docPartPr/w:types/w:type/@w:val", namespaceManager);
 
                                 if (nameNode != null)
                                 {
                                     buildingBlocks.Add(new BuildingBlockInfo
                                     {
                                         Name = nameNode.Value,
-                                        Category = categoryNode?.Value ?? "General",
-                                        Gallery = typeNode?.Value ?? "AutoText"
+                                        Category = categoryNode?.Value ?? "",
+                                        Gallery = galleryNode?.Value ?? "AutoText"
                                     });
                                 }
                             }
