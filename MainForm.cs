@@ -221,11 +221,11 @@ namespace BuildingBlocksManager
                 Size = new System.Drawing.Size(80, 30)
             };
 
-            // Tab control section
+            // Tab control section - Form width 800px - 40px margins = 760px max
             tabControl = new TabControl
             {
                 Location = new System.Drawing.Point(20, 275),
-                Size = new System.Drawing.Size(720, 220),
+                Size = new System.Drawing.Size(740, 220),
                 Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom
             };
 
@@ -234,7 +234,7 @@ namespace BuildingBlocksManager
             txtResults = new TextBox
             {
                 Location = new System.Drawing.Point(5, 5),
-                Size = new System.Drawing.Size(705, 185),
+                Size = new System.Drawing.Size(725, 185),
                 Multiline = true,
                 ScrollBars = ScrollBars.Vertical,
                 ReadOnly = true,
@@ -248,7 +248,7 @@ namespace BuildingBlocksManager
             treeDirectory = new TreeView
             {
                 Location = new System.Drawing.Point(5, 5),
-                Size = new System.Drawing.Size(705, 185),
+                Size = new System.Drawing.Size(725, 185),
                 Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom
             };
             tabDirectory.Controls.Add(treeDirectory);
@@ -280,7 +280,7 @@ namespace BuildingBlocksManager
             listTemplate = new ListBox
             {
                 Location = new System.Drawing.Point(5, 35),
-                Size = new System.Drawing.Size(705, 150),
+                Size = new System.Drawing.Size(725, 150),
                 Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom
             };
 
