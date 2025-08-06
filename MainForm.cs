@@ -160,17 +160,25 @@ namespace BuildingBlocksManager
 
             btnQueryDirectory = new Button
             {
-                Text = "Query Source Directory",
+                Text = "Directory",
                 Location = new System.Drawing.Point(20, 190),
-                Size = new System.Drawing.Size(160, 30)
+                Size = new System.Drawing.Size(100, 30)
             };
+
+            var btnQueryTemplate = new Button
+            {
+                Text = "Template",
+                Location = new System.Drawing.Point(20, 225),
+                Size = new System.Drawing.Size(100, 30)
+            };
+            btnQueryTemplate.Click += BtnLoadTemplate_Click;
 
             // Import group
             var lblImport = new Label
             {
                 Text = "Import\n(Folder -> Template)",
-                Location = new System.Drawing.Point(220, 155),
-                Size = new System.Drawing.Size(120, 35),
+                Location = new System.Drawing.Point(160, 155),
+                Size = new System.Drawing.Size(140, 35),
                 Font = new System.Drawing.Font(Label.DefaultFont, System.Drawing.FontStyle.Bold),
                 TextAlign = System.Drawing.ContentAlignment.MiddleCenter
             };
@@ -178,14 +186,14 @@ namespace BuildingBlocksManager
             btnImportAll = new Button
             {
                 Text = "All",
-                Location = new System.Drawing.Point(220, 195),
+                Location = new System.Drawing.Point(190, 195),
                 Size = new System.Drawing.Size(80, 30)
             };
 
             btnImportSelected = new Button
             {
                 Text = "Selected",
-                Location = new System.Drawing.Point(220, 230),
+                Location = new System.Drawing.Point(190, 230),
                 Size = new System.Drawing.Size(80, 30)
             };
 
@@ -193,8 +201,8 @@ namespace BuildingBlocksManager
             var lblExport = new Label
             {
                 Text = "Export\n(Template -> Folder)",
-                Location = new System.Drawing.Point(350, 155),
-                Size = new System.Drawing.Size(120, 35),
+                Location = new System.Drawing.Point(310, 155),
+                Size = new System.Drawing.Size(140, 35),
                 Font = new System.Drawing.Font(Label.DefaultFont, System.Drawing.FontStyle.Bold),
                 TextAlign = System.Drawing.ContentAlignment.MiddleCenter
             };
@@ -202,22 +210,22 @@ namespace BuildingBlocksManager
             btnExportAll = new Button
             {
                 Text = "All",
-                Location = new System.Drawing.Point(350, 195),
+                Location = new System.Drawing.Point(340, 195),
                 Size = new System.Drawing.Size(80, 30)
             };
 
             btnExportSelected = new Button
             {
                 Text = "Selected",
-                Location = new System.Drawing.Point(350, 230),
+                Location = new System.Drawing.Point(340, 230),
                 Size = new System.Drawing.Size(80, 30)
             };
 
             // Tab control section
             tabControl = new TabControl
             {
-                Location = new System.Drawing.Point(20, 280),
-                Size = new System.Drawing.Size(740, 245),
+                Location = new System.Drawing.Point(20, 275),
+                Size = new System.Drawing.Size(720, 220),
                 Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom
             };
 
@@ -226,7 +234,7 @@ namespace BuildingBlocksManager
             txtResults = new TextBox
             {
                 Location = new System.Drawing.Point(5, 5),
-                Size = new System.Drawing.Size(725, 210),
+                Size = new System.Drawing.Size(705, 185),
                 Multiline = true,
                 ScrollBars = ScrollBars.Vertical,
                 ReadOnly = true,
@@ -240,7 +248,7 @@ namespace BuildingBlocksManager
             treeDirectory = new TreeView
             {
                 Location = new System.Drawing.Point(5, 5),
-                Size = new System.Drawing.Size(725, 210),
+                Size = new System.Drawing.Size(705, 185),
                 Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom
             };
             tabDirectory.Controls.Add(treeDirectory);
@@ -272,7 +280,7 @@ namespace BuildingBlocksManager
             listTemplate = new ListBox
             {
                 Location = new System.Drawing.Point(5, 35),
-                Size = new System.Drawing.Size(725, 175),
+                Size = new System.Drawing.Size(705, 150),
                 Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom
             };
 
@@ -284,7 +292,7 @@ namespace BuildingBlocksManager
             // Progress and status section
             progressBar = new ProgressBar
             {
-                Location = new System.Drawing.Point(20, 535),
+                Location = new System.Drawing.Point(20, 505),
                 Size = new System.Drawing.Size(520, 23),
                 Style = ProgressBarStyle.Continuous
             };
@@ -292,7 +300,7 @@ namespace BuildingBlocksManager
             lblStatus = new Label
             {
                 Text = "Ready",
-                Location = new System.Drawing.Point(550, 535),
+                Location = new System.Drawing.Point(550, 505),
                 Size = new System.Drawing.Size(210, 23),
                 TextAlign = System.Drawing.ContentAlignment.MiddleLeft
             };
@@ -303,7 +311,7 @@ namespace BuildingBlocksManager
                 lblTemplate, txtTemplatePath, btnBrowseTemplate,
                 lblDirectory, txtSourceDirectory, btnBrowseDirectory,
                 lblStructure, chkFlatImport, chkFlatExport,
-                lblQuery, btnQueryDirectory, 
+                lblQuery, btnQueryDirectory, btnQueryTemplate,
                 lblImport, btnImportAll, btnImportSelected,
                 lblExport, btnExportAll, btnExportSelected,
                 tabControl,
