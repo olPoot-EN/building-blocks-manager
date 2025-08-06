@@ -29,6 +29,7 @@ namespace BuildingBlocksManager
         private ListView listViewTemplate;
         private Button btnFilterTemplate;
         private Label lblTemplateCount;
+        private CheckBox chkTemplateTextsOnly;
         private ProgressBar progressBar;
         private Label lblStatus;
         private Settings settings;
@@ -276,9 +277,19 @@ namespace BuildingBlocksManager
             {
                 Text = "",
                 Location = new System.Drawing.Point(95, 9),
-                Size = new System.Drawing.Size(300, 17),
+                Size = new System.Drawing.Size(200, 17),
                 TextAlign = System.Drawing.ContentAlignment.MiddleLeft
             };
+            
+            // Template texts only checkbox
+            chkTemplateTextsOnly = new CheckBox
+            {
+                Text = "Template texts only",
+                Location = new System.Drawing.Point(305, 7),
+                Size = new System.Drawing.Size(140, 20),
+                Checked = false
+            };
+            chkTemplateTextsOnly.CheckedChanged += ChkTemplateTextsOnly_CheckedChanged;
             
             // ListView (moved down to accommodate filter controls)
             listViewTemplate = new ListView
@@ -301,6 +312,7 @@ namespace BuildingBlocksManager
 
             tabTemplate.Controls.Add(btnFilterTemplate);
             tabTemplate.Controls.Add(lblTemplateCount);
+            tabTemplate.Controls.Add(chkTemplateTextsOnly);
             tabTemplate.Controls.Add(listViewTemplate);
 
             // Add tabs to tab control
@@ -1591,6 +1603,14 @@ namespace BuildingBlocksManager
                 {
                     bool includeByCategory = selectedCategories.Count == 0;
                     bool includeByGallery = selectedGalleries.Count == 0;
+                    bool includeByTemplateOnly = true;
+                    
+                    // Check "Template texts only" filter
+                    if (chkTemplateTextsOnly.Checked)
+                    {
+                        // Only include AutoText gallery items (exclude Built-In, etc.)
+                        includeByTemplateOnly = bb.Gallery == "AutoText";
+                    }
                     
                     // Check category filter
                     if (selectedCategories.Count > 0)
@@ -1617,7 +1637,7 @@ namespace BuildingBlocksManager
                         }
                     }
                     
-                    if (includeByCategory && includeByGallery)
+                    if (includeByCategory && includeByGallery && includeByTemplateOnly)
                     {
                         filteredBlocks.Add(bb);
                     }
@@ -1676,6 +1696,12 @@ namespace BuildingBlocksManager
 
             listViewTemplate.ListViewItemSorter = new ListViewItemComparer(e.Column, sortOrder);
             listViewTemplate.Sort();
+        }
+
+        private void ChkTemplateTextsOnly_CheckedChanged(object sender, EventArgs e)
+        {
+            // Re-apply current filters when template texts only checkbox changes
+            ApplyTemplateFilter();
         }
     }
 

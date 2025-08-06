@@ -142,7 +142,6 @@ namespace BuildingBlocksManager
                                     Gallery = galleryDisplay
                                 });
                                 
-                                System.Diagnostics.Debug.WriteLine($"SDK - Name: {name}, Category: {category}, Gallery: {gallery}, Types: {types} -> {galleryDisplay}");
                             }
                         }
                     }
