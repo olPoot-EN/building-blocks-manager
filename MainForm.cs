@@ -117,7 +117,7 @@ namespace BuildingBlocksManager
             txtTemplatePath = new TextBox
             {
                 Location = new System.Drawing.Point(140, 45),
-                Size = new System.Drawing.Size(490, 23),
+                Size = new System.Drawing.Size(390, 23),
                 ReadOnly = true
             };
 
@@ -125,15 +125,15 @@ namespace BuildingBlocksManager
             {
                 Text = "",
                 Location = new System.Drawing.Point(140, 70),
-                Size = new System.Drawing.Size(490, 15),
-                Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, Label.DefaultFont.Size - 1, System.Drawing.FontStyle.Italic),
+                Size = new System.Drawing.Size(390, 15),
+                Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, Label.DefaultFont.Size - 1, System.Drawing.FontStyle.Regular),
                 ForeColor = System.Drawing.Color.Gray
             };
 
             btnBrowseTemplate = new Button
             {
                 Text = "Browse",
-                Location = new System.Drawing.Point(640, 44),
+                Location = new System.Drawing.Point(540, 44),
                 Size = new System.Drawing.Size(80, 25)
             };
 
@@ -149,7 +149,7 @@ namespace BuildingBlocksManager
             txtSourceDirectory = new TextBox
             {
                 Location = new System.Drawing.Point(140, 95),
-                Size = new System.Drawing.Size(490, 23),
+                Size = new System.Drawing.Size(390, 23),
                 ReadOnly = true
             };
 
@@ -157,7 +157,7 @@ namespace BuildingBlocksManager
             {
                 Text = "",
                 Location = new System.Drawing.Point(140, 120),
-                Size = new System.Drawing.Size(490, 15),
+                Size = new System.Drawing.Size(390, 15),
                 Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, Label.DefaultFont.Size - 1, System.Drawing.FontStyle.Regular),
                 ForeColor = System.Drawing.Color.Gray
             };
@@ -165,7 +165,7 @@ namespace BuildingBlocksManager
             btnBrowseDirectory = new Button
             {
                 Text = "Browse",
-                Location = new System.Drawing.Point(640, 94),
+                Location = new System.Drawing.Point(540, 94),
                 Size = new System.Drawing.Size(80, 25)
             };
 
