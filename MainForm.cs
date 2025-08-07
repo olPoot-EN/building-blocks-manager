@@ -54,9 +54,9 @@ namespace BuildingBlocksManager
         {
             InitializeComponent();
             this.Text = "Building Blocks Manager";
-            this.Size = new System.Drawing.Size(800, 600);
+            this.Size = new System.Drawing.Size(600, 600);
             this.StartPosition = FormStartPosition.CenterScreen;
-            this.MinimumSize = new System.Drawing.Size(600, 500);
+            this.MinimumSize = new System.Drawing.Size(450, 500);
             
             // Wire up event handlers
             btnBrowseTemplate.Click += BtnBrowseTemplate_Click;
@@ -274,11 +274,11 @@ namespace BuildingBlocksManager
             };
             btnStop.Click += BtnStop_Click;
 
-            // Tab control section - Form width 800px - 40px margins = 760px max
+            // Tab control section - Form width 600px - 40px margins = 560px max (25% reduction from 740)
             tabControl = new TabControl
             {
                 Location = new System.Drawing.Point(20, 300),
-                Size = new System.Drawing.Size(740, 220)
+                Size = new System.Drawing.Size(555, 220)
             };
 
             // Results tab
@@ -286,7 +286,7 @@ namespace BuildingBlocksManager
             txtResults = new TextBox
             {
                 Location = new System.Drawing.Point(3, 3),
-                Size = new System.Drawing.Size(725, 185), // More aggressive: leave minimal margin for scrollbars
+                Size = new System.Drawing.Size(540, 185), // 25% reduction from 725
                 Multiline = true,
                 ScrollBars = ScrollBars.Both, // Enable both horizontal and vertical scrollbars
                 ReadOnly = true,
@@ -300,7 +300,7 @@ namespace BuildingBlocksManager
             treeDirectory = new TreeView
             {
                 Location = new System.Drawing.Point(3, 3),
-                Size = new System.Drawing.Size(725, 185), // More aggressive: leave minimal margin for scrollbars
+                Size = new System.Drawing.Size(540, 185), // 25% reduction from 725
                 Scrollable = true,
                 HotTracking = true,
                 ShowLines = true,
@@ -344,7 +344,7 @@ namespace BuildingBlocksManager
             listViewTemplate = new ListView
             {
                 Location = new System.Drawing.Point(3, 35),
-                Size = new System.Drawing.Size(725, 150), // More aggressive: 725px width, 185-35px for filter controls
+                Size = new System.Drawing.Size(540, 150), // 25% reduction from 725
                 View = View.Details,
                 FullRowSelect = true,
                 GridLines = true,
@@ -352,12 +352,12 @@ namespace BuildingBlocksManager
                 Scrollable = true // Explicitly enable scrolling
             };
 
-            // Add columns - match building block organizer layout (Name/Gallery/Category/Template)
-            listViewTemplate.Columns.Add("Name", 180);      // 180px
-            listViewTemplate.Columns.Add("Gallery", 180);   // 180px 
-            listViewTemplate.Columns.Add("Category", 180);  // 180px
-            listViewTemplate.Columns.Add("Template", 160);  // 160px
-            // Total: 700px, leaving 25px buffer for scrollbars
+            // Add columns - adjusted for 25% width reduction (540px total width)
+            listViewTemplate.Columns.Add("Name", 135);      // 135px (25% reduction from 180)
+            listViewTemplate.Columns.Add("Gallery", 135);   // 135px (25% reduction from 180) 
+            listViewTemplate.Columns.Add("Category", 135);  // 135px (25% reduction from 180)
+            listViewTemplate.Columns.Add("Template", 120);  // 120px (25% reduction from 160)
+            // Total: 525px, leaving 15px buffer for scrollbars
             
             // Enable column sorting
             listViewTemplate.ColumnClick += ListViewTemplate_ColumnClick;
@@ -381,15 +381,15 @@ namespace BuildingBlocksManager
             progressBar = new ProgressBar
             {
                 Location = new System.Drawing.Point(20, 530),
-                Size = new System.Drawing.Size(520, 23),
+                Size = new System.Drawing.Size(390, 23),
                 Style = ProgressBarStyle.Continuous
             };
 
             lblStatus = new Label
             {
                 Text = "Ready",
-                Location = new System.Drawing.Point(550, 530),
-                Size = new System.Drawing.Size(210, 23),
+                Location = new System.Drawing.Point(420, 530),
+                Size = new System.Drawing.Size(160, 23),
                 TextAlign = System.Drawing.ContentAlignment.MiddleLeft
             };
 
@@ -896,21 +896,26 @@ namespace BuildingBlocksManager
                 // Initialize WordManager
                 wordManager = new WordManager(fullTemplatePath);
                 
-                // Get all Building Blocks from template
-                AppendResults("Loading Building Blocks from template...");
-                var allBuildingBlocks = wordManager.GetBuildingBlocks();
+                // Check if building blocks have been loaded (user must run Query Template first)
+                if (allBuildingBlocks.Count == 0)
+                {
+                    AppendResults("No Building Blocks loaded. Please run Query Template first to load and filter Building Blocks.");
+                    HideStopButton();
+                    return;
+                }
                 
-                // Filter out system/hex entries
-                var buildingBlocks = allBuildingBlocks.Where(bb => !IsSystemEntry(bb)).ToList();
+                // Use the current filtered list from the UI
+                var buildingBlocks = GetFilteredBuildingBlocks();
+                AppendResults("Using filtered Building Blocks from current display...");
 
                 if (buildingBlocks.Count == 0)
                 {
-                    AppendResults("No exportable Building Blocks found in template (only system entries found).");
+                    AppendResults("No Building Blocks to export based on current filters.");
                     HideStopButton();
                     return;
                 }
 
-                AppendResults($"Found {allBuildingBlocks.Count} total Building Blocks, {buildingBlocks.Count} exportable (excluding system/hex entries)");
+                AppendResults($"Found {buildingBlocks.Count} Building Blocks to export based on current filters");
                 AppendResults("");
 
                 // Export each Building Block
@@ -1235,11 +1240,11 @@ namespace BuildingBlocksManager
                 return new System.Collections.Generic.List<BuildingBlockInfo>();
             }
 
-            // Create selection dialog (reduced width by ~35%: 600 -> 390)
+            // Create selection dialog (reduced width by 25%: 600 -> 450)
             var form = new Form
             {
                 Text = "Select Building Blocks to Export",
-                Size = new System.Drawing.Size(390, 450),
+                Size = new System.Drawing.Size(450, 450),
                 StartPosition = FormStartPosition.CenterScreen
             };
 
@@ -1255,7 +1260,7 @@ namespace BuildingBlocksManager
             var listBox = new CheckedListBox
             {
                 Location = new System.Drawing.Point(20, 45),
-                Size = new System.Drawing.Size(330, 295),
+                Size = new System.Drawing.Size(390, 295),
                 CheckOnClick = true
             };
 
@@ -1282,7 +1287,7 @@ namespace BuildingBlocksManager
             var btnOK = new Button
             {
                 Text = "OK",
-                Location = new System.Drawing.Point(198, 360),
+                Location = new System.Drawing.Point(258, 360),
                 Size = new System.Drawing.Size(80, 25),
                 DialogResult = DialogResult.OK
             };
@@ -1290,7 +1295,7 @@ namespace BuildingBlocksManager
             var btnCancel = new Button
             {
                 Text = "Cancel",
-                Location = new System.Drawing.Point(288, 360),
+                Location = new System.Drawing.Point(348, 360),
                 Size = new System.Drawing.Size(80, 25),
                 DialogResult = DialogResult.Cancel
             };
