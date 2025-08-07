@@ -928,7 +928,7 @@ namespace BuildingBlocksManager
                     try
                     {
                         progressBar.Value = (int)((double)(i + 1) / buildingBlocks.Count * 100);
-                        UpdateStatus($"Exporting {bb.Name}...");
+                        UpdateStatus($"Exporting: {i + 1} of {buildingBlocks.Count}");
                         AppendResults($"Exporting {bb.Name}...");
 
                         string outputFilePath;
@@ -1064,7 +1064,7 @@ namespace BuildingBlocksManager
                     try
                     {
                         progressBar.Value = (int)((double)(i + 1) / selectedBlocks.Count * 100);
-                        UpdateStatus($"Exporting {bb.Name}...");
+                        UpdateStatus($"Exporting: {i + 1} of {selectedBlocks.Count}");
                         AppendResults($"Exporting {bb.Name}...");
 
                         string outputFilePath;
