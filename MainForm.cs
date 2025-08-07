@@ -117,7 +117,7 @@ namespace BuildingBlocksManager
             txtTemplatePath = new TextBox
             {
                 Location = new System.Drawing.Point(140, 45),
-                Size = new System.Drawing.Size(390, 23),
+                Size = new System.Drawing.Size(270, 23),
                 ReadOnly = true
             };
 
@@ -125,7 +125,7 @@ namespace BuildingBlocksManager
             {
                 Text = "",
                 Location = new System.Drawing.Point(140, 70),
-                Size = new System.Drawing.Size(390, 15),
+                Size = new System.Drawing.Size(270, 15),
                 Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, Label.DefaultFont.Size - 1, System.Drawing.FontStyle.Regular),
                 ForeColor = System.Drawing.Color.Gray
             };
@@ -133,7 +133,7 @@ namespace BuildingBlocksManager
             btnBrowseTemplate = new Button
             {
                 Text = "Browse",
-                Location = new System.Drawing.Point(540, 44),
+                Location = new System.Drawing.Point(420, 44),
                 Size = new System.Drawing.Size(80, 25)
             };
 
@@ -149,7 +149,7 @@ namespace BuildingBlocksManager
             txtSourceDirectory = new TextBox
             {
                 Location = new System.Drawing.Point(140, 95),
-                Size = new System.Drawing.Size(390, 23),
+                Size = new System.Drawing.Size(270, 23),
                 ReadOnly = true
             };
 
@@ -157,7 +157,7 @@ namespace BuildingBlocksManager
             {
                 Text = "",
                 Location = new System.Drawing.Point(140, 120),
-                Size = new System.Drawing.Size(390, 15),
+                Size = new System.Drawing.Size(270, 15),
                 Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, Label.DefaultFont.Size - 1, System.Drawing.FontStyle.Regular),
                 ForeColor = System.Drawing.Color.Gray
             };
@@ -165,7 +165,7 @@ namespace BuildingBlocksManager
             btnBrowseDirectory = new Button
             {
                 Text = "Browse",
-                Location = new System.Drawing.Point(540, 94),
+                Location = new System.Drawing.Point(420, 94),
                 Size = new System.Drawing.Size(80, 25)
             };
 
@@ -373,6 +373,9 @@ namespace BuildingBlocksManager
 
             // Add tabs to tab control
             tabControl.TabPages.AddRange(new TabPage[] { tabResults, tabDirectory, tabTemplate });
+            
+            // Add event handler for automatic querying when tabs are first accessed
+            tabControl.SelectedIndexChanged += TabControl_SelectedIndexChanged;
 
             // Progress and status section
             progressBar = new ProgressBar
@@ -441,6 +444,27 @@ namespace BuildingBlocksManager
             
             txtSourceDirectory.Text = "..." + Path.DirectorySeparatorChar + lowestLevelDirectory;
             lblSourceDirectoryPathDisplay.Text = string.IsNullOrEmpty(parentPath) ? "" : parentPath + Path.DirectorySeparatorChar;
+        }
+
+        private void TabControl_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            // Auto-query when Directory or Template tabs are first accessed and empty
+            if (tabControl.SelectedTab == tabDirectory)
+            {
+                // Check if directory tree is empty - trigger directory query
+                if (treeDirectory.Nodes.Count == 0 && ValidatePaths())
+                {
+                    BtnQueryDirectory_Click(sender, e);
+                }
+            }
+            else if (tabControl.SelectedTab == tabTemplate)
+            {
+                // Check if template list is empty - trigger template query
+                if (listViewTemplate.Items.Count == 0 && !string.IsNullOrWhiteSpace(fullTemplatePath) && File.Exists(fullTemplatePath))
+                {
+                    BtnQueryTemplate_Click(sender, e);
+                }
+            }
         }
 
         private void BtnStop_Click(object sender, EventArgs e)
