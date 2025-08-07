@@ -15,6 +15,8 @@ namespace BuildingBlocksManager
         private CheckBox chkFlatExport;
         private Button btnBrowseTemplate;
         private Button btnBrowseDirectory;
+        private Label lblTemplatePathDisplay;
+        private Label lblSourceDirectoryPathDisplay;
         private Button btnQueryDirectory;
         private Button btnImportAll;
         private Button btnImportSelected;
@@ -35,6 +37,10 @@ namespace BuildingBlocksManager
         private Settings settings;
         private Logger logger;
         private System.Threading.CancellationTokenSource cancellationTokenSource;
+        
+        // Store the actual full paths since text boxes now show partial info
+        private string fullTemplatePath = "";
+        private string fullSourceDirectoryPath = "";
         
         // Template filtering fields
         private List<BuildingBlockInfo> allBuildingBlocks = new List<BuildingBlockInfo>();
@@ -104,14 +110,24 @@ namespace BuildingBlocksManager
             {
                 Text = "Template File:",
                 Location = new System.Drawing.Point(20, 45),
-                Size = new System.Drawing.Size(100, 23)
+                Size = new System.Drawing.Size(110, 23),
+                TextAlign = System.Drawing.ContentAlignment.MiddleRight
             };
 
             txtTemplatePath = new TextBox
             {
-                Location = new System.Drawing.Point(130, 45),
-                Size = new System.Drawing.Size(500, 23),
+                Location = new System.Drawing.Point(140, 45),
+                Size = new System.Drawing.Size(490, 23),
                 ReadOnly = true
+            };
+
+            lblTemplatePathDisplay = new Label
+            {
+                Text = "",
+                Location = new System.Drawing.Point(140, 70),
+                Size = new System.Drawing.Size(490, 15),
+                Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, Label.DefaultFont.Size - 1, System.Drawing.FontStyle.Italic),
+                ForeColor = System.Drawing.Color.Gray
             };
 
             btnBrowseTemplate = new Button
@@ -125,21 +141,31 @@ namespace BuildingBlocksManager
             var lblDirectory = new Label
             {
                 Text = "Source Directory:",
-                Location = new System.Drawing.Point(20, 85),
-                Size = new System.Drawing.Size(110, 23)
+                Location = new System.Drawing.Point(20, 95),
+                Size = new System.Drawing.Size(110, 23),
+                TextAlign = System.Drawing.ContentAlignment.MiddleRight
             };
 
             txtSourceDirectory = new TextBox
             {
-                Location = new System.Drawing.Point(140, 85),
+                Location = new System.Drawing.Point(140, 95),
                 Size = new System.Drawing.Size(490, 23),
                 ReadOnly = true
+            };
+
+            lblSourceDirectoryPathDisplay = new Label
+            {
+                Text = "",
+                Location = new System.Drawing.Point(140, 120),
+                Size = new System.Drawing.Size(490, 15),
+                Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, Label.DefaultFont.Size - 1, System.Drawing.FontStyle.Regular),
+                ForeColor = System.Drawing.Color.Gray
             };
 
             btnBrowseDirectory = new Button
             {
                 Text = "Browse",
-                Location = new System.Drawing.Point(640, 84),
+                Location = new System.Drawing.Point(640, 94),
                 Size = new System.Drawing.Size(80, 25)
             };
 
@@ -147,21 +173,21 @@ namespace BuildingBlocksManager
             var lblStructure = new Label
             {
                 Text = "Ignore folder/category structure for:",
-                Location = new System.Drawing.Point(20, 125),
+                Location = new System.Drawing.Point(20, 150),
                 Size = new System.Drawing.Size(250, 23)
             };
 
             chkFlatImport = new CheckBox
             {
                 Text = "Import",
-                Location = new System.Drawing.Point(280, 125),
+                Location = new System.Drawing.Point(280, 150),
                 Size = new System.Drawing.Size(80, 23)
             };
 
             chkFlatExport = new CheckBox
             {
                 Text = "Export",
-                Location = new System.Drawing.Point(370, 125),
+                Location = new System.Drawing.Point(370, 150),
                 Size = new System.Drawing.Size(80, 23)
             };
 
@@ -169,7 +195,7 @@ namespace BuildingBlocksManager
             var lblQuery = new Label
             {
                 Text = "Query",
-                Location = new System.Drawing.Point(20, 165),
+                Location = new System.Drawing.Point(20, 190),
                 Size = new System.Drawing.Size(100, 20),
                 Font = new System.Drawing.Font(Label.DefaultFont, System.Drawing.FontStyle.Bold)
             };
@@ -177,14 +203,14 @@ namespace BuildingBlocksManager
             btnQueryDirectory = new Button
             {
                 Text = "Directory",
-                Location = new System.Drawing.Point(20, 190),
+                Location = new System.Drawing.Point(20, 215),
                 Size = new System.Drawing.Size(100, 30)
             };
 
             var btnQueryTemplate = new Button
             {
                 Text = "Template",
-                Location = new System.Drawing.Point(20, 225),
+                Location = new System.Drawing.Point(20, 250),
                 Size = new System.Drawing.Size(100, 30)
             };
             btnQueryTemplate.Click += BtnQueryTemplate_Click;
@@ -193,7 +219,7 @@ namespace BuildingBlocksManager
             var lblImport = new Label
             {
                 Text = "Import\n(Folder -> Template)",
-                Location = new System.Drawing.Point(160, 155),
+                Location = new System.Drawing.Point(160, 180),
                 Size = new System.Drawing.Size(140, 35),
                 Font = new System.Drawing.Font(Label.DefaultFont, System.Drawing.FontStyle.Bold),
                 TextAlign = System.Drawing.ContentAlignment.MiddleCenter
@@ -202,14 +228,14 @@ namespace BuildingBlocksManager
             btnImportAll = new Button
             {
                 Text = "All",
-                Location = new System.Drawing.Point(190, 195),
+                Location = new System.Drawing.Point(190, 220),
                 Size = new System.Drawing.Size(80, 30)
             };
 
             btnImportSelected = new Button
             {
                 Text = "Selected",
-                Location = new System.Drawing.Point(190, 230),
+                Location = new System.Drawing.Point(190, 255),
                 Size = new System.Drawing.Size(80, 30)
             };
 
@@ -217,7 +243,7 @@ namespace BuildingBlocksManager
             var lblExport = new Label
             {
                 Text = "Export\n(Template -> Folder)",
-                Location = new System.Drawing.Point(310, 155),
+                Location = new System.Drawing.Point(310, 180),
                 Size = new System.Drawing.Size(140, 35),
                 Font = new System.Drawing.Font(Label.DefaultFont, System.Drawing.FontStyle.Bold),
                 TextAlign = System.Drawing.ContentAlignment.MiddleCenter
@@ -226,14 +252,14 @@ namespace BuildingBlocksManager
             btnExportAll = new Button
             {
                 Text = "All",
-                Location = new System.Drawing.Point(340, 195),
+                Location = new System.Drawing.Point(340, 220),
                 Size = new System.Drawing.Size(80, 30)
             };
 
             btnExportSelected = new Button
             {
                 Text = "Selected",
-                Location = new System.Drawing.Point(340, 230),
+                Location = new System.Drawing.Point(340, 255),
                 Size = new System.Drawing.Size(80, 30)
             };
 
@@ -241,7 +267,7 @@ namespace BuildingBlocksManager
             btnStop = new Button
             {
                 Text = "Stop",
-                Location = new System.Drawing.Point(450, 210),
+                Location = new System.Drawing.Point(450, 235),
                 Size = new System.Drawing.Size(80, 35),
                 Visible = false,
                 BackColor = System.Drawing.Color.LightCoral
@@ -251,7 +277,7 @@ namespace BuildingBlocksManager
             // Tab control section - Form width 800px - 40px margins = 760px max
             tabControl = new TabControl
             {
-                Location = new System.Drawing.Point(20, 275),
+                Location = new System.Drawing.Point(20, 300),
                 Size = new System.Drawing.Size(740, 220)
             };
 
@@ -351,7 +377,7 @@ namespace BuildingBlocksManager
             // Progress and status section
             progressBar = new ProgressBar
             {
-                Location = new System.Drawing.Point(20, 505),
+                Location = new System.Drawing.Point(20, 530),
                 Size = new System.Drawing.Size(520, 23),
                 Style = ProgressBarStyle.Continuous
             };
@@ -359,7 +385,7 @@ namespace BuildingBlocksManager
             lblStatus = new Label
             {
                 Text = "Ready",
-                Location = new System.Drawing.Point(550, 505),
+                Location = new System.Drawing.Point(550, 530),
                 Size = new System.Drawing.Size(210, 23),
                 TextAlign = System.Drawing.ContentAlignment.MiddleLeft
             };
@@ -367,8 +393,8 @@ namespace BuildingBlocksManager
             // Add all controls to form
             Controls.AddRange(new Control[]
             {
-                lblTemplate, txtTemplatePath, btnBrowseTemplate,
-                lblDirectory, txtSourceDirectory, btnBrowseDirectory,
+                lblTemplate, txtTemplatePath, lblTemplatePathDisplay, btnBrowseTemplate,
+                lblDirectory, txtSourceDirectory, lblSourceDirectoryPathDisplay, btnBrowseDirectory,
                 lblStructure, chkFlatImport, chkFlatExport,
                 lblQuery, btnQueryDirectory, btnQueryTemplate,
                 lblImport, btnImportAll, btnImportSelected,
@@ -378,6 +404,43 @@ namespace BuildingBlocksManager
             });
 
             ResumeLayout(false);
+        }
+
+        private void UpdateTemplatePathDisplay(string fullPath)
+        {
+            fullTemplatePath = fullPath ?? "";
+            
+            if (string.IsNullOrEmpty(fullPath))
+            {
+                txtTemplatePath.Text = "";
+                lblTemplatePathDisplay.Text = "";
+                return;
+            }
+
+            var fileName = Path.GetFileName(fullPath);
+            var directoryPath = Path.GetDirectoryName(fullPath);
+            
+            txtTemplatePath.Text = fileName;
+            lblTemplatePathDisplay.Text = string.IsNullOrEmpty(directoryPath) ? "" : directoryPath + Path.DirectorySeparatorChar;
+        }
+
+        private void UpdateSourceDirectoryDisplay(string fullPath)
+        {
+            fullSourceDirectoryPath = fullPath ?? "";
+            
+            if (string.IsNullOrEmpty(fullPath))
+            {
+                txtSourceDirectory.Text = "";
+                lblSourceDirectoryPathDisplay.Text = "";
+                return;
+            }
+
+            var directoryInfo = new DirectoryInfo(fullPath);
+            var lowestLevelDirectory = directoryInfo.Name;
+            var parentPath = directoryInfo.Parent?.FullName;
+            
+            txtSourceDirectory.Text = "..." + Path.DirectorySeparatorChar + lowestLevelDirectory;
+            lblSourceDirectoryPathDisplay.Text = string.IsNullOrEmpty(parentPath) ? "" : parentPath + Path.DirectorySeparatorChar;
         }
 
         private void BtnStop_Click(object sender, EventArgs e)
@@ -409,7 +472,7 @@ namespace BuildingBlocksManager
                 
                 if (dialog.ShowDialog() == DialogResult.OK)
                 {
-                    txtTemplatePath.Text = dialog.FileName;
+                    UpdateTemplatePathDisplay(dialog.FileName);
                     UpdateStatus("Template file selected: " + Path.GetFileName(dialog.FileName));
                     SaveSettings();
                 }
@@ -425,7 +488,7 @@ namespace BuildingBlocksManager
                 
                 if (dialog.ShowDialog() == DialogResult.OK)
                 {
-                    txtSourceDirectory.Text = dialog.SelectedPath;
+                    UpdateSourceDirectoryDisplay(dialog.SelectedPath);
                     UpdateStatus("Source directory selected: " + dialog.SelectedPath);
                     SaveSettings();
                 }
@@ -447,28 +510,28 @@ namespace BuildingBlocksManager
 
         private bool ValidatePaths()
         {
-            if (string.IsNullOrWhiteSpace(txtTemplatePath.Text))
+            if (string.IsNullOrWhiteSpace(fullTemplatePath))
             {
                 MessageBox.Show("Please select a template file.", "Validation Error", 
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return false;
             }
 
-            if (!File.Exists(txtTemplatePath.Text))
+            if (!File.Exists(fullTemplatePath))
             {
                 MessageBox.Show("The selected template file does not exist.", "Validation Error", 
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return false;
             }
 
-            if (string.IsNullOrWhiteSpace(txtSourceDirectory.Text))
+            if (string.IsNullOrWhiteSpace(fullSourceDirectoryPath))
             {
                 MessageBox.Show("Please select a source directory.", "Validation Error", 
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return false;
             }
 
-            if (!Directory.Exists(txtSourceDirectory.Text))
+            if (!Directory.Exists(fullSourceDirectoryPath))
             {
                 MessageBox.Show("The selected source directory does not exist.", "Validation Error", 
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -489,11 +552,11 @@ namespace BuildingBlocksManager
             treeDirectory.Nodes.Clear();
             
             AppendResults("=== DIRECTORY QUERY ===");
-            AppendResults($"Scanning directory: {txtSourceDirectory.Text}");
+            AppendResults($"Scanning directory: {fullSourceDirectoryPath}");
             
             try
             {
-                var fileManager = new FileManager(txtSourceDirectory.Text);
+                var fileManager = new FileManager(fullSourceDirectoryPath);
                 var summary = fileManager.GetSummary();
                 
                 AppendResults("");
@@ -540,12 +603,12 @@ namespace BuildingBlocksManager
             ShowStopButton();
             
             AppendResults("=== IMPORT ALL OPERATION ===");
-            AppendResults($"Template: {Path.GetFileName(txtTemplatePath.Text)}");
-            AppendResults($"Source Directory: {txtSourceDirectory.Text}");
+            AppendResults($"Template: {Path.GetFileName(fullTemplatePath)}");
+            AppendResults($"Source Directory: {fullSourceDirectoryPath}");
             AppendResults($"Flat Import: {(chkFlatImport.Checked ? "Yes" : "No")}");
             AppendResults("");
             
-            logger.Info($"Starting Import All operation - Template: {txtTemplatePath.Text}, Directory: {txtSourceDirectory.Text}");
+            logger.Info($"Starting Import All operation - Template: {fullTemplatePath}, Directory: {fullSourceDirectoryPath}");
 
             WordManager wordManager = null;
             var startTime = DateTime.Now;
@@ -555,15 +618,15 @@ namespace BuildingBlocksManager
             try
             {
                 // Check if template file is locked and handle it
-                if (!HandleTemplateFileLock(txtTemplatePath.Text, "Import All"))
+                if (!HandleTemplateFileLock(fullTemplatePath, "Import All"))
                 {
                     HideStopButton();
                     return;
                 }
 
                 // Initialize managers
-                wordManager = new WordManager(txtTemplatePath.Text);
-                var fileManager = new FileManager(txtSourceDirectory.Text);
+                wordManager = new WordManager(fullTemplatePath);
+                var fileManager = new FileManager(fullSourceDirectoryPath);
                 var importTracker = new ImportTracker();
 
                 // Create backup
@@ -672,7 +735,7 @@ namespace BuildingBlocksManager
             {
                 dialog.Title = "Select AT_ File to Import";
                 dialog.Filter = "Word Documents (AT_*.docx)|AT_*.docx|All Files (*.*)|*.*";
-                dialog.InitialDirectory = txtSourceDirectory.Text;
+                dialog.InitialDirectory = fullSourceDirectoryPath;
                 dialog.CheckFileExists = true;
                 
                 if (dialog.ShowDialog() == DialogResult.OK)
@@ -682,7 +745,7 @@ namespace BuildingBlocksManager
                     
                     AppendResults("=== IMPORT SELECTED FILE ===");
                     AppendResults($"File: {Path.GetFileName(dialog.FileName)}");
-                    AppendResults($"Template: {Path.GetFileName(txtTemplatePath.Text)}");
+                    AppendResults($"Template: {Path.GetFileName(fullTemplatePath)}");
                     AppendResults("");
 
                     WordManager wordManager = null;
@@ -691,8 +754,8 @@ namespace BuildingBlocksManager
                     try
                     {
                         // Initialize managers
-                        wordManager = new WordManager(txtTemplatePath.Text);
-                        var fileManager = new FileManager(txtSourceDirectory.Text);
+                        wordManager = new WordManager(fullTemplatePath);
+                        var fileManager = new FileManager(fullSourceDirectoryPath);
                         var importTracker = new ImportTracker();
 
                         // Create backup
@@ -774,7 +837,7 @@ namespace BuildingBlocksManager
                 }
                 
                 dialog.ShowNewFolderButton = true;
-                dialog.SelectedPath = txtSourceDirectory.Text; // Default to source directory
+                dialog.SelectedPath = fullSourceDirectoryPath; // Default to source directory
                 
                 if (dialog.ShowDialog() != DialogResult.OK) return;
                 exportPath = dialog.SelectedPath;
@@ -786,7 +849,7 @@ namespace BuildingBlocksManager
             ShowStopButton();
             
             AppendResults("=== EXPORT ALL OPERATION ===");
-            AppendResults($"Template: {Path.GetFileName(txtTemplatePath.Text)}");
+            AppendResults($"Template: {Path.GetFileName(fullTemplatePath)}");
             AppendResults($"Export Location: {exportPath}");
             AppendResults($"Flat Export: {(chkFlatExport.Checked ? "Yes" : "No")}");
             AppendResults("");
@@ -800,14 +863,14 @@ namespace BuildingBlocksManager
             try
             {
                 // Check if template file is locked and handle it
-                if (!HandleTemplateFileLock(txtTemplatePath.Text, "Export"))
+                if (!HandleTemplateFileLock(fullTemplatePath, "Export"))
                 {
                     HideStopButton();
                     return;
                 }
 
                 // Initialize WordManager
-                wordManager = new WordManager(txtTemplatePath.Text);
+                wordManager = new WordManager(fullTemplatePath);
                 
                 // Get all Building Blocks from template
                 AppendResults("Loading Building Blocks from template...");
@@ -939,7 +1002,7 @@ namespace BuildingBlocksManager
                 }
                 
                 dialog.ShowNewFolderButton = true;
-                dialog.SelectedPath = txtSourceDirectory.Text; // Default to source directory
+                dialog.SelectedPath = fullSourceDirectoryPath; // Default to source directory
                 
                 if (dialog.ShowDialog() != DialogResult.OK) return;
                 exportPath = dialog.SelectedPath;
@@ -963,11 +1026,11 @@ namespace BuildingBlocksManager
             try
             {
                 // Check if template file is locked and handle it
-                if (!HandleTemplateFileLock(txtTemplatePath.Text, "Export"))
+                if (!HandleTemplateFileLock(fullTemplatePath, "Export"))
                     return;
 
                 // Initialize WordManager
-                wordManager = new WordManager(txtTemplatePath.Text);
+                wordManager = new WordManager(fullTemplatePath);
 
                 // Export each selected Building Block
                 for (int i = 0; i < selectedBlocks.Count; i++)
@@ -1054,7 +1117,7 @@ namespace BuildingBlocksManager
 
         private void BtnRollback_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txtTemplatePath.Text))
+            if (string.IsNullOrWhiteSpace(fullTemplatePath))
             {
                 MessageBox.Show("Please select a template file first.", "Validation Error", 
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -1073,14 +1136,14 @@ namespace BuildingBlocksManager
                 progressBar.Style = ProgressBarStyle.Marquee;
                 
                 AppendResults("=== ROLLBACK OPERATION ===");
-                AppendResults($"Template: {Path.GetFileName(txtTemplatePath.Text)}");
+                AppendResults($"Template: {Path.GetFileName(fullTemplatePath)}");
                 AppendResults("Searching for backup files...");
 
                 WordManager wordManager = null;
                 
                 try
                 {
-                    wordManager = new WordManager(txtTemplatePath.Text);
+                    wordManager = new WordManager(fullTemplatePath);
                     
                     // Perform the rollback
                     wordManager.RollbackFromBackup();
@@ -1127,7 +1190,7 @@ namespace BuildingBlocksManager
                 // Fallback to loading from template if not already loaded
                 try
                 {
-                    using (var wordManager = new WordManager(txtTemplatePath.Text))
+                    using (var wordManager = new WordManager(fullTemplatePath))
                     {
                         var allBlocks = wordManager.GetBuildingBlocks();
                         availableBlocks = allBlocks.Where(bb => !IsSystemEntry(bb)).ToList();
@@ -1250,8 +1313,8 @@ namespace BuildingBlocksManager
         {
             settings = Settings.Load();
             
-            txtTemplatePath.Text = settings.LastTemplatePath;
-            txtSourceDirectory.Text = settings.LastSourceDirectory;
+            UpdateTemplatePathDisplay(settings.LastTemplatePath);
+            UpdateSourceDirectoryDisplay(settings.LastSourceDirectory);
             chkFlatImport.Checked = settings.FlatImport;
             chkFlatExport.Checked = settings.FlatExport;
             
@@ -1265,8 +1328,8 @@ namespace BuildingBlocksManager
         {
             if (settings == null) settings = new Settings();
             
-            settings.LastTemplatePath = txtTemplatePath.Text;
-            settings.LastSourceDirectory = txtSourceDirectory.Text;
+            settings.LastTemplatePath = fullTemplatePath;
+            settings.LastSourceDirectory = fullSourceDirectoryPath;
             settings.FlatImport = chkFlatImport.Checked;
             settings.FlatExport = chkFlatExport.Checked;
             
@@ -1497,14 +1560,14 @@ BACKUP PROCESS:
 
         private void BtnQueryTemplate_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txtTemplatePath.Text))
+            if (string.IsNullOrWhiteSpace(fullTemplatePath))
             {
                 MessageBox.Show("Please select a template file first.", "Validation Error", 
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            if (!File.Exists(txtTemplatePath.Text))
+            if (!File.Exists(fullTemplatePath))
             {
                 MessageBox.Show("The selected template file does not exist.", "Validation Error", 
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -1517,7 +1580,7 @@ BACKUP PROCESS:
             try
             {
                 // Check if template file is locked and handle it
-                if (!HandleTemplateFileLock(txtTemplatePath.Text, "Query Template"))
+                if (!HandleTemplateFileLock(fullTemplatePath, "Query Template"))
                 {
                     progressBar.Style = ProgressBarStyle.Continuous;
                     progressBar.Value = 0;
@@ -1525,7 +1588,7 @@ BACKUP PROCESS:
                     return;
                 }
 
-                using (var wordManager = new WordManager(txtTemplatePath.Text))
+                using (var wordManager = new WordManager(fullTemplatePath))
                 {
                     var buildingBlocks = wordManager.GetBuildingBlocks();
                     
@@ -1620,11 +1683,11 @@ BACKUP PROCESS:
         {
             treeDirectory.Nodes.Clear();
             
-            if (!Directory.Exists(txtSourceDirectory.Text))
+            if (!Directory.Exists(fullSourceDirectoryPath))
                 return;
                 
             // Use standard DirectoryInfo approach
-            var rootDir = new DirectoryInfo(txtSourceDirectory.Text);
+            var rootDir = new DirectoryInfo(fullSourceDirectoryPath);
             var rootNode = CreateDirectoryNode(rootDir, files);
             
             treeDirectory.Nodes.Add(rootNode);
@@ -2127,7 +2190,7 @@ BACKUP PROCESS:
 
             try
             {
-                using (var wordManager = new WordManager(txtTemplatePath.Text))
+                using (var wordManager = new WordManager(fullTemplatePath))
                 {
                     // Create backup before deleting
                     wordManager.CreateBackup();
