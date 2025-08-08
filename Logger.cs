@@ -35,6 +35,36 @@ namespace BuildingBlocksManager
             WriteLog("SUCCESS", message);
         }
 
+        public void WriteExportErrorLog(int successCount, int errorCount, System.Collections.Generic.List<string> errors)
+        {
+            if (errorCount == 0) return;
+
+            try
+            {
+                var errorLogFile = Path.Combine(LogDirectory, $"Export_Errors_{DateTime.Now:yyyyMMdd_HHmmss}.log");
+                using (var writer = new StreamWriter(errorLogFile))
+                {
+                    writer.WriteLine($"Export Error Report - {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+                    writer.WriteLine($"Successfully Exported: {successCount}");
+                    writer.WriteLine($"Failed Exports: {errorCount}");
+                    writer.WriteLine(new string('=', 50));
+                    writer.WriteLine();
+
+                    foreach (var error in errors)
+                    {
+                        writer.WriteLine(error);
+                        writer.WriteLine();
+                    }
+                }
+
+                Info($"Export error log created: {Path.GetFileName(errorLogFile)}");
+            }
+            catch (Exception ex)
+            {
+                Error($"Failed to create export error log: {ex.Message}");
+            }
+        }
+
         private void WriteLog(string level, string message)
         {
             try

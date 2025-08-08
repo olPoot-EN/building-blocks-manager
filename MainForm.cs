@@ -883,6 +883,7 @@ namespace BuildingBlocksManager
             int successCount = 0;
             int errorCount = 0;
             int directoriesCreated = 0;
+            var detailedErrors = new System.Collections.Generic.List<string>();
 
             try
             {
@@ -980,7 +981,10 @@ namespace BuildingBlocksManager
                     catch (Exception ex)
                     {
                         errorCount++;
+                        var errorDetail = $"Building Block: {bb.Name}\nCategory: {bb.Category}\nError: {ex.Message}\nTimestamp: {DateTime.Now:yyyy-MM-dd HH:mm:ss}";
+                        detailedErrors.Add(errorDetail);
                         AppendResults($"  ✗ Failed to export {bb.Name}: {ex.Message}");
+                        logger.Error($"Export failed for {bb.Name}: {ex.Message}");
                     }
                 }
             }
@@ -1004,6 +1008,9 @@ namespace BuildingBlocksManager
             AppendResults($"Files with Errors: {errorCount}");
             AppendResults($"Directories Created: {directoriesCreated}");
             AppendResults($"Processing Time: {processingTime:F1} seconds");
+            
+            // Create detailed error log if there were errors
+            logger.WriteExportErrorLog(successCount, errorCount, detailedErrors);
             
             progressBar.Value = 0;
             UpdateStatus(errorCount == 0 ? "Export completed successfully" : $"Export completed with {errorCount} errors");
@@ -1051,6 +1058,7 @@ namespace BuildingBlocksManager
             int successCount = 0;
             int errorCount = 0;
             int directoriesCreated = 0;
+            var detailedErrors = new System.Collections.Generic.List<string>();
 
             try
             {
@@ -1116,7 +1124,10 @@ namespace BuildingBlocksManager
                     catch (Exception ex)
                     {
                         errorCount++;
+                        var errorDetail = $"Building Block: {bb.Name}\nCategory: {bb.Category}\nError: {ex.Message}\nTimestamp: {DateTime.Now:yyyy-MM-dd HH:mm:ss}";
+                        detailedErrors.Add(errorDetail);
                         AppendResults($"  ✗ Failed to export {bb.Name}: {ex.Message}");
+                        logger.Error($"Export failed for {bb.Name}: {ex.Message}");
                     }
                 }
             }
@@ -1139,6 +1150,9 @@ namespace BuildingBlocksManager
             AppendResults($"Files with Errors: {errorCount}");
             AppendResults($"Directories Created: {directoriesCreated}");
             AppendResults($"Processing Time: {processingTime:F1} seconds");
+            
+            // Create detailed error log if there were errors
+            logger.WriteExportErrorLog(successCount, errorCount, detailedErrors);
             
             progressBar.Value = 0;
             UpdateStatus(errorCount == 0 ? "Export completed successfully" : $"Export completed with {errorCount} errors");
@@ -2051,49 +2065,42 @@ BACKUP PROCESS:
             
             foreach (var bb in allBuildingBlocks)
             {
-                bool includeByCategory = selectedCategories.Count == 0;
-                bool includeByGallery = selectedGalleries.Count == 0;
-                bool includeByTemplate = false; // Start with false - only include if template is selected
+                bool includeByCategory = false;
+                bool includeByGallery = false;
+                bool includeByTemplate = false;
                 
-                // Check category filter
-                if (selectedCategories.Count > 0)
+                // Check category filter - only include if category is selected
+                if (selectedCategories.Contains("System/Hex Entries") && IsSystemEntry(bb))
                 {
-                    if (selectedCategories.Contains("System/Hex Entries") && IsSystemEntry(bb))
+                    includeByCategory = true;
+                }
+                else if (selectedCategories.Contains(string.IsNullOrEmpty(bb.Category) ? "(No Category)" : bb.Category))
+                {
+                    if (selectedCategories.Contains("System/Hex Entries") || !IsSystemEntry(bb))
                     {
                         includeByCategory = true;
                     }
-                    else if (selectedCategories.Contains(string.IsNullOrEmpty(bb.Category) ? "(No Category)" : bb.Category))
-                    {
-                        if (selectedCategories.Contains("System/Hex Entries") || !IsSystemEntry(bb))
-                        {
-                            includeByCategory = true;
-                        }
-                    }
                 }
                 
-                // Check gallery filter
-                if (selectedGalleries.Count > 0)
+                // Check gallery filter - only include if gallery is selected
+                if (selectedGalleries.Contains(string.IsNullOrEmpty(bb.Gallery) ? "(No Gallery)" : bb.Gallery))
                 {
-                    if (selectedGalleries.Contains(string.IsNullOrEmpty(bb.Gallery) ? "(No Gallery)" : bb.Gallery))
-                    {
-                        includeByGallery = true;
-                    }
+                    includeByGallery = true;
                 }
                 
-                // Check template filter - if no templates selected, include nothing; if any selected, check if this one matches
-                if (selectedTemplates.Count == 0)
+                // Check template filter - only include if template is selected
+                if (selectedTemplates.Contains(string.IsNullOrEmpty(bb.Template) ? "(No Template)" : bb.Template))
                 {
-                    includeByTemplate = false; // No templates selected = show nothing
-                }
-                else
-                {
-                    if (selectedTemplates.Contains(string.IsNullOrEmpty(bb.Template) ? "(No Template)" : bb.Template))
-                    {
-                        includeByTemplate = true;
-                    }
+                    includeByTemplate = true;
                 }
                     
-                if (includeByCategory && includeByGallery && includeByTemplate)
+                // Only include if all active filters pass (AND logic)
+                // If a filter has no selections, it should not restrict (pass by default)
+                bool categoryPass = selectedCategories.Count == 0 || includeByCategory;
+                bool galleryPass = selectedGalleries.Count == 0 || includeByGallery;
+                bool templatePass = selectedTemplates.Count == 0 || includeByTemplate;
+                
+                if (categoryPass && galleryPass && templatePass)
                 {
                     filteredBlocks.Add(bb);
                 }
