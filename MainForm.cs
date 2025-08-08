@@ -11,12 +11,15 @@ namespace BuildingBlocksManager
     {
         private TextBox txtTemplatePath;
         private TextBox txtSourceDirectory;
+        private TextBox txtExportDirectory;
         private CheckBox chkFlatImport;
         private CheckBox chkFlatExport;
         private Button btnBrowseTemplate;
         private Button btnBrowseDirectory;
+        private Button btnBrowseExportDirectory;
         private Label lblTemplatePathDisplay;
         private Label lblSourceDirectoryPathDisplay;
+        private Label lblExportDirectoryPathDisplay;
         private Button btnQueryDirectory;
         private Button btnImportAll;
         private Button btnImportSelected;
@@ -41,6 +44,7 @@ namespace BuildingBlocksManager
         // Store the actual full paths since text boxes now show partial info
         private string fullTemplatePath = "";
         private string fullSourceDirectoryPath = "";
+        private string fullExportDirectoryPath = "";
         
         // Template filtering fields
         private List<BuildingBlockInfo> allBuildingBlocks = new List<BuildingBlockInfo>();
@@ -61,6 +65,7 @@ namespace BuildingBlocksManager
             // Wire up event handlers
             btnBrowseTemplate.Click += BtnBrowseTemplate_Click;
             btnBrowseDirectory.Click += BtnBrowseDirectory_Click;
+            btnBrowseExportDirectory.Click += BtnBrowseExportDirectory_Click;
             btnQueryDirectory.Click += BtnQueryDirectory_Click;
             btnImportAll.Click += BtnImportAll_Click;
             btnImportSelected.Click += BtnImportSelected_Click;
@@ -149,24 +154,24 @@ namespace BuildingBlocksManager
             // Source directory section
             var lblDirectory = new Label
             {
-                Text = "Source Directory:",
+                Text = "Source:",
                 Location = new System.Drawing.Point(20, 95),
-                Size = new System.Drawing.Size(110, 23),
+                Size = new System.Drawing.Size(50, 23),
                 TextAlign = System.Drawing.ContentAlignment.MiddleRight
             };
 
             txtSourceDirectory = new TextBox
             {
-                Location = new System.Drawing.Point(140, 95),
-                Size = new System.Drawing.Size(270, 23),
+                Location = new System.Drawing.Point(80, 95),
+                Size = new System.Drawing.Size(160, 23),
                 ReadOnly = true
             };
 
             lblSourceDirectoryPathDisplay = new Label
             {
                 Text = "",
-                Location = new System.Drawing.Point(140, 120),
-                Size = new System.Drawing.Size(270, 15),
+                Location = new System.Drawing.Point(80, 120),
+                Size = new System.Drawing.Size(160, 15),
                 Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, Label.DefaultFont.Size - 1, System.Drawing.FontStyle.Regular),
                 ForeColor = System.Drawing.Color.Gray
             };
@@ -174,8 +179,40 @@ namespace BuildingBlocksManager
             btnBrowseDirectory = new Button
             {
                 Text = "Browse",
-                Location = new System.Drawing.Point(420, 94),
-                Size = new System.Drawing.Size(80, 25)
+                Location = new System.Drawing.Point(250, 94),
+                Size = new System.Drawing.Size(60, 25)
+            };
+
+            // Export directory section
+            var lblExportDirectory = new Label
+            {
+                Text = "Export:",
+                Location = new System.Drawing.Point(320, 95),
+                Size = new System.Drawing.Size(50, 23),
+                TextAlign = System.Drawing.ContentAlignment.MiddleRight
+            };
+
+            txtExportDirectory = new TextBox
+            {
+                Location = new System.Drawing.Point(380, 95),
+                Size = new System.Drawing.Size(160, 23),
+                ReadOnly = true
+            };
+
+            lblExportDirectoryPathDisplay = new Label
+            {
+                Text = "",
+                Location = new System.Drawing.Point(380, 120),
+                Size = new System.Drawing.Size(160, 15),
+                Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, Label.DefaultFont.Size - 1, System.Drawing.FontStyle.Regular),
+                ForeColor = System.Drawing.Color.Gray
+            };
+
+            btnBrowseExportDirectory = new Button
+            {
+                Text = "Browse",
+                Location = new System.Drawing.Point(550, 94),
+                Size = new System.Drawing.Size(60, 25)
             };
 
             // Structure options section
@@ -419,6 +456,7 @@ namespace BuildingBlocksManager
             {
                 lblTemplate, txtTemplatePath, lblTemplatePathDisplay, btnBrowseTemplate,
                 lblDirectory, txtSourceDirectory, lblSourceDirectoryPathDisplay, btnBrowseDirectory,
+                lblExportDirectory, txtExportDirectory, lblExportDirectoryPathDisplay, btnBrowseExportDirectory,
                 lblStructure, chkFlatImport, chkFlatExport,
                 lblQuery, btnQueryDirectory, btnQueryTemplate,
                 lblImport, btnImportAll, btnImportSelected,
@@ -468,6 +506,25 @@ namespace BuildingBlocksManager
             
             // Reinitialize logger with new source directory
             InitializeLogger();
+        }
+
+        private void UpdateExportDirectoryDisplay(string fullPath)
+        {
+            fullExportDirectoryPath = fullPath ?? "";
+            
+            if (string.IsNullOrEmpty(fullPath))
+            {
+                txtExportDirectory.Text = "";
+                lblExportDirectoryPathDisplay.Text = "";
+                return;
+            }
+
+            var directoryInfo = new DirectoryInfo(fullPath);
+            var lowestLevelDirectory = directoryInfo.Name;
+            var parentPath = directoryInfo.Parent?.FullName;
+            
+            txtExportDirectory.Text = "..." + Path.DirectorySeparatorChar + lowestLevelDirectory;
+            lblExportDirectoryPathDisplay.Text = string.IsNullOrEmpty(parentPath) ? "" : parentPath + Path.DirectorySeparatorChar;
         }
 
         private void TabControl_SelectedIndexChanged(object sender, EventArgs e)
@@ -538,6 +595,22 @@ namespace BuildingBlocksManager
                 {
                     UpdateSourceDirectoryDisplay(dialog.SelectedPath);
                     UpdateStatus("Source directory selected: " + dialog.SelectedPath);
+                    SaveSettings();
+                }
+            }
+        }
+
+        private void BtnBrowseExportDirectory_Click(object sender, EventArgs e)
+        {
+            using (var dialog = new FolderBrowserDialog())
+            {
+                dialog.Description = "Select Export Directory";
+                dialog.ShowNewFolderButton = true;
+                
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    UpdateExportDirectoryDisplay(dialog.SelectedPath);
+                    UpdateStatus("Export directory selected: " + dialog.SelectedPath);
                     SaveSettings();
                 }
             }
@@ -896,24 +969,31 @@ namespace BuildingBlocksManager
         {
             if (!ValidatePaths()) return;
 
-            // Always prompt for export directory
+            // Use export directory if set, otherwise prompt
             string exportPath;
-            using (var dialog = new FolderBrowserDialog())
+            if (!string.IsNullOrEmpty(fullExportDirectoryPath) && Directory.Exists(fullExportDirectoryPath))
             {
-                if (chkFlatExport.Checked)
+                exportPath = fullExportDirectoryPath;
+            }
+            else
+            {
+                using (var dialog = new FolderBrowserDialog())
                 {
-                    dialog.Description = "Select Export Folder (Flat Structure - All files in one folder)";
+                    if (chkFlatExport.Checked)
+                    {
+                        dialog.Description = "Select Export Folder (Flat Structure - All files in one folder)";
+                    }
+                    else
+                    {
+                        dialog.Description = "Select Export Folder (Hierarchical Structure - Files organized in category folders)";
+                    }
+                    
+                    dialog.ShowNewFolderButton = true;
+                    dialog.SelectedPath = !string.IsNullOrEmpty(fullExportDirectoryPath) ? fullExportDirectoryPath : fullSourceDirectoryPath;
+                    
+                    if (dialog.ShowDialog() != DialogResult.OK) return;
+                    exportPath = dialog.SelectedPath;
                 }
-                else
-                {
-                    dialog.Description = "Select Export Folder (Hierarchical Structure - Files organized in category folders)";
-                }
-                
-                dialog.ShowNewFolderButton = true;
-                dialog.SelectedPath = fullSourceDirectoryPath; // Default to source directory
-                
-                if (dialog.ShowDialog() != DialogResult.OK) return;
-                exportPath = dialog.SelectedPath;
             }
 
             UpdateStatus("Exporting all Building Blocks...");
@@ -1092,24 +1172,31 @@ namespace BuildingBlocksManager
                 return;
             }
 
-            // Always prompt for export directory
+            // Use export directory if set, otherwise prompt
             string exportPath;
-            using (var dialog = new FolderBrowserDialog())
+            if (!string.IsNullOrEmpty(fullExportDirectoryPath) && Directory.Exists(fullExportDirectoryPath))
             {
-                if (chkFlatExport.Checked)
+                exportPath = fullExportDirectoryPath;
+            }
+            else
+            {
+                using (var dialog = new FolderBrowserDialog())
                 {
-                    dialog.Description = "Select Export Folder (Flat Structure - All files in one folder)";
+                    if (chkFlatExport.Checked)
+                    {
+                        dialog.Description = "Select Export Folder (Flat Structure - All files in one folder)";
+                    }
+                    else
+                    {
+                        dialog.Description = "Select Export Folder (Hierarchical Structure - Files organized in category folders)";
+                    }
+                    
+                    dialog.ShowNewFolderButton = true;
+                    dialog.SelectedPath = !string.IsNullOrEmpty(fullExportDirectoryPath) ? fullExportDirectoryPath : fullSourceDirectoryPath;
+                    
+                    if (dialog.ShowDialog() != DialogResult.OK) return;
+                    exportPath = dialog.SelectedPath;
                 }
-                else
-                {
-                    dialog.Description = "Select Export Folder (Hierarchical Structure - Files organized in category folders)";
-                }
-                
-                dialog.ShowNewFolderButton = true;
-                dialog.SelectedPath = fullSourceDirectoryPath; // Default to source directory
-                
-                if (dialog.ShowDialog() != DialogResult.OK) return;
-                exportPath = dialog.SelectedPath;
             }
 
             UpdateStatus("Exporting selected Building Blocks...");
@@ -1290,6 +1377,7 @@ namespace BuildingBlocksManager
             
             UpdateTemplatePathDisplay(settings.LastTemplatePath);
             UpdateSourceDirectoryDisplay(settings.LastSourceDirectory);
+            UpdateExportDirectoryDisplay(settings.LastExportDirectory);
             chkFlatImport.Checked = settings.FlatImport;
             chkFlatExport.Checked = settings.FlatExport;
             
@@ -1305,6 +1393,7 @@ namespace BuildingBlocksManager
             
             settings.LastTemplatePath = fullTemplatePath;
             settings.LastSourceDirectory = fullSourceDirectoryPath;
+            settings.LastExportDirectory = fullExportDirectoryPath;
             settings.FlatImport = chkFlatImport.Checked;
             settings.FlatExport = chkFlatExport.Checked;
             
