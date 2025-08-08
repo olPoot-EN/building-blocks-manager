@@ -76,7 +76,7 @@ namespace BuildingBlocksManager
 
         private void InitializeLogger()
         {
-            logger = new Logger(fullSourceDirectoryPath);
+            logger = new Logger(fullTemplatePath, fullSourceDirectoryPath, settings.LogToTemplateDirectory, settings.EnableDetailedLogging);
             logger.CleanupOldLogs();
             logger.Info("Building Blocks Manager started");
         }
@@ -92,6 +92,10 @@ namespace BuildingBlocksManager
             var viewLogMenuItem = new ToolStripMenuItem("View Log File");
             viewLogMenuItem.Click += ViewLogMenuItem_Click;
             fileMenu.DropDownItems.Add(viewLogMenuItem);
+            
+            var loggingConfigMenuItem = new ToolStripMenuItem("Logging Configuration...");
+            loggingConfigMenuItem.Click += LoggingConfigMenuItem_Click;
+            fileMenu.DropDownItems.Add(loggingConfigMenuItem);
             
             fileMenu.DropDownItems.Add(new ToolStripSeparator());
             
@@ -1577,6 +1581,17 @@ namespace BuildingBlocksManager
             {
                 MessageBox.Show($"Failed to open log file: {ex.Message}", "Error", 
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void LoggingConfigMenuItem_Click(object sender, EventArgs e)
+        {
+            var configForm = new LoggingConfigForm(settings);
+            if (configForm.ShowDialog() == DialogResult.OK)
+            {
+                // Settings were changed, reinitialize logger
+                InitializeLogger();
+                AppendResults("Logging configuration updated. New settings will take effect for the next session.");
             }
         }
 

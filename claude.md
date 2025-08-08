@@ -70,15 +70,17 @@ using Word = Microsoft.Office.Interop.Word;
 
 ## Development Workflow
 
+**Working Directory**: `/Users/davidparry/claude_code/Autotext Import_Export Tool`
+**Repository**: https://github.com/olPoot-EN/building-blocks-manager
+
 **Development**: Mac M4 Mini with Claude Code (writes C# code only)
-**Testing**: Windows laptop (tests actual Word automation)
+**Testing**: Windows laptop (tests actual Word automation) - testing occurs separately on Windows machine
 **Git**: 
-- Repository: https://github.com/olPoot-EN/building-blocks-manager
 - **ALWAYS commit and push changes after completing development tasks**
 - Commit after each Claude Code session, pull and test on Windows
 - Use descriptive commit messages explaining what was implemented
 
-**Important**: Code must work on Windows with Word - don't worry about Mac compatibility. The Mac just writes the C# code.
+**Important**: Code must work on Windows with Word - don't worry about Mac compatibility. The Mac just writes the C# code. This is NOT a cross-platform application.
 
 ## Features Summary
 

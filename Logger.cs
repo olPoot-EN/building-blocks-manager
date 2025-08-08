@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 
 namespace BuildingBlocksManager
 {
@@ -7,28 +8,43 @@ namespace BuildingBlocksManager
     {
         private readonly string logDirectory;
         private readonly string logFile;
+        private readonly bool enableDetailedLogging;
 
         public string GetLogDirectory() => logDirectory;
 
-        public Logger(string sourceDirectoryPath = null)
+        public Logger(string templatePath = null, string sourceDirectoryPath = null, bool logToTemplateDirectory = true, bool enableDetailedLogging = true)
         {
-            if (!string.IsNullOrEmpty(sourceDirectoryPath) && Directory.Exists(sourceDirectoryPath))
+            this.enableDetailedLogging = enableDetailedLogging;
+            
+            // Determine log directory based on settings
+            if (logToTemplateDirectory && !string.IsNullOrEmpty(templatePath) && File.Exists(templatePath))
             {
-                logDirectory = Path.Combine(sourceDirectoryPath, "Logs");
+                // Use template directory for logs
+                var templateDir = Path.GetDirectoryName(templatePath);
+                logDirectory = Path.Combine(templateDir, "BBM_Logs");
+            }
+            else if (!string.IsNullOrEmpty(sourceDirectoryPath) && Directory.Exists(sourceDirectoryPath))
+            {
+                // Fall back to source directory
+                logDirectory = Path.Combine(sourceDirectoryPath, "BBM_Logs");
             }
             else
             {
-                // Fallback to user's local app data if source directory not provided or doesn't exist
-                logDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BuildingBlocksManager", "Logs");
+                // Final fallback to user's local app data
+                logDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BuildingBlocksManager", "BBM_Logs");
             }
             
             Directory.CreateDirectory(logDirectory);
-            logFile = Path.Combine(logDirectory, $"BBM_{DateTime.Now:yyyyMMdd_HHmmss}.log");
+            
+            // Use a more readable filename
+            var sessionTime = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+            logFile = Path.Combine(logDirectory, $"BBM_Session_{sessionTime}.log");
         }
 
         public void Info(string message)
         {
-            WriteLog("INFO", message);
+            if (enableDetailedLogging)
+                WriteLog("INFO", message);
         }
 
         public void Warning(string message)
@@ -108,8 +124,14 @@ namespace BuildingBlocksManager
             {
                 if (Directory.Exists(logDirectory))
                 {
-                    var files = Directory.GetFiles(logDirectory, "BBM_*.log");
-                    foreach (var file in files)
+                    var files = Directory.GetFiles(logDirectory, "BBM_Session_*.log");
+                    var exportFiles = Directory.GetFiles(logDirectory, "Export.log");
+                    var errorFiles = Directory.GetFiles(logDirectory, "Error.log");
+                    var deleteFiles = Directory.GetFiles(logDirectory, "Delete.log");
+                    
+                    var allFiles = files.Concat(exportFiles).Concat(errorFiles).Concat(deleteFiles);
+                    
+                    foreach (var file in allFiles)
                     {
                         var fileInfo = new FileInfo(file);
                         if (fileInfo.CreationTime < DateTime.Now.AddDays(-30))

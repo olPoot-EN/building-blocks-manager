@@ -13,6 +13,8 @@ namespace BuildingBlocksManager
         public string LastSourceDirectory { get; set; } = "";
         public bool FlatImport { get; set; } = false;
         public bool FlatExport { get; set; } = false;
+        public bool LogToTemplateDirectory { get; set; } = true;
+        public bool EnableDetailedLogging { get; set; } = true;
 
         public static Settings Load()
         {
@@ -47,6 +49,14 @@ namespace BuildingBlocksManager
                                     if (bool.TryParse(value, out bool flatExport))
                                         settings.FlatExport = flatExport;
                                     break;
+                                case "LogToTemplateDirectory":
+                                    if (bool.TryParse(value, out bool logToTemplate))
+                                        settings.LogToTemplateDirectory = logToTemplate;
+                                    break;
+                                case "EnableDetailedLogging":
+                                    if (bool.TryParse(value, out bool enableDetailed))
+                                        settings.EnableDetailedLogging = enableDetailed;
+                                    break;
                             }
                         }
                     }
@@ -71,7 +81,9 @@ namespace BuildingBlocksManager
                     $"LastTemplatePath={LastTemplatePath}",
                     $"LastSourceDirectory={LastSourceDirectory}",
                     $"FlatImport={FlatImport}",
-                    $"FlatExport={FlatExport}"
+                    $"FlatExport={FlatExport}",
+                    $"LogToTemplateDirectory={LogToTemplateDirectory}",
+                    $"EnableDetailedLogging={EnableDetailedLogging}"
                 };
                 
                 File.WriteAllLines(SettingsFile, lines);
