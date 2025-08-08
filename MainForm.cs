@@ -123,23 +123,23 @@ namespace BuildingBlocksManager
             var lblTemplate = new Label
             {
                 Text = "Template File:",
-                Location = new System.Drawing.Point(20, 45),
-                Size = new System.Drawing.Size(110, 23),
+                Location = new System.Drawing.Point(10, 45),
+                Size = new System.Drawing.Size(85, 23),
                 TextAlign = System.Drawing.ContentAlignment.MiddleRight
             };
 
             txtTemplatePath = new TextBox
             {
-                Location = new System.Drawing.Point(140, 45),
-                Size = new System.Drawing.Size(270, 23),
+                Location = new System.Drawing.Point(100, 45),
+                Size = new System.Drawing.Size(280, 23),
                 ReadOnly = true
             };
 
             lblTemplatePathDisplay = new Label
             {
                 Text = "",
-                Location = new System.Drawing.Point(140, 70),
-                Size = new System.Drawing.Size(270, 15),
+                Location = new System.Drawing.Point(100, 70),
+                Size = new System.Drawing.Size(280, 15),
                 Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, Label.DefaultFont.Size - 1, System.Drawing.FontStyle.Regular),
                 ForeColor = System.Drawing.Color.Gray
             };
@@ -147,31 +147,31 @@ namespace BuildingBlocksManager
             btnBrowseTemplate = new Button
             {
                 Text = "Browse",
-                Location = new System.Drawing.Point(420, 44),
-                Size = new System.Drawing.Size(80, 25)
+                Location = new System.Drawing.Point(390, 44),
+                Size = new System.Drawing.Size(70, 25)
             };
 
             // Source directory section
             var lblDirectory = new Label
             {
                 Text = "Source:",
-                Location = new System.Drawing.Point(20, 95),
-                Size = new System.Drawing.Size(50, 23),
+                Location = new System.Drawing.Point(10, 95),
+                Size = new System.Drawing.Size(45, 23),
                 TextAlign = System.Drawing.ContentAlignment.MiddleRight
             };
 
             txtSourceDirectory = new TextBox
             {
-                Location = new System.Drawing.Point(80, 95),
-                Size = new System.Drawing.Size(160, 23),
+                Location = new System.Drawing.Point(60, 95),
+                Size = new System.Drawing.Size(140, 23),
                 ReadOnly = true
             };
 
             lblSourceDirectoryPathDisplay = new Label
             {
                 Text = "",
-                Location = new System.Drawing.Point(80, 120),
-                Size = new System.Drawing.Size(160, 15),
+                Location = new System.Drawing.Point(60, 120),
+                Size = new System.Drawing.Size(140, 15),
                 Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, Label.DefaultFont.Size - 1, System.Drawing.FontStyle.Regular),
                 ForeColor = System.Drawing.Color.Gray
             };
@@ -179,7 +179,7 @@ namespace BuildingBlocksManager
             btnBrowseDirectory = new Button
             {
                 Text = "Browse",
-                Location = new System.Drawing.Point(250, 94),
+                Location = new System.Drawing.Point(210, 94),
                 Size = new System.Drawing.Size(60, 25)
             };
 
@@ -187,23 +187,23 @@ namespace BuildingBlocksManager
             var lblExportDirectory = new Label
             {
                 Text = "Export:",
-                Location = new System.Drawing.Point(320, 95),
-                Size = new System.Drawing.Size(50, 23),
+                Location = new System.Drawing.Point(280, 95),
+                Size = new System.Drawing.Size(45, 23),
                 TextAlign = System.Drawing.ContentAlignment.MiddleRight
             };
 
             txtExportDirectory = new TextBox
             {
-                Location = new System.Drawing.Point(380, 95),
-                Size = new System.Drawing.Size(160, 23),
+                Location = new System.Drawing.Point(330, 95),
+                Size = new System.Drawing.Size(140, 23),
                 ReadOnly = true
             };
 
             lblExportDirectoryPathDisplay = new Label
             {
                 Text = "",
-                Location = new System.Drawing.Point(380, 120),
-                Size = new System.Drawing.Size(160, 15),
+                Location = new System.Drawing.Point(330, 120),
+                Size = new System.Drawing.Size(140, 15),
                 Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, Label.DefaultFont.Size - 1, System.Drawing.FontStyle.Regular),
                 ForeColor = System.Drawing.Color.Gray
             };
@@ -211,7 +211,7 @@ namespace BuildingBlocksManager
             btnBrowseExportDirectory = new Button
             {
                 Text = "Browse",
-                Location = new System.Drawing.Point(550, 94),
+                Location = new System.Drawing.Point(480, 94),
                 Size = new System.Drawing.Size(60, 25)
             };
 
