@@ -324,46 +324,78 @@ namespace BuildingBlocksManager
 
         public void ExportBuildingBlock(string buildingBlockName, string category, string outputPath)
         {
-            Word.Document newDoc = null;
-            
             try
             {
-                OpenTemplate();
+                // Try OpenXML-based export first
+                ExportBuildingBlockOpenXML(buildingBlockName, category, outputPath);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Failed to export Building Block '{buildingBlockName}': {ex.Message}", ex);
+            }
+        }
+
+        private void ExportBuildingBlockOpenXML(string buildingBlockName, string category, string outputPath)
+        {
+            using (var templateDoc = WordprocessingDocument.Open(templatePath, false))
+            {
+                var glossaryPart = templateDoc.MainDocumentPart?.GlossaryDocumentPart;
+                if (glossaryPart?.GlossaryDocument?.DocParts == null)
+                    throw new InvalidOperationException("No Building Blocks found in template");
+
+                DocPart targetDocPart = null;
                 
-                // Find the Building Block
-                Word.BuildingBlock targetBB = null;
-                Word.Template template = (Word.Template)templateDoc.get_AttachedTemplate();
-                
-                for (int i = 1; i <= template.BuildingBlockEntries.Count; i++)
+                // Find the target Building Block
+                foreach (var docPart in glossaryPart.GlossaryDocument.DocParts.Elements<DocPart>())
                 {
-                    Word.BuildingBlock bb = template.BuildingBlockEntries.Item(i);
-                    string actualCategory = bb.Category?.Name ?? "";
-                    
-                    // Debug logging
-                    System.Diagnostics.Debug.WriteLine($"Checking BB: Name='{bb.Name}', Category='{actualCategory}', Looking for: Name='{buildingBlockName}', Category='{category}'");
-                    
-                    // If category is empty, match by name only, otherwise match both name and category
-                    bool categoryMatch = string.IsNullOrEmpty(category) ? 
-                        string.IsNullOrEmpty(actualCategory) : 
-                        actualCategory == category;
-                    
-                    if (bb.Name == buildingBlockName && categoryMatch)
+                    var properties = docPart.DocPartProperties;
+                    if (properties != null)
                     {
-                        targetBB = bb;
-                        System.Diagnostics.Debug.WriteLine($"Found matching BB: {bb.Name}");
-                        break;
+                        var name = properties.DocPartName?.Val?.Value ?? "";
+                        
+                        // Extract category
+                        var actualCategory = "";
+                        var categoryElement = properties.GetFirstChild<Category>();
+                        if (categoryElement != null)
+                        {
+                            var categoryName = categoryElement.GetFirstChild<DocumentFormat.OpenXml.Wordprocessing.Name>();
+                            if (categoryName?.Val != null)
+                                actualCategory = categoryName.Val.Value;
+                        }
+                        
+                        // Match logic: if search category is empty, match empty categories; otherwise exact match
+                        bool categoryMatch = string.IsNullOrEmpty(category) ? 
+                            string.IsNullOrEmpty(actualCategory) : 
+                            actualCategory == category;
+                        
+                        if (name == buildingBlockName && categoryMatch)
+                        {
+                            targetDocPart = docPart;
+                            break;
+                        }
                     }
                 }
 
-                if (targetBB == null)
+                if (targetDocPart == null)
                 {
-                    // Create detailed error message showing available Building Blocks
+                    // Create detailed error message
                     var availableNames = new List<string>();
-                    for (int j = 1; j <= template.BuildingBlockEntries.Count; j++)
+                    foreach (var docPart in glossaryPart.GlossaryDocument.DocParts.Elements<DocPart>())
                     {
-                        Word.BuildingBlock bb = template.BuildingBlockEntries.Item(j);
-                        string actualCategory = bb.Category?.Name ?? "";
-                        availableNames.Add($"'{bb.Name}' (Category: '{actualCategory}')");
+                        var properties = docPart.DocPartProperties;
+                        if (properties != null)
+                        {
+                            var name = properties.DocPartName?.Val?.Value ?? "";
+                            var actualCategory = "";
+                            var categoryElement = properties.GetFirstChild<Category>();
+                            if (categoryElement != null)
+                            {
+                                var categoryName = categoryElement.GetFirstChild<DocumentFormat.OpenXml.Wordprocessing.Name>();
+                                if (categoryName?.Val != null)
+                                    actualCategory = categoryName.Val.Value;
+                            }
+                            availableNames.Add($"'{name}' (Category: '{actualCategory}')");
+                        }
                     }
                     
                     var errorMsg = $"Building Block '{buildingBlockName}' not found in category '{category}'. Available Building Blocks: {string.Join(", ", availableNames.Take(10))}";
@@ -373,24 +405,23 @@ namespace BuildingBlocksManager
                     throw new InvalidOperationException(errorMsg);
                 }
 
-                // Create new document and insert Building Block content
-                newDoc = wordApp.Documents.Add();
-                var range = newDoc.Range();
-                targetBB.Insert(range);
-
-                // Save the new document
-                newDoc.SaveAs2(outputPath);
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"Failed to export Building Block '{buildingBlockName}': {ex.Message}", ex);
-            }
-            finally
-            {
-                if (newDoc != null)
+                // Create new document and copy the Building Block content
+                using (var newDoc = WordprocessingDocument.Create(outputPath, DocumentFormat.OpenXml.WordprocessingDocumentType.Document))
                 {
-                    newDoc.Close(false);
-                    Marshal.ReleaseComObject(newDoc);
+                    // Add main document part
+                    var mainPart = newDoc.AddMainDocumentPart();
+                    mainPart.Document = new Document(new Body());
+
+                    // Copy the Building Block content to the new document
+                    var targetBody = targetDocPart.DocPartBody;
+                    if (targetBody != null)
+                    {
+                        // Clone the content from the Building Block to the new document
+                        var clonedBody = (Body)targetBody.CloneNode(true);
+                        mainPart.Document.Body = clonedBody;
+                    }
+
+                    mainPart.Document.Save();
                 }
             }
         }
