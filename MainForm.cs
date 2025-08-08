@@ -314,7 +314,8 @@ namespace BuildingBlocksManager
                 HotTracking = true,
                 ShowLines = true,
                 ShowPlusMinus = true,
-                ShowRootLines = true
+                ShowRootLines = true,
+                CheckBoxes = true // Enable checkboxes for multiselect
             };
             tabDirectory.Controls.Add(treeDirectory);
 
@@ -778,92 +779,117 @@ namespace BuildingBlocksManager
         {
             if (!ValidatePaths()) return;
 
-            using (var dialog = new OpenFileDialog())
+            // Get checked file nodes from TreeView
+            var checkedFiles = GetCheckedFiles(treeDirectory.Nodes);
+            
+            if (checkedFiles.Count == 0)
             {
-                dialog.Title = "Select AT_ File to Import";
-                dialog.Filter = "Word Documents (AT_*.docx)|AT_*.docx|All Files (*.*)|*.*";
-                dialog.InitialDirectory = fullSourceDirectoryPath;
-                dialog.CheckFileExists = true;
-                
-                if (dialog.ShowDialog() == DialogResult.OK)
-                {
-                    UpdateStatus("Importing selected file...");
-                    progressBar.Style = ProgressBarStyle.Marquee;
-                    
-                    AppendResults("=== IMPORT SELECTED FILE ===");
-                    AppendResults($"File: {Path.GetFileName(dialog.FileName)}");
-                    AppendResults($"Template: {Path.GetFileName(fullTemplatePath)}");
-                    AppendResults("");
+                MessageBox.Show("Please check one or more AT_ files in the Directory tab to import.", 
+                    "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
 
-                    WordManager wordManager = null;
-                    var startTime = DateTime.Now;
+            UpdateStatus("Importing selected files...");
+            progressBar.Style = ProgressBarStyle.Continuous;
+            progressBar.Value = 0;
+            
+            AppendResults("=== IMPORT SELECTED FILES ===");
+            AppendResults($"Selected Files: {checkedFiles.Count}");
+            AppendResults($"Template: {Path.GetFileName(fullTemplatePath)}");
+            AppendResults("");
+
+            WordManager wordManager = null;
+            var startTime = DateTime.Now;
+            int successCount = 0;
+            int errorCount = 0;
+            
+            // Check for flat import category if needed
+            string flatCategory = null;
+            if (chkFlatImport.Checked)
+            {
+                flatCategory = PromptForInput("Flat Import Category", 
+                    "Enter category name for all selected Building Blocks:");
+                if (string.IsNullOrWhiteSpace(flatCategory))
+                {
+                    AppendResults("Import cancelled - no category specified.");
+                    return;
+                }
+            }
+
+            try
+            {
+                // Initialize managers
+                wordManager = new WordManager(fullTemplatePath);
+                var fileManager = new FileManager(fullSourceDirectoryPath);
+                var importTracker = new ImportTracker();
+
+                // Create backup
+                AppendResults("Creating backup...");
+                wordManager.CreateBackup();
+
+                // Process each selected file
+                for (int i = 0; i < checkedFiles.Count; i++)
+                {
+                    var file = checkedFiles[i];
                     
                     try
                     {
-                        // Initialize managers
-                        wordManager = new WordManager(fullTemplatePath);
-                        var fileManager = new FileManager(fullSourceDirectoryPath);
-                        var importTracker = new ImportTracker();
+                        progressBar.Value = (int)((double)(i + 1) / checkedFiles.Count * 100);
+                        UpdateStatus($"Importing: {i + 1} of {checkedFiles.Count}");
+                        
+                        var fileName = Path.GetFileName(file.FilePath);
+                        AppendResults($"Processing {fileName}...");
 
-                        // Create backup
-                        AppendResults("Creating backup...");
-                        wordManager.CreateBackup();
-
-                        // Extract category and name
-                        var fileName = Path.GetFileName(dialog.FileName);
-                        var category = fileManager.ExtractCategory(dialog.FileName);
+                        var category = chkFlatImport.Checked ? flatCategory : file.Category;
                         var name = fileManager.ExtractName(fileName);
 
                         // Check for invalid characters
                         var invalidChars = fileManager.GetInvalidCharacters(fileName);
                         if (invalidChars.Count > 0)
                         {
-                            AppendResults($"Warning: File contains invalid characters: {string.Join(", ", invalidChars)}");
-                            AppendResults("Import may fail or produce unexpected results.");
+                            AppendResults($"  Warning: File contains invalid characters: {string.Join(", ", invalidChars)}");
                         }
 
-                        AppendResults("Processing file...");
-                        
-                        // Use flat category if specified
-                        if (chkFlatImport.Checked)
-                        {
-                            string flatCategory = PromptForInput("Flat Import Category", 
-                                "Enter category name for this Building Block:");
-                            if (string.IsNullOrWhiteSpace(flatCategory))
-                            {
-                                AppendResults("Import cancelled - no category specified.");
-                                return;
-                            }
-                            category = flatCategory;
-                        }
-
-                        // Import the Building Block to AutoText gallery
-                        wordManager.ImportBuildingBlock(dialog.FileName, category, name, "AutoText");
+                        // Import the Building Block
+                        wordManager.ImportBuildingBlock(file.FilePath, category, name, "AutoText");
                         
                         // Update import tracking
-                        importTracker.UpdateImportTime(dialog.FileName);
+                        importTracker.UpdateImportTime(file.FilePath);
                         
-                        var processingTime = (DateTime.Now - startTime).TotalSeconds;
-                        
-                        AppendResults($"Successfully imported Building Block: {category}\\{name}");
-                        AppendResults($"Processing Time: {processingTime:F1} seconds");
-                        
-                        UpdateStatus("Import completed successfully");
+                        successCount++;
+                        logger.Success($"Imported {fileName} as {category}\\{name}");
+                        AppendResults($"  ✓ Imported as {category}\\{name}");
                     }
                     catch (Exception ex)
                     {
-                        AppendResults($"Import failed: {ex.Message}");
-                        UpdateStatus("Import failed");
+                        errorCount++;
+                        var fileName = Path.GetFileName(file.FilePath);
+                        logger.Error($"Failed to import {fileName}: {ex.Message}");
+                        AppendResults($"  ✗ Failed to import {fileName}: {ex.Message}");
                     }
-                    finally
-                    {
-                        wordManager?.Dispose();
-                    }
-                    
-                    progressBar.Style = ProgressBarStyle.Continuous;
-                    progressBar.Value = 0;
                 }
+                
+                var processingTime = (DateTime.Now - startTime).TotalSeconds;
+                
+                AppendResults("");
+                AppendResults($"Import Summary: Success: {successCount}, Errors: {errorCount}");
+                AppendResults($"Processing Time: {processingTime:F1} seconds");
+                
+                logger.Info($"Import Selected completed - Success: {successCount}, Errors: {errorCount}, Time: {processingTime:F1}s");
             }
+            catch (Exception ex)
+            {
+                AppendResults($"Import operation failed: {ex.Message}");
+                logger.Error($"Import Selected operation failed: {ex.Message}");
+            }
+            finally
+            {
+                wordManager?.Dispose();
+            }
+            
+            progressBar.Style = ProgressBarStyle.Continuous;
+            progressBar.Value = 0;
+            UpdateStatus(errorCount == 0 ? "Import completed successfully" : $"Import completed with {errorCount} errors");
         }
 
         private void BtnExportAll_Click(object sender, EventArgs e)
@@ -1041,9 +1067,30 @@ namespace BuildingBlocksManager
         {
             if (!ValidatePaths()) return;
 
-            // Show Building Block selection dialog
-            var selectedBlocks = ShowBuildingBlockSelectionDialog();
-            if (selectedBlocks == null || selectedBlocks.Count == 0) return;
+            // Check if any building blocks are selected in the ListView
+            if (listViewTemplate.SelectedItems.Count == 0)
+            {
+                MessageBox.Show("Please select one or more Building Blocks from the Template tab to export.", 
+                    "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            // Get selected building blocks from ListView
+            var selectedBlocks = new List<BuildingBlockInfo>();
+            foreach (ListViewItem item in listViewTemplate.SelectedItems)
+            {
+                if (item.Tag is BuildingBlockInfo bb)
+                {
+                    selectedBlocks.Add(bb);
+                }
+            }
+
+            if (selectedBlocks.Count == 0)
+            {
+                MessageBox.Show("No valid Building Blocks selected.", 
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
 
             // Always prompt for export directory
             string exportPath;
@@ -1237,140 +1284,6 @@ namespace BuildingBlocksManager
             return Microsoft.VisualBasic.Interaction.InputBox(prompt, title, "");
         }
 
-        private System.Collections.Generic.List<BuildingBlockInfo> ShowBuildingBlockSelectionDialog()
-        {
-            // Use currently filtered building blocks if available
-            System.Collections.Generic.List<BuildingBlockInfo> availableBlocks;
-            
-            if (allBuildingBlocks.Count > 0)
-            {
-                // Use the same filtering logic as the template display
-                availableBlocks = GetFilteredBuildingBlocks();
-            }
-            else
-            {
-                // Fallback to loading from template if not already loaded
-                try
-                {
-                    using (var wordManager = new WordManager(fullTemplatePath))
-                    {
-                        var allBlocks = wordManager.GetBuildingBlocks();
-                        availableBlocks = allBlocks.ToList();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Failed to load Building Blocks from template: {ex.Message}", 
-                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return new System.Collections.Generic.List<BuildingBlockInfo>();
-                }
-            }
-
-            if (availableBlocks.Count == 0)
-            {
-                MessageBox.Show("No exportable Building Blocks found in the template (only system/hex entries found).", 
-                    "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return new System.Collections.Generic.List<BuildingBlockInfo>();
-            }
-
-            // Create selection dialog (reduced width by 25%: 600 -> 450)
-            var form = new Form
-            {
-                Text = "Select Building Blocks to Export",
-                Size = new System.Drawing.Size(450, 450),
-                StartPosition = FormStartPosition.CenterScreen
-            };
-
-            // Selected count label
-            var lblSelectedCount = new Label
-            {
-                Text = $"Selected 0 of {availableBlocks.Count}",
-                Location = new System.Drawing.Point(20, 20),
-                Size = new System.Drawing.Size(200, 20),
-                Font = new System.Drawing.Font(Label.DefaultFont, System.Drawing.FontStyle.Bold)
-            };
-
-            var listBox = new CheckedListBox
-            {
-                Location = new System.Drawing.Point(20, 45),
-                Size = new System.Drawing.Size(390, 295),
-                CheckOnClick = true
-            };
-
-            // Add real Building Blocks to the list
-            foreach (var bb in availableBlocks)
-            {
-                listBox.Items.Add(bb, false);
-            }
-
-            var btnSelectAll = new Button
-            {
-                Text = "All",
-                Location = new System.Drawing.Point(20, 360),
-                Size = new System.Drawing.Size(50, 25)
-            };
-
-            var btnSelectNone = new Button
-            {
-                Text = "None",
-                Location = new System.Drawing.Point(80, 360),
-                Size = new System.Drawing.Size(50, 25)
-            };
-
-            var btnOK = new Button
-            {
-                Text = "OK",
-                Location = new System.Drawing.Point(258, 360),
-                Size = new System.Drawing.Size(80, 25),
-                DialogResult = DialogResult.OK
-            };
-
-            var btnCancel = new Button
-            {
-                Text = "Cancel",
-                Location = new System.Drawing.Point(348, 360),
-                Size = new System.Drawing.Size(80, 25),
-                DialogResult = DialogResult.Cancel
-            };
-
-            // Update selected count when items are checked/unchecked
-            listBox.ItemCheck += (s, e) => {
-                // Use BeginInvoke to update after the check state changes
-                this.BeginInvoke(new Action(() => {
-                    int checkedCount = listBox.CheckedItems.Count;
-                    lblSelectedCount.Text = $"Selected {checkedCount} of {availableBlocks.Count}";
-                }));
-            };
-
-            btnSelectAll.Click += (s, e) => {
-                for (int i = 0; i < listBox.Items.Count; i++)
-                    listBox.SetItemChecked(i, true);
-                lblSelectedCount.Text = $"Selected {listBox.Items.Count} of {availableBlocks.Count}";
-            };
-
-            btnSelectNone.Click += (s, e) => {
-                for (int i = 0; i < listBox.Items.Count; i++)
-                    listBox.SetItemChecked(i, false);
-                lblSelectedCount.Text = $"Selected 0 of {availableBlocks.Count}";
-            };
-
-            form.Controls.AddRange(new Control[] { lblSelectedCount, listBox, btnSelectAll, btnSelectNone, btnOK, btnCancel });
-            form.AcceptButton = btnOK;
-            form.CancelButton = btnCancel;
-
-            var result = new System.Collections.Generic.List<BuildingBlockInfo>();
-            if (form.ShowDialog() == DialogResult.OK)
-            {
-                foreach (BuildingBlockInfo item in listBox.CheckedItems)
-                {
-                    result.Add(item);
-                }
-            }
-
-            form.Dispose();
-            return result;
-        }
-
         private void LoadSettings()
         {
             settings = Settings.Load();
@@ -1404,6 +1317,28 @@ namespace BuildingBlocksManager
             logger?.Info("Building Blocks Manager closing");
             logger?.EndSession();
             base.OnFormClosing(e);
+        }
+
+        private List<FileManager.FileInfo> GetCheckedFiles(TreeNodeCollection nodes)
+        {
+            var checkedFiles = new List<FileManager.FileInfo>();
+            
+            foreach (TreeNode node in nodes)
+            {
+                // If this node represents a file and is checked
+                if (node.Checked && node.Tag is FileManager.FileInfo fileInfo)
+                {
+                    checkedFiles.Add(fileInfo);
+                }
+                
+                // Recursively check child nodes
+                if (node.Nodes.Count > 0)
+                {
+                    checkedFiles.AddRange(GetCheckedFiles(node.Nodes));
+                }
+            }
+            
+            return checkedFiles;
         }
 
         private string ConvertCategoryToPath(string category)
