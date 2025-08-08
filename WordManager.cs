@@ -261,7 +261,11 @@ namespace BuildingBlocksManager
                 sourceDoc = wordApp.Documents.Open(sourceFile);
 
                 // Verify source document has content
-                if (sourceDoc.Content.Text.Trim().Length <= 1) // Word docs always have at least 1 char (paragraph mark)
+                var sourceText = sourceDoc.Content.Text?.Trim() ?? "";
+                System.Diagnostics.Debug.WriteLine($"[WordManager] Source document text length: {sourceText.Length}");
+                System.Diagnostics.Debug.WriteLine($"[WordManager] Source document preview: '{sourceText.Substring(0, Math.Min(100, sourceText.Length))}'");
+                
+                if (sourceText.Length <= 1) // Word docs always have at least 1 char (paragraph mark)
                 {
                     throw new InvalidOperationException("Source document appears to be empty");
                 }
@@ -277,7 +281,11 @@ namespace BuildingBlocksManager
                 range.Paste();
 
                 // Verify pasted content
-                if (range.Text.Trim().Length == 0)
+                var pastedText = range.Text?.Trim() ?? "";
+                System.Diagnostics.Debug.WriteLine($"[WordManager] Pasted content length: {pastedText.Length}");
+                System.Diagnostics.Debug.WriteLine($"[WordManager] Pasted content preview: '{pastedText.Substring(0, Math.Min(100, pastedText.Length))}'");
+                
+                if (pastedText.Length == 0)
                 {
                     throw new InvalidOperationException("Failed to paste content from source document");
                 }
@@ -287,16 +295,49 @@ namespace BuildingBlocksManager
 
                 // Access template's BuildingBlockEntries
                 Word.Template template = (Word.Template)templateDoc.get_AttachedTemplate();
+                System.Diagnostics.Debug.WriteLine($"[WordManager] Template BuildingBlockEntries count: {template.BuildingBlockEntries.Count}");
                 
                 // Sanitize parameters one more time before Word API call
                 string sanitizedName = SanitizeBuildingBlockName(name);
                 string sanitizedCategory = SanitizeBuildingBlockCategory(category);
                 
-                template.BuildingBlockEntries.Add(
-                    sanitizedName,
-                    buildingBlockType,
-                    sanitizedCategory,
-                    range);
+                // Check for empty category - Word sometimes doesn't like empty strings
+                if (string.IsNullOrWhiteSpace(sanitizedCategory))
+                {
+                    sanitizedCategory = null; // Try null instead of empty string
+                    System.Diagnostics.Debug.WriteLine($"[WordManager] Using null for empty category");
+                }
+                
+                System.Diagnostics.Debug.WriteLine($"[WordManager] About to add Building Block:");
+                System.Diagnostics.Debug.WriteLine($"  Original Name: '{name}' -> Sanitized: '{sanitizedName}'");
+                System.Diagnostics.Debug.WriteLine($"  Original Category: '{category}' -> Sanitized: '{sanitizedCategory}'");
+                System.Diagnostics.Debug.WriteLine($"  Gallery Type: {galleryType} -> {buildingBlockType}");
+                System.Diagnostics.Debug.WriteLine($"  Range Text Length: {range.Text?.Length ?? 0}");
+                System.Diagnostics.Debug.WriteLine($"  Range Text Preview: '{range.Text?.Substring(0, Math.Min(50, range.Text?.Length ?? 0))}...'");
+                
+                // Try AutoText first, fall back to Quick Parts if it fails
+                try
+                {
+                    template.BuildingBlockEntries.Add(
+                        sanitizedName,
+                        buildingBlockType,
+                        sanitizedCategory,
+                        range);
+                    System.Diagnostics.Debug.WriteLine($"[WordManager] Successfully added to {galleryType} gallery");
+                }
+                catch (COMException comEx) when ((uint)comEx.ErrorCode == 0x800A16DD && galleryType == "AutoText")
+                {
+                    System.Diagnostics.Debug.WriteLine($"[WordManager] AutoText failed with 0x800A16DD, trying Quick Parts...");
+                    
+                    // Try Quick Parts as fallback
+                    var quickPartsType = GetBuildingBlockType("Quick Parts");
+                    template.BuildingBlockEntries.Add(
+                        sanitizedName,
+                        quickPartsType,
+                        sanitizedCategory,
+                        range);
+                    System.Diagnostics.Debug.WriteLine($"[WordManager] Successfully added to Quick Parts gallery as fallback");
+                }
 
                 // Clear the pasted content from template
                 range.Delete();
@@ -403,8 +444,16 @@ namespace BuildingBlocksManager
             // Common COM error codes for Building Blocks
             switch ((uint)comEx.ErrorCode)
             {
-                case 0x800A13E9: // Invalid parameter
+                case 0x800A13E9: // Invalid parameter (generic)
                     return $"Invalid parameter. Name: '{name}' (length: {name?.Length ?? 0}), Category: '{category}' (length: {category?.Length ?? 0}). {baseMessage}";
+                    
+                case 0x800A16DD: // Invalid parameter (specific to Building Block operations)
+                    return $"Invalid Building Block parameter. This usually means:\n" +
+                           $"• Name '{name}' contains invalid characters or is too long\n" +
+                           $"• Category '{category}' is malformed\n" +
+                           $"• Document content is corrupted or empty\n" +
+                           $"• Template file has issues\n" +
+                           $"Name length: {name?.Length ?? 0}, Category length: {category?.Length ?? 0}. {baseMessage}";
                     
                 case 0x800A03EC: // Name already exists
                     return $"Building Block with name '{name}' already exists. {baseMessage}";
