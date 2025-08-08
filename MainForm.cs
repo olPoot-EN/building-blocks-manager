@@ -1251,7 +1251,7 @@ namespace BuildingBlocksManager
                     using (var wordManager = new WordManager(fullTemplatePath))
                     {
                         var allBlocks = wordManager.GetBuildingBlocks();
-                        availableBlocks = allBlocks.Where(bb => !IsSystemEntry(bb)).ToList();
+                        availableBlocks = allBlocks.ToList();
                     }
                 }
                 catch (Exception ex)
@@ -1653,31 +1653,32 @@ BACKUP PROCESS:
                     // Store all building blocks for filtering
                     allBuildingBlocks = buildingBlocks;
                     
-                    // Reset filters when loading new template and set System/Hex to unchecked by default
+                    // Reset filters when loading new template and apply defaults
                     selectedCategories.Clear();
                     selectedGalleries.Clear();
                     selectedTemplates.Clear();
                     
-                    // Apply default filter: exclude System/Hex Entries if they exist, but include all templates and galleries by default
-                    var hasSystemEntries = buildingBlocks.Any(bb => IsSystemEntry(bb));
-                    if (hasSystemEntries)
+                    // Categories: All checked EXCEPT "System/Hex Entries" (if it exists)
+                    var categories = GetUniqueCategories();
+                    foreach (var category in categories)
                     {
-                        // Add all categories except System/Hex Entries to selected list
-                        var categories = GetUniqueCategories();
-                        foreach (var category in categories.Where(c => c != "System/Hex Entries"))
+                        if (category != "System/Hex Entries")
                         {
                             selectedCategories.Add(category);
                         }
                     }
                     
-                    // Pre-select galleries by default, except placeholder items like System/Hex entries
+                    // Galleries: All checked EXCEPT "Placeholder" (if it exists)
                     var galleries = GetUniqueGalleries();
-                    foreach (var gallery in galleries.Where(g => g != "Placeholder"))
+                    foreach (var gallery in galleries)
                     {
-                        selectedGalleries.Add(gallery);
+                        if (gallery != "Placeholder")
+                        {
+                            selectedGalleries.Add(gallery);
+                        }
                     }
                     
-                    // Pre-select templates by default so list populates initially
+                    // Templates: All checked
                     var templates = GetUniqueTemplates();
                     selectedTemplates.AddRange(templates);
                     
@@ -1696,7 +1697,7 @@ BACKUP PROCESS:
                         return;
                     }
 
-                    // Apply current filter (which will exclude System/Hex entries by default)
+                    // Apply current filter (system/hex entries excluded by default)
                     ApplyTemplateFilter();
 
                     // Switch to Template tab
@@ -2080,42 +2081,41 @@ BACKUP PROCESS:
             
             foreach (var bb in allBuildingBlocks)
             {
-                bool includeByCategory = false;
-                bool includeByGallery = false;
-                bool includeByTemplate = false;
-                
-                // Check category filter - only include if category is selected
-                if (selectedCategories.Contains("System/Hex Entries") && IsSystemEntry(bb))
+                // Apply category filter
+                bool categoryMatch = true;
+                if (selectedCategories.Count > 0)
                 {
-                    includeByCategory = true;
-                }
-                else if (selectedCategories.Contains(string.IsNullOrEmpty(bb.Category) ? "(No Category)" : bb.Category))
-                {
-                    if (selectedCategories.Contains("System/Hex Entries") || !IsSystemEntry(bb))
+                    if (IsSystemEntry(bb))
                     {
-                        includeByCategory = true;
+                        // System entries are only included if "System/Hex Entries" is selected
+                        categoryMatch = selectedCategories.Contains("System/Hex Entries");
+                    }
+                    else
+                    {
+                        // Regular entries: check if their actual category is selected
+                        string actualCategory = string.IsNullOrEmpty(bb.Category) ? "(No Category)" : bb.Category;
+                        categoryMatch = selectedCategories.Contains(actualCategory);
                     }
                 }
                 
-                // Check gallery filter - only include if gallery is selected
-                if (selectedGalleries.Contains(string.IsNullOrEmpty(bb.Gallery) ? "(No Gallery)" : bb.Gallery))
+                // Apply gallery filter
+                bool galleryMatch = true;
+                if (selectedGalleries.Count > 0)
                 {
-                    includeByGallery = true;
+                    string actualGallery = string.IsNullOrEmpty(bb.Gallery) ? "(No Gallery)" : bb.Gallery;
+                    galleryMatch = selectedGalleries.Contains(actualGallery);
                 }
                 
-                // Check template filter - only include if template is selected
-                if (selectedTemplates.Contains(string.IsNullOrEmpty(bb.Template) ? "(No Template)" : bb.Template))
+                // Apply template filter
+                bool templateMatch = true;
+                if (selectedTemplates.Count > 0)
                 {
-                    includeByTemplate = true;
+                    string actualTemplate = string.IsNullOrEmpty(bb.Template) ? "(No Template)" : bb.Template;
+                    templateMatch = selectedTemplates.Contains(actualTemplate);
                 }
-                    
-                // Only include if all active filters pass (AND logic)
-                // If a filter has no selections, it should not restrict (pass by default)
-                bool categoryPass = selectedCategories.Count == 0 || includeByCategory;
-                bool galleryPass = selectedGalleries.Count == 0 || includeByGallery;
-                bool templatePass = selectedTemplates.Count == 0 || includeByTemplate;
                 
-                if (categoryPass && galleryPass && templatePass)
+                // Include only if ALL filters match (AND logic)
+                if (categoryMatch && galleryMatch && templateMatch)
                 {
                     filteredBlocks.Add(bb);
                 }
