@@ -252,8 +252,17 @@ namespace BuildingBlocksManager
             
             try
             {
+                // Validate parameters before starting Word operations
+                ValidateBuildingBlockParameters(name, category);
+                
                 OpenTemplate();
                 sourceDoc = wordApp.Documents.Open(sourceFile);
+
+                // Verify source document has content
+                if (sourceDoc.Content.Text.Trim().Length <= 1) // Word docs always have at least 1 char (paragraph mark)
+                {
+                    throw new InvalidOperationException("Source document appears to be empty");
+                }
 
                 // Remove existing Building Block with same name if it exists
                 RemoveBuildingBlock(name, category);
@@ -265,15 +274,26 @@ namespace BuildingBlocksManager
                 var range = templateDoc.Range();
                 range.Paste();
 
+                // Verify pasted content
+                if (range.Text.Trim().Length == 0)
+                {
+                    throw new InvalidOperationException("Failed to paste content from source document");
+                }
+
                 // Convert gallery type to Word enum
                 var buildingBlockType = GetBuildingBlockType(galleryType);
 
                 // Access template's BuildingBlockEntries
                 Word.Template template = (Word.Template)templateDoc.get_AttachedTemplate();
+                
+                // Sanitize parameters one more time before Word API call
+                string sanitizedName = SanitizeBuildingBlockName(name);
+                string sanitizedCategory = SanitizeBuildingBlockCategory(category);
+                
                 template.BuildingBlockEntries.Add(
-                    name,
+                    sanitizedName,
                     buildingBlockType,
-                    category,
+                    sanitizedCategory,
                     range);
 
                 // Clear the pasted content from template
@@ -281,6 +301,11 @@ namespace BuildingBlocksManager
                 
                 // Save template
                 templateDoc.Save();
+            }
+            catch (COMException comEx)
+            {
+                string detailedMessage = GetDetailedComError(comEx, name, category);
+                throw new InvalidOperationException($"Failed to import Building Block '{name}': {detailedMessage}", comEx);
             }
             catch (Exception ex)
             {
@@ -293,6 +318,101 @@ namespace BuildingBlocksManager
                     sourceDoc.Close(false);
                     Marshal.ReleaseComObject(sourceDoc);
                 }
+            }
+        }
+
+        private void ValidateBuildingBlockParameters(string name, string category)
+        {
+            // Building Block name validation
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Building Block name cannot be empty");
+            
+            if (name.Length > 64) // Word has a limit around 64 characters
+                throw new ArgumentException($"Building Block name too long (max 64 chars): '{name}' ({name.Length} chars)");
+            
+            // Check for invalid characters in name
+            char[] invalidNameChars = { '/', '\\', ':', '*', '?', '"', '<', '>', '|', '\t', '\n', '\r' };
+            if (name.IndexOfAny(invalidNameChars) >= 0)
+                throw new ArgumentException($"Building Block name contains invalid characters: '{name}'");
+            
+            // Category validation (can be empty)
+            if (!string.IsNullOrEmpty(category))
+            {
+                if (category.Length > 128) // Conservative limit
+                    throw new ArgumentException($"Category too long (max 128 chars): '{category}' ({category.Length} chars)");
+                
+                // Check for invalid characters in category
+                char[] invalidCategoryChars = { '*', '?', '"', '<', '>', '|', '\t', '\n', '\r' };
+                if (category.IndexOfAny(invalidCategoryChars) >= 0)
+                    throw new ArgumentException($"Category contains invalid characters: '{category}'");
+            }
+        }
+        
+        private string SanitizeBuildingBlockName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                return "Untitled";
+            
+            // Replace problematic characters with underscores
+            string sanitized = name;
+            char[] problematicChars = { '/', '\\', ':', '*', '?', '"', '<', '>', '|', '\t', '\n', '\r' };
+            
+            foreach (char c in problematicChars)
+            {
+                sanitized = sanitized.Replace(c, '_');
+            }
+            
+            // Trim and limit length
+            sanitized = sanitized.Trim();
+            if (sanitized.Length > 64)
+                sanitized = sanitized.Substring(0, 64).Trim();
+            
+            return sanitized;
+        }
+        
+        private string SanitizeBuildingBlockCategory(string category)
+        {
+            if (string.IsNullOrWhiteSpace(category))
+                return "";
+            
+            // Replace problematic characters with underscores
+            string sanitized = category;
+            char[] problematicChars = { '*', '?', '"', '<', '>', '|', '\t', '\n', '\r' };
+            
+            foreach (char c in problematicChars)
+            {
+                sanitized = sanitized.Replace(c, '_');
+            }
+            
+            // Trim and limit length
+            sanitized = sanitized.Trim();
+            if (sanitized.Length > 128)
+                sanitized = sanitized.Substring(0, 128).Trim();
+            
+            return sanitized;
+        }
+        
+        private string GetDetailedComError(COMException comEx, string name, string category)
+        {
+            string baseMessage = comEx.Message;
+            
+            // Common COM error codes for Building Blocks
+            switch ((uint)comEx.ErrorCode)
+            {
+                case 0x800A13E9: // Invalid parameter
+                    return $"Invalid parameter. Name: '{name}' (length: {name?.Length ?? 0}), Category: '{category}' (length: {category?.Length ?? 0}). {baseMessage}";
+                    
+                case 0x800A03EC: // Name already exists
+                    return $"Building Block with name '{name}' already exists. {baseMessage}";
+                    
+                case 0x800A175D: // Document is read-only
+                    return $"Template document is read-only. {baseMessage}";
+                    
+                case 0x80080005: // Server execution failed
+                    return $"Word automation failed. Try closing Word and running again. {baseMessage}";
+                    
+                default:
+                    return $"COM Error 0x{comEx.ErrorCode:X8}: {baseMessage}";
             }
         }
 
