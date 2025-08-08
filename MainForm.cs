@@ -731,6 +731,9 @@ namespace BuildingBlocksManager
             AppendResults("");
             
             logger.Info($"Starting Import All operation - Template: {fullTemplatePath}, Directory: {fullSourceDirectoryPath}");
+            
+            // Clear any previous category change tracking
+            conflictedFiles.Clear();
 
             WordManager wordManager = null;
             var startTime = DateTime.Now;
@@ -793,15 +796,37 @@ namespace BuildingBlocksManager
                         var category = chkFlatImport.Checked ? flatCategory : file.Category;
                         
                         // Import the Building Block to AutoText gallery
-                        wordManager.ImportBuildingBlock(file.FilePath, category, file.Name, "AutoText");
+                        var importResult = wordManager.ImportBuildingBlock(file.FilePath, category, file.Name, "AutoText");
                         
-                        // Update import tracking
-                        importTracker.UpdateImportTime(file.FilePath);
-                        
-                        successCount++;
-                        AppendResults($"  ✓ Successfully imported as {category}\\{file.Name}");
-                        logger.Success($"Imported {fileName} as {category}\\{file.Name}");
-                        logger.LogImport(fileName, file.Name, category, file.FilePath);
+                        if (importResult.Success)
+                        {
+                            // Update import tracking
+                            importTracker.UpdateImportTime(file.FilePath);
+                            
+                            successCount++;
+                            
+                            // Check if category was changed
+                            if (importResult.CategoryChanged)
+                            {
+                                AppendResults($"  ✓ Successfully imported as {importResult.FinalCategory}\\{importResult.ImportedName}");
+                                AppendResults($"    Note: Category changed from empty to '{importResult.AssignedCategory}' (legacy AutoText compatibility)");
+                                logger.Success($"Imported {fileName} as {importResult.FinalCategory}\\{importResult.ImportedName} (category auto-assigned)");
+                                
+                                // Track category changes for summary
+                                conflictedFiles.Add($"{importResult.ImportedName} (assigned to '{importResult.AssignedCategory}')");
+                            }
+                            else
+                            {
+                                AppendResults($"  ✓ Successfully imported as {importResult.FinalCategory}\\{importResult.ImportedName}");
+                                logger.Success($"Imported {fileName} as {importResult.FinalCategory}\\{importResult.ImportedName}");
+                            }
+                            
+                            logger.LogImport(fileName, importResult.ImportedName, importResult.FinalCategory, file.FilePath);
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException("Import failed without exception");
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -843,6 +868,18 @@ namespace BuildingBlocksManager
             AppendResults($"Building Blocks Successfully Imported: {successCount}");
             AppendResults($"Files with Errors: {errorCount}");
             AppendResults($"Processing Time: {processingTime:F1} seconds");
+            
+            // Show category changes summary if any occurred
+            if (conflictedFiles.Count > 0)
+            {
+                AppendResults("");
+                AppendResults($"Category Changes: {conflictedFiles.Count} Building Blocks were assigned to 'General' category");
+                AppendResults("(These were legacy AutoText entries without categories)");
+                foreach (var item in conflictedFiles)
+                {
+                    AppendResults($"  • {item}");
+                }
+            }
             
             logger.Info($"Import All completed - Success: {successCount}, Errors: {errorCount}, Time: {processingTime:F1}s");
             
@@ -926,15 +963,37 @@ namespace BuildingBlocksManager
                         }
 
                         // Import the Building Block
-                        wordManager.ImportBuildingBlock(file.FilePath, category, name, "AutoText");
+                        var importResult = wordManager.ImportBuildingBlock(file.FilePath, category, name, "AutoText");
                         
-                        // Update import tracking
-                        importTracker.UpdateImportTime(file.FilePath);
-                        
-                        successCount++;
-                        logger.Success($"Imported {fileName} as {category}\\{name}");
-                        logger.LogImport(fileName, name, category, file.FilePath);
-                        AppendResults($"  ✓ Imported as {category}\\{name}");
+                        if (importResult.Success)
+                        {
+                            // Update import tracking
+                            importTracker.UpdateImportTime(file.FilePath);
+                            
+                            successCount++;
+                            
+                            // Check if category was changed
+                            if (importResult.CategoryChanged)
+                            {
+                                AppendResults($"  ✓ Imported as {importResult.FinalCategory}\\{importResult.ImportedName}");
+                                AppendResults($"    Note: Category changed from empty to '{importResult.AssignedCategory}' (legacy AutoText compatibility)");
+                                logger.Success($"Imported {fileName} as {importResult.FinalCategory}\\{importResult.ImportedName} (category auto-assigned)");
+                                
+                                // Track category changes for summary
+                                conflictedFiles.Add($"{importResult.ImportedName} (assigned to '{importResult.AssignedCategory}')");
+                            }
+                            else
+                            {
+                                AppendResults($"  ✓ Imported as {importResult.FinalCategory}\\{importResult.ImportedName}");
+                                logger.Success($"Imported {fileName} as {importResult.FinalCategory}\\{importResult.ImportedName}");
+                            }
+                            
+                            logger.LogImport(fileName, importResult.ImportedName, importResult.FinalCategory, file.FilePath);
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException("Import failed without exception");
+                        }
                     }
                     catch (Exception ex)
                     {

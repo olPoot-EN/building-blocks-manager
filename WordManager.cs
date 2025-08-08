@@ -246,9 +246,10 @@ namespace BuildingBlocksManager
             ImportBuildingBlock(sourceFile, category, name, "AutoText"); // Default to AutoText
         }
         
-        public void ImportBuildingBlock(string sourceFile, string category, string name, string galleryType)
+        public ImportResult ImportBuildingBlock(string sourceFile, string category, string name, string galleryType)
         {
             Word.Document sourceDoc = null;
+            var result = new ImportResult { Success = false };
             
             try
             {
@@ -273,7 +274,7 @@ namespace BuildingBlocksManager
                 // Remove existing Building Block with same name if it exists
                 RemoveBuildingBlock(name, category);
 
-                // Work directly with the source document content - don't paste into template!
+                // Use source document content directly (simpler approach)
                 var sourceRange = sourceDoc.Content;
                 System.Diagnostics.Debug.WriteLine($"[WordManager] Source range length: {sourceRange.Text?.Length ?? 0}");
                 System.Diagnostics.Debug.WriteLine($"[WordManager] Source range preview: '{sourceRange.Text?.Substring(0, Math.Min(100, sourceRange.Text?.Length ?? 0))}'");
@@ -290,9 +291,13 @@ namespace BuildingBlocksManager
                 string sanitizedCategory = SanitizeBuildingBlockCategory(category);
                 
                 // Check for empty category - Word doesn't like empty strings for BuildingBlockEntries
-                if (string.IsNullOrWhiteSpace(sanitizedCategory))
+                bool categoryWasEmpty = string.IsNullOrWhiteSpace(sanitizedCategory);
+                if (categoryWasEmpty)
                 {
                     sanitizedCategory = "General"; // Use default category instead of empty/null
+                    result.CategoryChanged = true;
+                    result.OriginalCategory = category;
+                    result.AssignedCategory = sanitizedCategory;
                     System.Diagnostics.Debug.WriteLine($"[WordManager] Using 'General' for empty category");
                 }
                 
@@ -327,12 +332,17 @@ namespace BuildingBlocksManager
                     System.Diagnostics.Debug.WriteLine($"[WordManager] Successfully added to Quick Parts gallery as fallback");
                 }
 
-                // No need to delete anything from template since we didn't modify it!
+                // No temporary document to close
                 
                 // Save template
                 templateDoc.Save();
                 
+                result.Success = true;
+                result.ImportedName = sanitizedName;
+                result.FinalCategory = sanitizedCategory;
+                
                 System.Diagnostics.Debug.WriteLine($"[WordManager] Successfully imported '{sanitizedName}' in category '{sanitizedCategory}'");
+                return result;
             }
             catch (COMException comEx)
             {
@@ -965,5 +975,15 @@ namespace BuildingBlocksManager
         {
             return Name;
         }
+    }
+
+    public class ImportResult
+    {
+        public bool Success { get; set; }
+        public string ImportedName { get; set; }
+        public string FinalCategory { get; set; }
+        public bool CategoryChanged { get; set; }
+        public string OriginalCategory { get; set; }
+        public string AssignedCategory { get; set; }
     }
 }
