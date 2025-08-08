@@ -339,6 +339,9 @@ namespace BuildingBlocksManager
                     Word.BuildingBlock bb = template.BuildingBlockEntries.Item(i);
                     string actualCategory = bb.Category?.Name ?? "";
                     
+                    // Debug logging
+                    System.Diagnostics.Debug.WriteLine($"Checking BB: Name='{bb.Name}', Category='{actualCategory}', Looking for: Name='{buildingBlockName}', Category='{category}'");
+                    
                     // If category is empty, match by name only, otherwise match both name and category
                     bool categoryMatch = string.IsNullOrEmpty(category) ? 
                         string.IsNullOrEmpty(actualCategory) : 
@@ -347,12 +350,28 @@ namespace BuildingBlocksManager
                     if (bb.Name == buildingBlockName && categoryMatch)
                     {
                         targetBB = bb;
+                        System.Diagnostics.Debug.WriteLine($"Found matching BB: {bb.Name}");
                         break;
                     }
                 }
 
                 if (targetBB == null)
-                    throw new InvalidOperationException($"Building Block '{buildingBlockName}' not found in category '{category}'");
+                {
+                    // Create detailed error message showing available Building Blocks
+                    var availableNames = new List<string>();
+                    for (int j = 1; j <= template.BuildingBlockEntries.Count; j++)
+                    {
+                        Word.BuildingBlock bb = template.BuildingBlockEntries.Item(j);
+                        string actualCategory = bb.Category?.Name ?? "";
+                        availableNames.Add($"'{bb.Name}' (Category: '{actualCategory}')");
+                    }
+                    
+                    var errorMsg = $"Building Block '{buildingBlockName}' not found in category '{category}'. Available Building Blocks: {string.Join(", ", availableNames.Take(10))}";
+                    if (availableNames.Count > 10)
+                        errorMsg += $"... and {availableNames.Count - 10} more";
+                    
+                    throw new InvalidOperationException(errorMsg);
+                }
 
                 // Create new document and insert Building Block content
                 newDoc = wordApp.Documents.Add();
