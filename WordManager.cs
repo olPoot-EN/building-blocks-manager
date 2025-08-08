@@ -304,7 +304,12 @@ namespace BuildingBlocksManager
                     Word.BuildingBlock bb = template.BuildingBlockEntries.Item(i);
                     string actualCategory = bb.Category?.Name ?? "";
                     
-                    if (bb.Name == name && actualCategory == category)
+                    // If category is empty, match by name only, otherwise match both name and category
+                    bool categoryMatch = string.IsNullOrEmpty(category) ? 
+                        string.IsNullOrEmpty(actualCategory) : 
+                        actualCategory == category;
+                    
+                    if (bb.Name == name && categoryMatch)
                     {
                         bb.Delete();
                         break;
@@ -334,7 +339,12 @@ namespace BuildingBlocksManager
                     Word.BuildingBlock bb = template.BuildingBlockEntries.Item(i);
                     string actualCategory = bb.Category?.Name ?? "";
                     
-                    if (bb.Name == buildingBlockName && actualCategory == category)
+                    // If category is empty, match by name only, otherwise match both name and category
+                    bool categoryMatch = string.IsNullOrEmpty(category) ? 
+                        string.IsNullOrEmpty(actualCategory) : 
+                        actualCategory == category;
+                    
+                    if (bb.Name == buildingBlockName && categoryMatch)
                     {
                         targetBB = bb;
                         break;
@@ -408,7 +418,12 @@ namespace BuildingBlocksManager
                     Word.BuildingBlock bb = template.BuildingBlockEntries.Item(i);
                     string actualCategory = bb.Category?.Name ?? "";
                     
-                    if (bb.Name == buildingBlockName && actualCategory == category)
+                    // If category is empty, match by name only, otherwise match both name and category
+                    bool categoryMatch = string.IsNullOrEmpty(category) ? 
+                        string.IsNullOrEmpty(actualCategory) : 
+                        actualCategory == category;
+                    
+                    if (bb.Name == buildingBlockName && categoryMatch)
                     {
                         bb.Delete();
                         templateDoc.Save();
