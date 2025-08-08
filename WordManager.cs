@@ -500,27 +500,69 @@ namespace BuildingBlocksManager
         {
             try
             {
-                // FAST: Use XML to find building block location without opening Word
-                var location = FindBuildingBlockLocationXML(buildingBlockName, category);
-                if (!location.Found)
-                {
-                    throw new InvalidOperationException($"Building Block '{buildingBlockName}' not found");
-                }
+                // Ensure any COM connections are closed to avoid file access conflicts
+                CloseTemplate();
+                
+                // Check file accessibility before proceeding
+                if (!IsFileAccessible(templatePath))
+                    throw new IOException($"Template file is locked or in use: {templatePath}");
 
-                // PRECISE: Open Word only when we know the target exists and get it by index
-                OpenTemplate();
-                Word.BuildingBlock targetBB = GetBuildingBlockByIndex(location.Index);
-                if (targetBB == null)
-                {
-                    throw new InvalidOperationException($"Building Block at index {location.Index} could not be accessed");
-                }
-
-                targetBB.Delete();
-                templateDoc.Save();
+                // Pure XML deletion approach
+                DeleteBuildingBlockXML(buildingBlockName, category);
             }
             catch (Exception ex)
             {
                 throw new InvalidOperationException($"Failed to delete Building Block '{buildingBlockName}': {ex.Message}", ex);
+            }
+        }
+
+        private void DeleteBuildingBlockXML(string buildingBlockName, string category)
+        {
+            using (var doc = WordprocessingDocument.Open(templatePath, true)) // Writable
+            {
+                var glossaryPart = doc.MainDocumentPart?.GlossaryDocumentPart;
+                if (glossaryPart?.GlossaryDocument?.DocParts == null)
+                    throw new InvalidOperationException("No Building Blocks found in template");
+
+                DocPart targetDocPart = null;
+                
+                // Find the target Building Block
+                foreach (var docPart in glossaryPart.GlossaryDocument.DocParts.Elements<DocPart>())
+                {
+                    var properties = docPart.DocPartProperties;
+                    if (properties != null)
+                    {
+                        var name = properties.DocPartName?.Val?.Value ?? "";
+                        
+                        // Extract category
+                        var actualCategory = "";
+                        var categoryElement = properties.GetFirstChild<Category>();
+                        if (categoryElement != null)
+                        {
+                            var categoryName = categoryElement.GetFirstChild<DocumentFormat.OpenXml.Wordprocessing.Name>();
+                            if (categoryName?.Val != null)
+                                actualCategory = categoryName.Val.Value;
+                        }
+                        
+                        // Match building block name and category
+                        if (name == buildingBlockName && 
+                            (string.IsNullOrEmpty(category) || actualCategory == category))
+                        {
+                            targetDocPart = docPart;
+                            break;
+                        }
+                    }
+                }
+
+                if (targetDocPart == null)
+                {
+                    throw new InvalidOperationException($"Building Block '{buildingBlockName}' not found");
+                }
+
+                // Remove the DocPart from the XML
+                targetDocPart.Remove();
+                
+                // Save changes (automatically handled by WordprocessingDocument disposal)
             }
         }
 

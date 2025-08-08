@@ -86,7 +86,7 @@ namespace BuildingBlocksManager
 
         public void LogDeletion(string buildingBlockName, string category)
         {
-            var message = $"Deleted: {buildingBlockName} (Category: {category})";
+            var message = $"{buildingBlockName} (Category: {category})";
             WriteToFile(deleteLogFile, "DELETE", message);
         }
 
