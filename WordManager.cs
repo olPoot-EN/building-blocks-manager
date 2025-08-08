@@ -296,24 +296,10 @@ namespace BuildingBlocksManager
         {
             try
             {
-                Word.Template template = (Word.Template)templateDoc.get_AttachedTemplate();
-                
-                // Use indexed access to find and remove Building Block
-                for (int i = 1; i <= template.BuildingBlockEntries.Count; i++)
+                Word.BuildingBlock targetBB = FindBuildingBlockWithFallback(name, category);
+                if (targetBB != null)
                 {
-                    Word.BuildingBlock bb = template.BuildingBlockEntries.Item(i);
-                    string actualCategory = bb.Category?.Name ?? "";
-                    
-                    // If category is empty, match by name only, otherwise match both name and category
-                    bool categoryMatch = string.IsNullOrEmpty(category) ? 
-                        string.IsNullOrEmpty(actualCategory) : 
-                        actualCategory == category;
-                    
-                    if (bb.Name == name && categoryMatch)
-                    {
-                        bb.Delete();
-                        break;
-                    }
+                    targetBB.Delete();
                 }
             }
             catch
@@ -324,15 +310,136 @@ namespace BuildingBlocksManager
 
         public void ExportBuildingBlock(string buildingBlockName, string category, string outputPath)
         {
+            Word.Document newDoc = null;
+            
             try
             {
-                // Try OpenXML-based export first
-                ExportBuildingBlockOpenXML(buildingBlockName, category, outputPath);
+                OpenTemplate();
+                
+                // Find the Building Block using multiple search strategies
+                Word.BuildingBlock targetBB = FindBuildingBlockWithFallback(buildingBlockName, category);
+
+                if (targetBB == null)
+                {
+                    throw new InvalidOperationException($"Building Block '{buildingBlockName}' not found with any search strategy");
+                }
+
+                // Create new document and insert Building Block content
+                newDoc = wordApp.Documents.Add();
+                var range = newDoc.Range();
+                targetBB.Insert(range);
+
+                // Save the new document
+                newDoc.SaveAs2(outputPath);
             }
             catch (Exception ex)
             {
                 throw new InvalidOperationException($"Failed to export Building Block '{buildingBlockName}': {ex.Message}", ex);
             }
+            finally
+            {
+                if (newDoc != null)
+                {
+                    newDoc.Close(false);
+                    Marshal.ReleaseComObject(newDoc);
+                }
+            }
+        }
+
+        private Word.BuildingBlock FindBuildingBlockWithFallback(string buildingBlockName, string category)
+        {
+            Word.Template template = (Word.Template)templateDoc.get_AttachedTemplate();
+            Word.BuildingBlock targetBB = null;
+            var searchResults = new List<string>();
+
+            // Strategy 1: Exact name and category match
+            for (int i = 1; i <= template.BuildingBlockEntries.Count; i++)
+            {
+                Word.BuildingBlock bb = template.BuildingBlockEntries.Item(i);
+                string actualCategory = bb.Category?.Name ?? "";
+                
+                bool categoryMatch = string.IsNullOrEmpty(category) ? 
+                    string.IsNullOrEmpty(actualCategory) : 
+                    actualCategory == category;
+                
+                if (bb.Name == buildingBlockName && categoryMatch)
+                {
+                    searchResults.Add($"Strategy 1 - Exact match: Found '{bb.Name}' in category '{actualCategory}'");
+                    return bb;
+                }
+            }
+
+            // Strategy 2: Exact name, any category
+            for (int i = 1; i <= template.BuildingBlockEntries.Count; i++)
+            {
+                Word.BuildingBlock bb = template.BuildingBlockEntries.Item(i);
+                string actualCategory = bb.Category?.Name ?? "";
+                
+                if (bb.Name == buildingBlockName)
+                {
+                    searchResults.Add($"Strategy 2 - Name match: Found '{bb.Name}' in category '{actualCategory}'");
+                    targetBB = bb;
+                    // Don't return immediately, continue looking for better matches
+                }
+            }
+
+            if (targetBB != null)
+            {
+                System.Diagnostics.Debug.WriteLine(string.Join("; ", searchResults));
+                return targetBB;
+            }
+
+            // Strategy 3: Partial name matching
+            for (int i = 1; i <= template.BuildingBlockEntries.Count; i++)
+            {
+                Word.BuildingBlock bb = template.BuildingBlockEntries.Item(i);
+                string actualCategory = bb.Category?.Name ?? "";
+                
+                if (bb.Name.Contains(buildingBlockName) || buildingBlockName.Contains(bb.Name))
+                {
+                    searchResults.Add($"Strategy 3 - Partial match: Found '{bb.Name}' in category '{actualCategory}'");
+                    targetBB = bb;
+                }
+            }
+
+            if (targetBB != null)
+            {
+                System.Diagnostics.Debug.WriteLine(string.Join("; ", searchResults));
+                return targetBB;
+            }
+
+            // Strategy 4: Case-insensitive search
+            for (int i = 1; i <= template.BuildingBlockEntries.Count; i++)
+            {
+                Word.BuildingBlock bb = template.BuildingBlockEntries.Item(i);
+                string actualCategory = bb.Category?.Name ?? "";
+                
+                if (string.Equals(bb.Name, buildingBlockName, StringComparison.OrdinalIgnoreCase))
+                {
+                    searchResults.Add($"Strategy 4 - Case-insensitive: Found '{bb.Name}' in category '{actualCategory}'");
+                    targetBB = bb;
+                }
+            }
+
+            // Log all search attempts for debugging
+            if (searchResults.Count > 0)
+            {
+                System.Diagnostics.Debug.WriteLine($"Search results for '{buildingBlockName}': {string.Join("; ", searchResults)}");
+            }
+            else
+            {
+                // Show available Building Blocks for debugging
+                var availableNames = new List<string>();
+                for (int j = 1; j <= template.BuildingBlockEntries.Count; j++)
+                {
+                    Word.BuildingBlock bb = template.BuildingBlockEntries.Item(j);
+                    string actualCategory = bb.Category?.Name ?? "";
+                    availableNames.Add($"'{bb.Name}' (Category: '{actualCategory}')");
+                }
+                System.Diagnostics.Debug.WriteLine($"No matches found. Available: {string.Join(", ", availableNames.Take(10))}");
+            }
+
+            return targetBB;
         }
 
         private void ExportBuildingBlockOpenXML(string buildingBlockName, string category, string outputPath)
@@ -464,28 +571,15 @@ namespace BuildingBlocksManager
             try
             {
                 OpenTemplate();
-                Word.Template template = (Word.Template)templateDoc.get_AttachedTemplate();
                 
-                // Find and delete the Building Block
-                for (int i = 1; i <= template.BuildingBlockEntries.Count; i++)
+                Word.BuildingBlock targetBB = FindBuildingBlockWithFallback(buildingBlockName, category);
+                if (targetBB == null)
                 {
-                    Word.BuildingBlock bb = template.BuildingBlockEntries.Item(i);
-                    string actualCategory = bb.Category?.Name ?? "";
-                    
-                    // If category is empty, match by name only, otherwise match both name and category
-                    bool categoryMatch = string.IsNullOrEmpty(category) ? 
-                        string.IsNullOrEmpty(actualCategory) : 
-                        actualCategory == category;
-                    
-                    if (bb.Name == buildingBlockName && categoryMatch)
-                    {
-                        bb.Delete();
-                        templateDoc.Save();
-                        return;
-                    }
+                    throw new InvalidOperationException($"Building Block '{buildingBlockName}' not found with any search strategy");
                 }
 
-                throw new InvalidOperationException($"Building Block '{buildingBlockName}' not found in category '{category}'");
+                targetBB.Delete();
+                templateDoc.Save();
             }
             catch (Exception ex)
             {
