@@ -302,7 +302,9 @@ namespace BuildingBlocksManager
                 for (int i = 1; i <= template.BuildingBlockEntries.Count; i++)
                 {
                     Word.BuildingBlock bb = template.BuildingBlockEntries.Item(i);
-                    if (bb.Name == name && bb.Category.Name == category)
+                    string actualCategory = bb.Category?.Name ?? "";
+                    
+                    if (bb.Name == name && actualCategory == category)
                     {
                         bb.Delete();
                         break;
@@ -330,7 +332,9 @@ namespace BuildingBlocksManager
                 for (int i = 1; i <= template.BuildingBlockEntries.Count; i++)
                 {
                     Word.BuildingBlock bb = template.BuildingBlockEntries.Item(i);
-                    if (bb.Name == buildingBlockName && bb.Category.Name == category)
+                    string actualCategory = bb.Category?.Name ?? "";
+                    
+                    if (bb.Name == buildingBlockName && actualCategory == category)
                     {
                         targetBB = bb;
                         break;
@@ -402,7 +406,9 @@ namespace BuildingBlocksManager
                 for (int i = 1; i <= template.BuildingBlockEntries.Count; i++)
                 {
                     Word.BuildingBlock bb = template.BuildingBlockEntries.Item(i);
-                    if (bb.Name == buildingBlockName && bb.Category.Name == category)
+                    string actualCategory = bb.Category?.Name ?? "";
+                    
+                    if (bb.Name == buildingBlockName && actualCategory == category)
                     {
                         bb.Delete();
                         templateDoc.Save();
