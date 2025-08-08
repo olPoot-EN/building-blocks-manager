@@ -2077,51 +2077,12 @@ BACKUP PROCESS:
 
         private List<BuildingBlockInfo> GetFilteredBuildingBlocks()
         {
-            List<BuildingBlockInfo> filteredBlocks = new List<BuildingBlockInfo>();
-            
-            foreach (var bb in allBuildingBlocks)
-            {
-                // Apply category filter
-                bool categoryMatch = true;
-                if (selectedCategories.Count > 0)
-                {
-                    if (IsSystemEntry(bb))
-                    {
-                        // System entries are only included if "System/Hex Entries" is selected
-                        categoryMatch = selectedCategories.Contains("System/Hex Entries");
-                    }
-                    else
-                    {
-                        // Regular entries: check if their actual category is selected
-                        string actualCategory = string.IsNullOrEmpty(bb.Category) ? "(No Category)" : bb.Category;
-                        categoryMatch = selectedCategories.Contains(actualCategory);
-                    }
-                }
-                
-                // Apply gallery filter
-                bool galleryMatch = true;
-                if (selectedGalleries.Count > 0)
-                {
-                    string actualGallery = string.IsNullOrEmpty(bb.Gallery) ? "(No Gallery)" : bb.Gallery;
-                    galleryMatch = selectedGalleries.Contains(actualGallery);
-                }
-                
-                // Apply template filter
-                bool templateMatch = true;
-                if (selectedTemplates.Count > 0)
-                {
-                    string actualTemplate = string.IsNullOrEmpty(bb.Template) ? "(No Template)" : bb.Template;
-                    templateMatch = selectedTemplates.Contains(actualTemplate);
-                }
-                
-                // Include only if ALL filters match (AND logic)
-                if (categoryMatch && galleryMatch && templateMatch)
-                {
-                    filteredBlocks.Add(bb);
-                }
-            }
-            
-            return filteredBlocks;
+            return allBuildingBlocks
+                .Where(bb => selectedCategories.Contains(IsSystemEntry(bb) ? "System/Hex Entries" : 
+                                                        (string.IsNullOrEmpty(bb.Category) ? "(No Category)" : bb.Category)))
+                .Where(bb => selectedGalleries.Contains(string.IsNullOrEmpty(bb.Gallery) ? "(No Gallery)" : bb.Gallery))
+                .Where(bb => selectedTemplates.Contains(string.IsNullOrEmpty(bb.Template) ? "(No Template)" : bb.Template))
+                .ToList();
         }
 
         private void ApplyTemplateFilter()
