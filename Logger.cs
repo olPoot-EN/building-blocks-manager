@@ -19,7 +19,7 @@ namespace BuildingBlocksManager
         public Logger(string templatePath = null, string sourceDirectoryPath = null, bool logToTemplateDirectory = true, bool enableDetailedLogging = true)
         {
             this.enableDetailedLogging = enableDetailedLogging;
-            this.sessionId = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            this.sessionId = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
             
             // Determine log directory based on settings
             if (logToTemplateDirectory && !string.IsNullOrEmpty(templatePath) && File.Exists(templatePath))
@@ -94,7 +94,7 @@ namespace BuildingBlocksManager
         {
             try
             {
-                var logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {level}: {message}";
+                var logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm}] {level}: {message}";
                 File.AppendAllText(filePath, logEntry + Environment.NewLine);
             }
             catch

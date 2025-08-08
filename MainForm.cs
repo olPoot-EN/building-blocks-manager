@@ -625,7 +625,7 @@ namespace BuildingBlocksManager
 
         private void AppendResults(string message)
         {
-            txtResults.AppendText($"[{DateTime.Now:HH:mm:ss}] {message}\r\n");
+            txtResults.AppendText($"[{DateTime.Now:HH:mm}] {message}\r\n");
             txtResults.ScrollToCaret();
             Application.DoEvents();
         }

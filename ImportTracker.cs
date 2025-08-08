@@ -69,7 +69,7 @@ namespace BuildingBlocksManager
                 var lines = new List<string>();
                 foreach (var kvp in importHistory)
                 {
-                    lines.Add($"{kvp.Key}|{kvp.Value:yyyy-MM-dd HH:mm:ss}");
+                    lines.Add($"{kvp.Key}|{kvp.Value:yyyy-MM-dd HH:mm}");
                 }
                 
                 File.WriteAllLines(TrackingFile, lines);

@@ -57,7 +57,7 @@ namespace BuildingBlocksManager
             var directory = Path.GetDirectoryName(templatePath);
             var fileName = Path.GetFileNameWithoutExtension(templatePath);
             var extension = Path.GetExtension(templatePath);
-            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmm");
             
             var backupPath = Path.Combine(directory, $"{fileName}_Backup_{timestamp}{extension}");
             File.Copy(templatePath, backupPath, true);
