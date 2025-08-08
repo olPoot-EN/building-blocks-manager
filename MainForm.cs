@@ -1402,6 +1402,7 @@ namespace BuildingBlocksManager
         {
             SaveSettings();
             logger?.Info("Building Blocks Manager closing");
+            logger?.EndSession();
             base.OnFormClosing(e);
         }
 

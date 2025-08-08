@@ -7,14 +7,19 @@ namespace BuildingBlocksManager
     public class Logger
     {
         private readonly string logDirectory;
-        private readonly string logFile;
+        private readonly string generalLogFile;
+        private readonly string exportLogFile;
+        private readonly string errorLogFile;
+        private readonly string deleteLogFile;
         private readonly bool enableDetailedLogging;
+        private readonly string sessionId;
 
         public string GetLogDirectory() => logDirectory;
 
         public Logger(string templatePath = null, string sourceDirectoryPath = null, bool logToTemplateDirectory = true, bool enableDetailedLogging = true)
         {
             this.enableDetailedLogging = enableDetailedLogging;
+            this.sessionId = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
             
             // Determine log directory based on settings
             if (logToTemplateDirectory && !string.IsNullOrEmpty(templatePath) && File.Exists(templatePath))
@@ -36,80 +41,61 @@ namespace BuildingBlocksManager
             
             Directory.CreateDirectory(logDirectory);
             
-            // Use a more readable filename
-            var sessionTime = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-            logFile = Path.Combine(logDirectory, $"BBM_Session_{sessionTime}.log");
+            // Define persistent log files
+            generalLogFile = Path.Combine(logDirectory, "general.log");
+            exportLogFile = Path.Combine(logDirectory, "export.log");
+            errorLogFile = Path.Combine(logDirectory, "error.log");
+            deleteLogFile = Path.Combine(logDirectory, "delete.log");
+            
+            // Write session start marker to general log
+            WriteSessionMarker(generalLogFile, "SESSION START");
         }
 
         public void Info(string message)
         {
             if (enableDetailedLogging)
-                WriteLog("INFO", message);
+                WriteToFile(generalLogFile, "INFO", message);
         }
 
         public void Warning(string message)
         {
-            WriteLog("WARNING", message);
+            WriteToFile(generalLogFile, "WARNING", message);
         }
 
         public void Error(string message)
         {
-            WriteLog("ERROR", message);
+            WriteToFile(errorLogFile, "ERROR", message);
         }
 
         public void Success(string message)
         {
-            WriteLog("SUCCESS", message);
+            WriteToFile(generalLogFile, "SUCCESS", message);
         }
 
         public void LogExport(string buildingBlockName, string category, string exportPath)
         {
-            try
-            {
-                var exportLogFile = Path.Combine(logDirectory, "Export.log");
-                var logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Exported: {buildingBlockName} (Category: {category}) to {exportPath}";
-                File.AppendAllText(exportLogFile, logEntry + Environment.NewLine);
-            }
-            catch
-            {
-                // Silently handle logging errors
-            }
+            var message = $"Exported: {buildingBlockName} (Category: {category}) to {exportPath}";
+            WriteToFile(exportLogFile, "EXPORT", message);
         }
 
         public void LogError(string operation, string buildingBlockName, string category, string errorMessage)
         {
-            try
-            {
-                var errorLogFile = Path.Combine(logDirectory, "Error.log");
-                var logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {operation} FAILED: {buildingBlockName} (Category: {category}) - {errorMessage}";
-                File.AppendAllText(errorLogFile, logEntry + Environment.NewLine);
-            }
-            catch
-            {
-                // Silently handle logging errors
-            }
+            var message = $"{operation} FAILED: {buildingBlockName} (Category: {category}) - {errorMessage}";
+            WriteToFile(errorLogFile, "ERROR", message);
         }
 
         public void LogDeletion(string buildingBlockName, string category)
         {
-            try
-            {
-                var deleteLogFile = Path.Combine(logDirectory, "Delete.log");
-                var logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Deleted: {buildingBlockName} (Category: {category})";
-                File.AppendAllText(deleteLogFile, logEntry + Environment.NewLine);
-            }
-            catch
-            {
-                // Silently handle logging errors
-            }
+            var message = $"Deleted: {buildingBlockName} (Category: {category})";
+            WriteToFile(deleteLogFile, "DELETE", message);
         }
 
-        private void WriteLog(string level, string message)
+        private void WriteToFile(string filePath, string level, string message)
         {
             try
             {
                 var logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {level}: {message}";
-                File.AppendAllText(logFile, logEntry + Environment.NewLine);
+                File.AppendAllText(filePath, logEntry + Environment.NewLine);
             }
             catch
             {
@@ -117,26 +103,59 @@ namespace BuildingBlocksManager
             }
         }
 
+        private void WriteSessionMarker(string filePath, string marker)
+        {
+            try
+            {
+                var sessionMarker = $"\n========== {marker}: {sessionId} ==========\n";
+                File.AppendAllText(filePath, sessionMarker);
+            }
+            catch
+            {
+                // Silently handle logging errors
+            }
+        }
+
+        public void EndSession()
+        {
+            WriteSessionMarker(generalLogFile, "SESSION END");
+        }
+
         public void CleanupOldLogs()
         {
-            // Remove logs older than 30 days
+            // Archive and truncate logs that are too large (over 10MB) or very old content
             try
             {
                 if (Directory.Exists(logDirectory))
                 {
-                    var files = Directory.GetFiles(logDirectory, "BBM_Session_*.log");
-                    var exportFiles = Directory.GetFiles(logDirectory, "Export.log");
-                    var errorFiles = Directory.GetFiles(logDirectory, "Error.log");
-                    var deleteFiles = Directory.GetFiles(logDirectory, "Delete.log");
+                    var logFiles = new[] { generalLogFile, exportLogFile, errorLogFile, deleteLogFile };
                     
-                    var allFiles = files.Concat(exportFiles).Concat(errorFiles).Concat(deleteFiles);
-                    
-                    foreach (var file in allFiles)
+                    foreach (var logFile in logFiles)
                     {
-                        var fileInfo = new FileInfo(file);
-                        if (fileInfo.CreationTime < DateTime.Now.AddDays(-30))
+                        if (File.Exists(logFile))
                         {
-                            File.Delete(file);
+                            var fileInfo = new FileInfo(logFile);
+                            
+                            // If file is larger than 10MB, archive it and start fresh
+                            if (fileInfo.Length > 10 * 1024 * 1024)
+                            {
+                                var archiveName = Path.ChangeExtension(logFile, $".archive_{DateTime.Now:yyyyMMdd}.log");
+                                File.Move(logFile, archiveName);
+                                
+                                // Create new file with session marker
+                                WriteSessionMarker(logFile, "SESSION START (After Archive)");
+                            }
+                        }
+                    }
+                    
+                    // Clean up old archive files (older than 90 days)
+                    var archiveFiles = Directory.GetFiles(logDirectory, "*.archive_*.log");
+                    foreach (var archiveFile in archiveFiles)
+                    {
+                        var fileInfo = new FileInfo(archiveFile);
+                        if (fileInfo.CreationTime < DateTime.Now.AddDays(-90))
+                        {
+                            File.Delete(archiveFile);
                         }
                     }
                 }
