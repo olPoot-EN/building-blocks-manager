@@ -5,14 +5,25 @@ namespace BuildingBlocksManager
 {
     public class Logger
     {
-        private static readonly string LogDirectory = 
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BuildingBlocksManager", "Logs");
+        private readonly string logDirectory;
         private readonly string logFile;
 
-        public Logger()
+        public string GetLogDirectory() => logDirectory;
+
+        public Logger(string sourceDirectoryPath = null)
         {
-            Directory.CreateDirectory(LogDirectory);
-            logFile = Path.Combine(LogDirectory, $"BBM_{DateTime.Now:yyyyMMdd_HHmmss}.log");
+            if (!string.IsNullOrEmpty(sourceDirectoryPath) && Directory.Exists(sourceDirectoryPath))
+            {
+                logDirectory = Path.Combine(sourceDirectoryPath, "Logs");
+            }
+            else
+            {
+                // Fallback to user's local app data if source directory not provided or doesn't exist
+                logDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BuildingBlocksManager", "Logs");
+            }
+            
+            Directory.CreateDirectory(logDirectory);
+            logFile = Path.Combine(logDirectory, $"BBM_{DateTime.Now:yyyyMMdd_HHmmss}.log");
         }
 
         public void Info(string message)
@@ -41,7 +52,7 @@ namespace BuildingBlocksManager
 
             try
             {
-                var errorLogFile = Path.Combine(LogDirectory, $"Export_Errors_{DateTime.Now:yyyyMMdd_HHmmss}.log");
+                var errorLogFile = Path.Combine(logDirectory, $"Export_Errors_{DateTime.Now:yyyyMMdd_HHmmss}.log");
                 using (var writer = new StreamWriter(errorLogFile))
                 {
                     writer.WriteLine($"Export Error Report - {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
@@ -57,7 +68,7 @@ namespace BuildingBlocksManager
                     }
                 }
 
-                Info($"Export error log created: {Path.GetFileName(errorLogFile)}");
+                Info($"Export error log created: {Path.GetFileName(errorLogFile)} in {logDirectory}");
             }
             catch (Exception ex)
             {
@@ -78,15 +89,14 @@ namespace BuildingBlocksManager
             }
         }
 
-        public static void CleanupOldLogs()
+        public void CleanupOldLogs()
         {
-            // TODO: Implement log cleanup
             // Remove logs older than 30 days
             try
             {
-                if (Directory.Exists(LogDirectory))
+                if (Directory.Exists(logDirectory))
                 {
-                    var files = Directory.GetFiles(LogDirectory, "BBM_*.log");
+                    var files = Directory.GetFiles(logDirectory, "BBM_*.log");
                     foreach (var file in files)
                     {
                         var fileInfo = new FileInfo(file);

@@ -70,9 +70,14 @@ namespace BuildingBlocksManager
             // Load and apply settings
             LoadSettings();
             
-            // Initialize logger and clean up old logs
-            logger = new Logger();
-            Logger.CleanupOldLogs();
+            // Initialize logger (will be reinitialized when source directory is selected)
+            InitializeLogger();
+        }
+
+        private void InitializeLogger()
+        {
+            logger = new Logger(fullSourceDirectoryPath);
+            logger.CleanupOldLogs();
             logger.Info("Building Blocks Manager started");
         }
 
@@ -330,11 +335,20 @@ namespace BuildingBlocksManager
                 TextAlign = System.Drawing.ContentAlignment.MiddleLeft
             };
             
+            // Select All button
+            var btnSelectAll = new Button
+            {
+                Text = "Select All",
+                Location = new System.Drawing.Point(305, 5),
+                Size = new System.Drawing.Size(70, 25)
+            };
+            btnSelectAll.Click += BtnSelectAll_Click;
+            
             // Delete tip label
             var lblDeleteTip = new Label
             {
                 Text = "Right-click to delete autotext",
-                Location = new System.Drawing.Point(305, 9),
+                Location = new System.Drawing.Point(385, 9),
                 Size = new System.Drawing.Size(140, 17),
                 Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, Label.DefaultFont.Size, System.Drawing.FontStyle.Italic),
                 ForeColor = System.Drawing.Color.Gray
@@ -349,7 +363,8 @@ namespace BuildingBlocksManager
                 FullRowSelect = true,
                 GridLines = true,
                 Sorting = SortOrder.None,
-                Scrollable = true // Explicitly enable scrolling
+                Scrollable = true, // Explicitly enable scrolling
+                MultiSelect = true // Enable multi-selection
             };
 
             // Add columns - adjusted for 25% width reduction (540px total width)
@@ -368,6 +383,7 @@ namespace BuildingBlocksManager
 
             tabTemplate.Controls.Add(btnFilterTemplate);
             tabTemplate.Controls.Add(lblTemplateCount);
+            tabTemplate.Controls.Add(btnSelectAll);
             tabTemplate.Controls.Add(lblDeleteTip);
             tabTemplate.Controls.Add(listViewTemplate);
 
@@ -444,6 +460,9 @@ namespace BuildingBlocksManager
             
             txtSourceDirectory.Text = "..." + Path.DirectorySeparatorChar + lowestLevelDirectory;
             lblSourceDirectoryPathDisplay.Text = string.IsNullOrEmpty(parentPath) ? "" : parentPath + Path.DirectorySeparatorChar;
+            
+            // Reinitialize logger with new source directory
+            InitializeLogger();
         }
 
         private void TabControl_SelectedIndexChanged(object sender, EventArgs e)
@@ -1006,6 +1025,10 @@ namespace BuildingBlocksManager
             AppendResults("Export Operation Completed");
             AppendResults($"Building Blocks Successfully Exported: {successCount}");
             AppendResults($"Files with Errors: {errorCount}");
+            if (errorCount > 0)
+            {
+                AppendResults($"Error details logged to: {logger.GetLogDirectory()}");
+            }
             AppendResults($"Directories Created: {directoriesCreated}");
             AppendResults($"Processing Time: {processingTime:F1} seconds");
             
@@ -1148,6 +1171,10 @@ namespace BuildingBlocksManager
             AppendResults("Export Selected Operation Completed");
             AppendResults($"Building Blocks Successfully Exported: {successCount}");
             AppendResults($"Files with Errors: {errorCount}");
+            if (errorCount > 0)
+            {
+                AppendResults($"Error details logged to: {logger.GetLogDirectory()}");
+            }
             AppendResults($"Directories Created: {directoriesCreated}");
             AppendResults($"Processing Time: {processingTime:F1} seconds");
             
@@ -1534,7 +1561,7 @@ namespace BuildingBlocksManager
         {
             try
             {
-                var logDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BuildingBlocksManager", "Logs");
+                var logDirectory = logger.GetLogDirectory();
                 
                 if (Directory.Exists(logDirectory))
                 {
@@ -2186,6 +2213,14 @@ BACKUP PROCESS:
             return contextMenu;
         }
 
+        private void BtnSelectAll_Click(object sender, EventArgs e)
+        {
+            foreach (ListViewItem item in listViewTemplate.Items)
+            {
+                item.Selected = true;
+            }
+        }
+
         private void ListViewTemplate_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Delete)
@@ -2200,29 +2235,41 @@ BACKUP PROCESS:
         {
             if (listViewTemplate.SelectedItems.Count == 0)
             {
-                MessageBox.Show("Please select a Building Block to delete.", "No Selection",
+                MessageBox.Show("Please select Building Block(s) to delete.", "No Selection",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
-            var selectedItem = listViewTemplate.SelectedItems[0];
-            var buildingBlock = selectedItem.Tag as BuildingBlockInfo;
-            
-            if (buildingBlock == null)
+            // Collect selected building blocks
+            var selectedBlocks = new System.Collections.Generic.List<BuildingBlockInfo>();
+            foreach (ListViewItem item in listViewTemplate.SelectedItems)
+            {
+                var buildingBlock = item.Tag as BuildingBlockInfo;
+                if (buildingBlock != null)
+                {
+                    selectedBlocks.Add(buildingBlock);
+                }
+            }
+
+            if (selectedBlocks.Count == 0)
             {
                 MessageBox.Show("Invalid Building Block selection.", "Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
-            var result = MessageBox.Show(
-                $"Are you sure you want to delete the Building Block '{buildingBlock.Name}' from category '{buildingBlock.Category}'?\n\nThis action cannot be undone.",
-                "Confirm Delete",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Warning);
+            // Confirm deletion
+            string message = selectedBlocks.Count == 1
+                ? $"Are you sure you want to delete the Building Block '{selectedBlocks[0].Name}' from category '{selectedBlocks[0].Category}'?\n\nThis action cannot be undone."
+                : $"Are you sure you want to delete {selectedBlocks.Count} Building Blocks?\n\nThis action cannot be undone.";
+
+            var result = MessageBox.Show(message, "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
 
             if (result != DialogResult.Yes)
                 return;
+
+            int successCount = 0;
+            int errorCount = 0;
 
             try
             {
@@ -2231,13 +2278,25 @@ BACKUP PROCESS:
                     // Create backup before deleting
                     wordManager.CreateBackup();
                     
-                    wordManager.DeleteBuildingBlock(buildingBlock.Name, buildingBlock.Category);
+                    foreach (var buildingBlock in selectedBlocks)
+                    {
+                        try
+                        {
+                            wordManager.DeleteBuildingBlock(buildingBlock.Name, buildingBlock.Category);
+                            AppendResults($"Deleted Building Block: {buildingBlock.Name} from category {buildingBlock.Category}");
+                            
+                            // Remove from the current list and update allBuildingBlocks
+                            allBuildingBlocks.RemoveAll(bb => bb.Name == buildingBlock.Name && bb.Category == buildingBlock.Category);
+                            successCount++;
+                        }
+                        catch (Exception ex)
+                        {
+                            AppendResults($"Failed to delete {buildingBlock.Name}: {ex.Message}");
+                            errorCount++;
+                        }
+                    }
                     
-                    AppendResults($"Deleted Building Block: {buildingBlock.Name} from category {buildingBlock.Category}");
-                    UpdateStatus($"Deleted {buildingBlock.Name}");
-                    
-                    // Remove from the current list and update allBuildingBlocks
-                    allBuildingBlocks.RemoveAll(bb => bb.Name == buildingBlock.Name && bb.Category == buildingBlock.Category);
+                    UpdateStatus($"Deleted {successCount} Building Block(s)" + (errorCount > 0 ? $" ({errorCount} errors)" : ""));
                     
                     // Refresh the display
                     ApplyTemplateFilter();
@@ -2245,9 +2304,9 @@ BACKUP PROCESS:
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to delete Building Block: {ex.Message}", "Delete Error",
+                MessageBox.Show($"Failed to delete Building Block(s): {ex.Message}", "Delete Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
-                AppendResults($"Failed to delete {buildingBlock.Name}: {ex.Message}");
+                AppendResults($"Failed to delete Building Blocks: {ex.Message}");
             }
         }
     }
