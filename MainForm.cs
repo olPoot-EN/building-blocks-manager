@@ -902,7 +902,6 @@ namespace BuildingBlocksManager
             int successCount = 0;
             int errorCount = 0;
             int directoriesCreated = 0;
-            var detailedErrors = new System.Collections.Generic.List<string>();
 
             try
             {
@@ -995,15 +994,14 @@ namespace BuildingBlocksManager
                         
                         successCount++;
                         var displayPath = GetRelativePath(exportPath, outputFilePath);
+                        logger.LogExport(bb.Name, bb.Category, displayPath);
                         AppendResults($"  ✓ Exported to {displayPath}");
                     }
                     catch (Exception ex)
                     {
                         errorCount++;
-                        var errorDetail = $"Building Block: {bb.Name}\nCategory: {bb.Category}\nError: {ex.Message}\nTimestamp: {DateTime.Now:yyyy-MM-dd HH:mm:ss}";
-                        detailedErrors.Add(errorDetail);
+                        logger.LogError("Export", bb.Name, bb.Category, ex.Message);
                         AppendResults($"  ✗ Failed to export {bb.Name}: {ex.Message}");
-                        logger.Error($"Export failed for {bb.Name}: {ex.Message}");
                     }
                 }
             }
@@ -1025,15 +1023,11 @@ namespace BuildingBlocksManager
             AppendResults("Export Operation Completed");
             AppendResults($"Building Blocks Successfully Exported: {successCount}");
             AppendResults($"Files with Errors: {errorCount}");
-            if (errorCount > 0)
-            {
-                AppendResults($"Error details logged to: {logger.GetLogDirectory()}");
-            }
+            AppendResults($"Logs saved to: {logger.GetLogDirectory()}");
             AppendResults($"Directories Created: {directoriesCreated}");
             AppendResults($"Processing Time: {processingTime:F1} seconds");
             
-            // Create detailed error log if there were errors
-            logger.WriteExportErrorLog(successCount, errorCount, detailedErrors);
+            // Export and error logging handled individually above
             
             progressBar.Value = 0;
             UpdateStatus(errorCount == 0 ? "Export completed successfully" : $"Export completed with {errorCount} errors");
@@ -1081,7 +1075,6 @@ namespace BuildingBlocksManager
             int successCount = 0;
             int errorCount = 0;
             int directoriesCreated = 0;
-            var detailedErrors = new System.Collections.Generic.List<string>();
 
             try
             {
@@ -1142,15 +1135,14 @@ namespace BuildingBlocksManager
                         
                         successCount++;
                         var displayPath = GetRelativePath(exportPath, outputFilePath);
+                        logger.LogExport(bb.Name, bb.Category, displayPath);
                         AppendResults($"  ✓ Exported to {displayPath}");
                     }
                     catch (Exception ex)
                     {
                         errorCount++;
-                        var errorDetail = $"Building Block: {bb.Name}\nCategory: {bb.Category}\nError: {ex.Message}\nTimestamp: {DateTime.Now:yyyy-MM-dd HH:mm:ss}";
-                        detailedErrors.Add(errorDetail);
+                        logger.LogError("Export", bb.Name, bb.Category, ex.Message);
                         AppendResults($"  ✗ Failed to export {bb.Name}: {ex.Message}");
-                        logger.Error($"Export failed for {bb.Name}: {ex.Message}");
                     }
                 }
             }
@@ -1171,15 +1163,11 @@ namespace BuildingBlocksManager
             AppendResults("Export Selected Operation Completed");
             AppendResults($"Building Blocks Successfully Exported: {successCount}");
             AppendResults($"Files with Errors: {errorCount}");
-            if (errorCount > 0)
-            {
-                AppendResults($"Error details logged to: {logger.GetLogDirectory()}");
-            }
+            AppendResults($"Logs saved to: {logger.GetLogDirectory()}");
             AppendResults($"Directories Created: {directoriesCreated}");
             AppendResults($"Processing Time: {processingTime:F1} seconds");
             
-            // Create detailed error log if there were errors
-            logger.WriteExportErrorLog(successCount, errorCount, detailedErrors);
+            // Export and error logging handled individually above
             
             progressBar.Value = 0;
             UpdateStatus(errorCount == 0 ? "Export completed successfully" : $"Export completed with {errorCount} errors");
@@ -2290,7 +2278,7 @@ BACKUP PROCESS:
                         {
                             wordManager.DeleteBuildingBlock(buildingBlock.Name, buildingBlock.Category);
                             AppendResults($"Deleted Building Block: {buildingBlock.Name} from category {buildingBlock.Category}");
-                            logger.Info($"Deleted Building Block: {buildingBlock.Name} from category {buildingBlock.Category}");
+                            logger.LogDeletion(buildingBlock.Name, buildingBlock.Category);
                             
                             // Remove from the data collections
                             allBuildingBlocks.RemoveAll(bb => bb.Name == buildingBlock.Name && bb.Category == buildingBlock.Category);
@@ -2306,7 +2294,7 @@ BACKUP PROCESS:
                         catch (Exception ex)
                         {
                             AppendResults($"Failed to delete {buildingBlock.Name}: {ex.Message}");
-                            logger.Error($"Failed to delete {buildingBlock.Name}: {ex.Message}");
+                            logger.LogError("Delete", buildingBlock.Name, buildingBlock.Category, ex.Message);
                             errorCount++;
                         }
                     }

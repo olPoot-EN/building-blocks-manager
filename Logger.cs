@@ -46,33 +46,45 @@ namespace BuildingBlocksManager
             WriteLog("SUCCESS", message);
         }
 
-        public void WriteExportErrorLog(int successCount, int errorCount, System.Collections.Generic.List<string> errors)
+        public void LogExport(string buildingBlockName, string category, string exportPath)
         {
-            if (errorCount == 0) return;
-
             try
             {
-                var errorLogFile = Path.Combine(logDirectory, $"Export_Errors_{DateTime.Now:yyyyMMdd_HHmmss}.log");
-                using (var writer = new StreamWriter(errorLogFile))
-                {
-                    writer.WriteLine($"Export Error Report - {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-                    writer.WriteLine($"Successfully Exported: {successCount}");
-                    writer.WriteLine($"Failed Exports: {errorCount}");
-                    writer.WriteLine(new string('=', 50));
-                    writer.WriteLine();
-
-                    foreach (var error in errors)
-                    {
-                        writer.WriteLine(error);
-                        writer.WriteLine();
-                    }
-                }
-
-                Info($"Export error log created: {Path.GetFileName(errorLogFile)} in {logDirectory}");
+                var exportLogFile = Path.Combine(logDirectory, "Export.log");
+                var logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Exported: {buildingBlockName} (Category: {category}) to {exportPath}";
+                File.AppendAllText(exportLogFile, logEntry + Environment.NewLine);
             }
-            catch (Exception ex)
+            catch
             {
-                Error($"Failed to create export error log: {ex.Message}");
+                // Silently handle logging errors
+            }
+        }
+
+        public void LogError(string operation, string buildingBlockName, string category, string errorMessage)
+        {
+            try
+            {
+                var errorLogFile = Path.Combine(logDirectory, "Error.log");
+                var logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {operation} FAILED: {buildingBlockName} (Category: {category}) - {errorMessage}";
+                File.AppendAllText(errorLogFile, logEntry + Environment.NewLine);
+            }
+            catch
+            {
+                // Silently handle logging errors
+            }
+        }
+
+        public void LogDeletion(string buildingBlockName, string category)
+        {
+            try
+            {
+                var deleteLogFile = Path.Combine(logDirectory, "Delete.log");
+                var logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Deleted: {buildingBlockName} (Category: {category})";
+                File.AppendAllText(deleteLogFile, logEntry + Environment.NewLine);
+            }
+            catch
+            {
+                // Silently handle logging errors
             }
         }
 
