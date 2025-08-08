@@ -416,9 +416,13 @@ namespace BuildingBlocksManager
                     var targetBody = targetDocPart.DocPartBody;
                     if (targetBody != null)
                     {
-                        // Clone the content from the Building Block to the new document
-                        var clonedBody = (Body)targetBody.CloneNode(true);
-                        mainPart.Document.Body = clonedBody;
+                        // Copy children from DocPartBody to the new document's Body
+                        // DocPartBody and Body are different types but have similar content structure
+                        foreach (var element in targetBody.ChildElements)
+                        {
+                            var clonedElement = element.CloneNode(true);
+                            mainPart.Document.Body.Append(clonedElement);
+                        }
                     }
 
                     mainPart.Document.Save();
