@@ -289,11 +289,11 @@ namespace BuildingBlocksManager
                 string sanitizedName = SanitizeBuildingBlockName(name);
                 string sanitizedCategory = SanitizeBuildingBlockCategory(category);
                 
-                // Check for empty category - Word sometimes doesn't like empty strings
+                // Check for empty category - Word doesn't like empty strings for BuildingBlockEntries
                 if (string.IsNullOrWhiteSpace(sanitizedCategory))
                 {
-                    sanitizedCategory = null; // Try null instead of empty string
-                    System.Diagnostics.Debug.WriteLine($"[WordManager] Using null for empty category");
+                    sanitizedCategory = "General"; // Use default category instead of empty/null
+                    System.Diagnostics.Debug.WriteLine($"[WordManager] Using 'General' for empty category");
                 }
                 
                 System.Diagnostics.Debug.WriteLine($"[WordManager] About to add Building Block:");
@@ -303,7 +303,7 @@ namespace BuildingBlocksManager
                 System.Diagnostics.Debug.WriteLine($"  Source Range Text Length: {sourceRange.Text?.Length ?? 0}");
                 System.Diagnostics.Debug.WriteLine($"  Source Range Text Preview: '{sourceRange.Text?.Substring(0, Math.Min(50, sourceRange.Text?.Length ?? 0))}...'");
                 
-                // Try AutoText first, fall back to Quick Parts if it fails
+                // Use BuildingBlockEntries.Add() for modern Building Blocks system
                 try
                 {
                     template.BuildingBlockEntries.Add(
