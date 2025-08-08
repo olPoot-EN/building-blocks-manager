@@ -273,22 +273,10 @@ namespace BuildingBlocksManager
                 // Remove existing Building Block with same name if it exists
                 RemoveBuildingBlock(name, category);
 
-                // Copy content from source document
-                sourceDoc.Content.Copy();
-
-                // Create new Building Block in template
-                var range = templateDoc.Range();
-                range.Paste();
-
-                // Verify pasted content
-                var pastedText = range.Text?.Trim() ?? "";
-                System.Diagnostics.Debug.WriteLine($"[WordManager] Pasted content length: {pastedText.Length}");
-                System.Diagnostics.Debug.WriteLine($"[WordManager] Pasted content preview: '{pastedText.Substring(0, Math.Min(100, pastedText.Length))}'");
-                
-                if (pastedText.Length == 0)
-                {
-                    throw new InvalidOperationException("Failed to paste content from source document");
-                }
+                // Work directly with the source document content - don't paste into template!
+                var sourceRange = sourceDoc.Content;
+                System.Diagnostics.Debug.WriteLine($"[WordManager] Source range length: {sourceRange.Text?.Length ?? 0}");
+                System.Diagnostics.Debug.WriteLine($"[WordManager] Source range preview: '{sourceRange.Text?.Substring(0, Math.Min(100, sourceRange.Text?.Length ?? 0))}'");
 
                 // Convert gallery type to Word enum
                 var buildingBlockType = GetBuildingBlockType(galleryType);
@@ -312,8 +300,8 @@ namespace BuildingBlocksManager
                 System.Diagnostics.Debug.WriteLine($"  Original Name: '{name}' -> Sanitized: '{sanitizedName}'");
                 System.Diagnostics.Debug.WriteLine($"  Original Category: '{category}' -> Sanitized: '{sanitizedCategory}'");
                 System.Diagnostics.Debug.WriteLine($"  Gallery Type: {galleryType} -> {buildingBlockType}");
-                System.Diagnostics.Debug.WriteLine($"  Range Text Length: {range.Text?.Length ?? 0}");
-                System.Diagnostics.Debug.WriteLine($"  Range Text Preview: '{range.Text?.Substring(0, Math.Min(50, range.Text?.Length ?? 0))}...'");
+                System.Diagnostics.Debug.WriteLine($"  Source Range Text Length: {sourceRange.Text?.Length ?? 0}");
+                System.Diagnostics.Debug.WriteLine($"  Source Range Text Preview: '{sourceRange.Text?.Substring(0, Math.Min(50, sourceRange.Text?.Length ?? 0))}...'");
                 
                 // Try AutoText first, fall back to Quick Parts if it fails
                 try
@@ -322,7 +310,7 @@ namespace BuildingBlocksManager
                         sanitizedName,
                         buildingBlockType,
                         sanitizedCategory,
-                        range);
+                        sourceRange);
                     System.Diagnostics.Debug.WriteLine($"[WordManager] Successfully added to {galleryType} gallery");
                 }
                 catch (COMException comEx) when ((uint)comEx.ErrorCode == 0x800A16DD && galleryType == "AutoText")
@@ -335,12 +323,11 @@ namespace BuildingBlocksManager
                         sanitizedName,
                         quickPartsType,
                         sanitizedCategory,
-                        range);
+                        sourceRange);
                     System.Diagnostics.Debug.WriteLine($"[WordManager] Successfully added to Quick Parts gallery as fallback");
                 }
 
-                // Clear the pasted content from template
-                range.Delete();
+                // No need to delete anything from template since we didn't modify it!
                 
                 // Save template
                 templateDoc.Save();
