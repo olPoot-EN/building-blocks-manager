@@ -74,7 +74,7 @@ namespace BuildingBlocksManager
 
         public void LogExport(string buildingBlockName, string category, string exportPath)
         {
-            var message = $"Exported: {buildingBlockName} (Category: {category}) to {exportPath}";
+            var message = $"{buildingBlockName} (Category: {category}) to {exportPath}";
             WriteToFile(exportLogFile, "EXPORT", message);
         }
 

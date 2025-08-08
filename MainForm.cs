@@ -53,6 +53,7 @@ namespace BuildingBlocksManager
         private List<string> selectedTemplates = new List<string>();
         private int sortColumn = -1;
         private SortOrder sortOrder = SortOrder.None;
+        private System.Collections.Generic.List<string> conflictedFiles = new System.Collections.Generic.List<string>();
 
         public MainForm()
         {
@@ -1001,6 +1002,9 @@ namespace BuildingBlocksManager
             progressBar.Value = 0;
             ShowStopButton();
             
+            // Clear conflict list for this operation
+            conflictedFiles.Clear();
+            
             AppendResults("=== EXPORT ALL OPERATION ===");
             AppendResults($"Template: {Path.GetFileName(fullTemplatePath)}");
             AppendResults($"Export Location: {exportPath}");
@@ -1096,8 +1100,13 @@ namespace BuildingBlocksManager
                             }
                         }
 
-                        // Handle duplicate filenames
-                        outputFilePath = GetUniqueFilePath(outputFilePath);
+                        // Check for file conflicts and stash them
+                        if (File.Exists(outputFilePath))
+                        {
+                            conflictedFiles.Add(outputFilePath);
+                            AppendResults($"  ⚠ File already exists, skipping: {Path.GetFileName(outputFilePath)}");
+                            continue;
+                        }
 
                         // Export the Building Block
                         wordManager.ExportBuildingBlock(bb.Name, bb.Category, outputFilePath);
@@ -1136,6 +1145,9 @@ namespace BuildingBlocksManager
             AppendResults($"Logs saved to: {logger.GetLogDirectory()}");
             AppendResults($"Directories Created: {directoriesCreated}");
             AppendResults($"Processing Time: {processingTime:F1} seconds");
+            
+            // Handle conflicted files
+            HandleExportConflicts();
             
             // Export and error logging handled individually above
             
@@ -1203,6 +1215,9 @@ namespace BuildingBlocksManager
             progressBar.Style = ProgressBarStyle.Continuous;
             progressBar.Value = 0;
             
+            // Clear conflict list for this operation
+            conflictedFiles.Clear();
+            
             AppendResults("=== EXPORT SELECTED OPERATION ===");
             AppendResults($"Selected Building Blocks: {selectedBlocks.Count}");
             AppendResults($"Export Location: {exportPath}");
@@ -1265,8 +1280,13 @@ namespace BuildingBlocksManager
                             }
                         }
 
-                        // Handle duplicate filenames
-                        outputFilePath = GetUniqueFilePath(outputFilePath);
+                        // Check for file conflicts and stash them
+                        if (File.Exists(outputFilePath))
+                        {
+                            conflictedFiles.Add(outputFilePath);
+                            AppendResults($"  ⚠ File already exists, skipping: {Path.GetFileName(outputFilePath)}");
+                            continue;
+                        }
 
                         // Export the Building Block
                         wordManager.ExportBuildingBlock(bb.Name, bb.Category, outputFilePath);
@@ -1304,6 +1324,9 @@ namespace BuildingBlocksManager
             AppendResults($"Logs saved to: {logger.GetLogDirectory()}");
             AppendResults($"Directories Created: {directoriesCreated}");
             AppendResults($"Processing Time: {processingTime:F1} seconds");
+            
+            // Handle conflicted files
+            HandleExportConflicts();
             
             // Export and error logging handled individually above
             
@@ -1440,27 +1463,6 @@ namespace BuildingBlocksManager
             return category.Replace('_', ' ');
         }
 
-        private string GetUniqueFilePath(string originalPath)
-        {
-            if (!File.Exists(originalPath))
-                return originalPath;
-
-            var directory = Path.GetDirectoryName(originalPath);
-            var fileName = Path.GetFileNameWithoutExtension(originalPath);
-            var extension = Path.GetExtension(originalPath);
-            
-            int counter = 2;
-            string newPath;
-            
-            do
-            {
-                newPath = Path.Combine(directory, $"{fileName}_{counter}{extension}");
-                counter++;
-            }
-            while (File.Exists(newPath));
-            
-            return newPath;
-        }
 
         private string GetRelativePath(string fromPath, string toPath)
         {
@@ -1490,6 +1492,108 @@ namespace BuildingBlocksManager
                 return path + Path.DirectorySeparatorChar;
             }
             return path;
+        }
+
+        private void HandleExportConflicts()
+        {
+            if (conflictedFiles.Count == 0)
+                return;
+
+            AppendResults("");
+            AppendResults($"⚠ FILE CONFLICTS DETECTED: {conflictedFiles.Count} files already exist in the export directory");
+            AppendResults("These files were NOT exported to avoid overwriting existing data:");
+            
+            foreach (var file in conflictedFiles)
+            {
+                AppendResults($"  • {Path.GetFileName(file)}");
+            }
+            
+            AppendResults("");
+            
+            var result = MessageBox.Show(
+                $"{conflictedFiles.Count} files already exist in the export directory and were skipped.\n\n" +
+                "Do you want to overwrite these existing files?\n\n" +
+                "• YES: Overwrite all conflicted files\n" +
+                "• NO: Skip these files (current choice)",
+                "File Conflicts - Overwrite Existing Files?",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question,
+                MessageBoxDefaultButton.Button2);
+            
+            if (result == DialogResult.Yes)
+            {
+                OverwriteConflictedFiles();
+            }
+            else
+            {
+                AppendResults("User chose to skip conflicted files. No files were overwritten.");
+            }
+        }
+
+        private void OverwriteConflictedFiles()
+        {
+            AppendResults("User chose to overwrite existing files. Re-exporting conflicted items...");
+            
+            WordManager wordManager = null;
+            int overwriteSuccessCount = 0;
+            int overwriteErrorCount = 0;
+            
+            try
+            {
+                wordManager = new WordManager(fullTemplatePath);
+                
+                foreach (var conflictedFile in conflictedFiles)
+                {
+                    try
+                    {
+                        // Find the building block that corresponds to this file
+                        var fileName = Path.GetFileNameWithoutExtension(conflictedFile);
+                        if (fileName.StartsWith("AT_"))
+                        {
+                            var blockName = fileName.Substring(3); // Remove "AT_" prefix
+                            
+                            // Find the building block in the filtered list
+                            var buildingBlock = GetFilteredBuildingBlocks()
+                                .FirstOrDefault(bb => bb.Name == blockName);
+                            
+                            if (buildingBlock != null)
+                            {
+                                // Delete the existing file
+                                File.Delete(conflictedFile);
+                                
+                                // Export the building block
+                                wordManager.ExportBuildingBlock(buildingBlock.Name, buildingBlock.Category, conflictedFile);
+                                
+                                var displayPath = GetRelativePath(Path.GetDirectoryName(conflictedFile), conflictedFile);
+                                logger.LogExport(buildingBlock.Name, buildingBlock.Category, displayPath);
+                                AppendResults($"  ✓ Overwritten: {Path.GetFileName(conflictedFile)}");
+                                overwriteSuccessCount++;
+                            }
+                            else
+                            {
+                                AppendResults($"  ⚠ Could not find building block for: {Path.GetFileName(conflictedFile)}");
+                                overwriteErrorCount++;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        AppendResults($"  ✗ Failed to overwrite {Path.GetFileName(conflictedFile)}: {ex.Message}");
+                        overwriteErrorCount++;
+                    }
+                }
+                
+                AppendResults("");
+                AppendResults($"Overwrite Summary: Success: {overwriteSuccessCount}, Errors: {overwriteErrorCount}");
+            }
+            catch (Exception ex)
+            {
+                AppendResults($"Error during overwrite operation: {ex.Message}");
+            }
+            finally
+            {
+                wordManager?.Dispose();
+            }
         }
 
         private bool HandleTemplateFileLock(string templatePath, string operationName)
