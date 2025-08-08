@@ -2270,6 +2270,7 @@ BACKUP PROCESS:
 
             int successCount = 0;
             int errorCount = 0;
+            var itemsToRemove = new System.Collections.Generic.List<ListViewItem>();
 
             try
             {
@@ -2278,28 +2279,48 @@ BACKUP PROCESS:
                     // Create backup before deleting
                     wordManager.CreateBackup();
                     
+                    // Find the ListView items corresponding to selected building blocks
                     foreach (var buildingBlock in selectedBlocks)
                     {
+                        var correspondingItem = listViewTemplate.Items.Cast<ListViewItem>()
+                            .FirstOrDefault(item => item.Tag is BuildingBlockInfo bb && 
+                                           bb.Name == buildingBlock.Name && bb.Category == buildingBlock.Category);
+                        
                         try
                         {
                             wordManager.DeleteBuildingBlock(buildingBlock.Name, buildingBlock.Category);
                             AppendResults($"Deleted Building Block: {buildingBlock.Name} from category {buildingBlock.Category}");
+                            logger.Info($"Deleted Building Block: {buildingBlock.Name} from category {buildingBlock.Category}");
                             
-                            // Remove from the current list and update allBuildingBlocks
+                            // Remove from the data collections
                             allBuildingBlocks.RemoveAll(bb => bb.Name == buildingBlock.Name && bb.Category == buildingBlock.Category);
+                            
+                            // Mark item for removal from ListView
+                            if (correspondingItem != null)
+                            {
+                                itemsToRemove.Add(correspondingItem);
+                            }
+                            
                             successCount++;
                         }
                         catch (Exception ex)
                         {
                             AppendResults($"Failed to delete {buildingBlock.Name}: {ex.Message}");
+                            logger.Error($"Failed to delete {buildingBlock.Name}: {ex.Message}");
                             errorCount++;
                         }
                     }
                     
-                    UpdateStatus($"Deleted {successCount} Building Block(s)" + (errorCount > 0 ? $" ({errorCount} errors)" : ""));
+                    // Remove successfully deleted items from ListView immediately
+                    foreach (var item in itemsToRemove)
+                    {
+                        listViewTemplate.Items.Remove(item);
+                    }
                     
-                    // Refresh the display
-                    ApplyTemplateFilter();
+                    // Update template count display
+                    UpdateTemplateCount(listViewTemplate.Items.Count);
+                    
+                    UpdateStatus($"Deleted {successCount} Building Block(s)" + (errorCount > 0 ? $" ({errorCount} errors)" : ""));
                 }
             }
             catch (Exception ex)
