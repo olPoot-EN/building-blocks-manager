@@ -801,6 +801,7 @@ namespace BuildingBlocksManager
                         successCount++;
                         AppendResults($"  ✓ Successfully imported as {category}\\{file.Name}");
                         logger.Success($"Imported {fileName} as {category}\\{file.Name}");
+                        logger.LogImport(fileName, file.Name, category, file.FilePath);
                     }
                     catch (Exception ex)
                     {
@@ -932,6 +933,7 @@ namespace BuildingBlocksManager
                         
                         successCount++;
                         logger.Success($"Imported {fileName} as {category}\\{name}");
+                        logger.LogImport(fileName, name, category, file.FilePath);
                         AppendResults($"  ✓ Imported as {category}\\{name}");
                     }
                     catch (Exception ex)

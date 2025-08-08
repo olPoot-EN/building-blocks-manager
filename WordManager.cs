@@ -255,6 +255,8 @@ namespace BuildingBlocksManager
                 // Validate parameters before starting Word operations
                 ValidateBuildingBlockParameters(name, category);
                 
+                System.Diagnostics.Debug.WriteLine($"[WordManager] Starting import of '{name}' from '{sourceFile}'");
+                
                 OpenTemplate();
                 sourceDoc = wordApp.Documents.Open(sourceFile);
 
@@ -301,6 +303,8 @@ namespace BuildingBlocksManager
                 
                 // Save template
                 templateDoc.Save();
+                
+                System.Diagnostics.Debug.WriteLine($"[WordManager] Successfully imported '{sanitizedName}' in category '{sanitizedCategory}'");
             }
             catch (COMException comEx)
             {

@@ -8,6 +8,7 @@ namespace BuildingBlocksManager
     {
         private readonly string logDirectory;
         private readonly string generalLogFile;
+        private readonly string importLogFile;
         private readonly string exportLogFile;
         private readonly string errorLogFile;
         private readonly string deleteLogFile;
@@ -43,6 +44,7 @@ namespace BuildingBlocksManager
             
             // Define persistent log files
             generalLogFile = Path.Combine(logDirectory, "general.log");
+            importLogFile = Path.Combine(logDirectory, "import.log");
             exportLogFile = Path.Combine(logDirectory, "export.log");
             errorLogFile = Path.Combine(logDirectory, "error.log");
             deleteLogFile = Path.Combine(logDirectory, "delete.log");
@@ -70,6 +72,12 @@ namespace BuildingBlocksManager
         public void Success(string message)
         {
             WriteToFile(generalLogFile, "SUCCESS", message);
+        }
+
+        public void LogImport(string fileName, string buildingBlockName, string category, string sourcePath)
+        {
+            var message = $"{fileName} -> {buildingBlockName} (Category: {category}) from {sourcePath}";
+            WriteToFile(importLogFile, "IMPORT", message);
         }
 
         public void LogExport(string buildingBlockName, string category, string exportPath)
@@ -128,7 +136,7 @@ namespace BuildingBlocksManager
             {
                 if (Directory.Exists(logDirectory))
                 {
-                    var logFiles = new[] { generalLogFile, exportLogFile, errorLogFile, deleteLogFile };
+                    var logFiles = new[] { generalLogFile, importLogFile, exportLogFile, errorLogFile, deleteLogFile };
                     
                     foreach (var logFile in logFiles)
                     {
