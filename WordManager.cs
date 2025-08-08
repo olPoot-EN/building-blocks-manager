@@ -59,11 +59,15 @@ namespace BuildingBlocksManager
             var extension = Path.GetExtension(templatePath);
             var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmm");
             
-            var backupPath = Path.Combine(directory, $"{fileName}_Backup_{timestamp}{extension}");
+            // Create backups directory
+            var backupDirectory = Path.Combine(directory, "BBM_Backups");
+            Directory.CreateDirectory(backupDirectory);
+            
+            var backupPath = Path.Combine(backupDirectory, $"{fileName}_Backup_{timestamp}{extension}");
             File.Copy(templatePath, backupPath, true);
 
             // Clean up old backups (keep only last 5)
-            CleanupOldBackups(directory, fileName, extension);
+            CleanupOldBackups(backupDirectory, fileName, extension);
         }
         
         private bool IsFileAccessible(string filePath)
@@ -466,7 +470,12 @@ namespace BuildingBlocksManager
                 var fileName = Path.GetFileNameWithoutExtension(templatePath);
                 var extension = Path.GetExtension(templatePath);
 
-                var backupFiles = Directory.GetFiles(directory, $"{fileName}_Backup_*{extension}")
+                // Look in backups directory
+                var backupDirectory = Path.Combine(directory, "BBM_Backups");
+                if (!Directory.Exists(backupDirectory))
+                    throw new DirectoryNotFoundException("No backup directory found");
+
+                var backupFiles = Directory.GetFiles(backupDirectory, $"{fileName}_Backup_*{extension}")
                     .Select(f => new FileInfo(f))
                     .OrderByDescending(f => f.CreationTime)
                     .FirstOrDefault();
@@ -491,12 +500,19 @@ namespace BuildingBlocksManager
         {
             try
             {
-                OpenTemplate();
-                
-                Word.BuildingBlock targetBB = FindBuildingBlockByName(buildingBlockName);
-                if (targetBB == null)
+                // FAST: Use XML to find building block location without opening Word
+                var location = FindBuildingBlockLocationXML(buildingBlockName, category);
+                if (!location.Found)
                 {
                     throw new InvalidOperationException($"Building Block '{buildingBlockName}' not found");
+                }
+
+                // PRECISE: Open Word only when we know the target exists and get it by index
+                OpenTemplate();
+                Word.BuildingBlock targetBB = GetBuildingBlockByIndex(location.Index);
+                if (targetBB == null)
+                {
+                    throw new InvalidOperationException($"Building Block at index {location.Index} could not be accessed");
                 }
 
                 targetBB.Delete();
@@ -506,6 +522,77 @@ namespace BuildingBlocksManager
             {
                 throw new InvalidOperationException($"Failed to delete Building Block '{buildingBlockName}': {ex.Message}", ex);
             }
+        }
+
+        private class BuildingBlockLocation
+        {
+            public int Index { get; set; }
+            public string Name { get; set; }
+            public string Category { get; set; }
+            public bool Found { get; set; }
+        }
+
+        private BuildingBlockLocation FindBuildingBlockLocationXML(string buildingBlockName, string category)
+        {
+            try
+            {
+                using (var doc = WordprocessingDocument.Open(templatePath, false))
+                {
+                    var glossaryPart = doc.MainDocumentPart?.GlossaryDocumentPart;
+                    if (glossaryPart?.GlossaryDocument?.DocParts != null)
+                    {
+                        int index = 0;
+                        foreach (var docPart in glossaryPart.GlossaryDocument.DocParts.Elements<DocPart>())
+                        {
+                            index++; // COM collections are 1-based
+                            var properties = docPart.DocPartProperties;
+                            if (properties != null)
+                            {
+                                var name = properties.DocPartName?.Val?.Value ?? "";
+                                
+                                // Extract category
+                                var actualCategory = "";
+                                var categoryElement = properties.GetFirstChild<Category>();
+                                if (categoryElement != null)
+                                {
+                                    var categoryName = categoryElement.GetFirstChild<DocumentFormat.OpenXml.Wordprocessing.Name>();
+                                    if (categoryName?.Val != null)
+                                        actualCategory = categoryName.Val.Value;
+                                }
+                                
+                                // Match building block name and category
+                                if (name == buildingBlockName && 
+                                    (string.IsNullOrEmpty(category) || actualCategory == category))
+                                {
+                                    return new BuildingBlockLocation
+                                    {
+                                        Index = index,
+                                        Name = name,
+                                        Category = actualCategory,
+                                        Found = true
+                                    };
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                return new BuildingBlockLocation { Found = false };
+            }
+            catch
+            {
+                return new BuildingBlockLocation { Found = false };
+            }
+        }
+
+        private Word.BuildingBlock GetBuildingBlockByIndex(int index)
+        {
+            Word.Template template = (Word.Template)templateDoc.get_AttachedTemplate();
+            if (index >= 1 && index <= template.BuildingBlockEntries.Count)
+            {
+                return template.BuildingBlockEntries.Item(index);
+            }
+            return null;
         }
 
         private void CloseTemplate()
