@@ -12,6 +12,7 @@ namespace BuildingBlocksManager
         public string LastTemplatePath { get; set; } = "";
         public string LastSourceDirectory { get; set; } = "";
         public string LastExportDirectory { get; set; } = "";
+        public string LedgerDirectory { get; set; } = "";
         public bool FlatImport { get; set; } = false;
         public bool FlatExport { get; set; } = false;
         public bool LogToTemplateDirectory { get; set; } = true;
@@ -44,6 +45,9 @@ namespace BuildingBlocksManager
                                     break;
                                 case "LastExportDirectory":
                                     settings.LastExportDirectory = value;
+                                    break;
+                                case "LedgerDirectory":
+                                    settings.LedgerDirectory = value;
                                     break;
                                 case "FlatImport":
                                     if (bool.TryParse(value, out bool flatImport))
@@ -85,6 +89,7 @@ namespace BuildingBlocksManager
                     $"LastTemplatePath={LastTemplatePath}",
                     $"LastSourceDirectory={LastSourceDirectory}",
                     $"LastExportDirectory={LastExportDirectory}",
+                    $"LedgerDirectory={LedgerDirectory}",
                     $"FlatImport={FlatImport}",
                     $"FlatExport={FlatExport}",
                     $"LogToTemplateDirectory={LogToTemplateDirectory}",

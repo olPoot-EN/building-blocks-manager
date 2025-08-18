@@ -103,6 +103,10 @@ namespace BuildingBlocksManager
             loggingConfigMenuItem.Click += LoggingConfigMenuItem_Click;
             fileMenu.DropDownItems.Add(loggingConfigMenuItem);
             
+            var ledgerConfigMenuItem = new ToolStripMenuItem("Ledger Directory...");
+            ledgerConfigMenuItem.Click += LedgerConfigMenuItem_Click;
+            fileMenu.DropDownItems.Add(ledgerConfigMenuItem);
+            
             fileMenu.DropDownItems.Add(new ToolStripSeparator());
             
             var rollbackMenuItem = new ToolStripMenuItem("Rollback");
@@ -1938,6 +1942,28 @@ namespace BuildingBlocksManager
                 // Settings were changed, reinitialize logger
                 InitializeLogger();
                 AppendResults("Logging configuration updated. New settings will take effect for the next session.");
+            }
+        }
+
+        private void LedgerConfigMenuItem_Click(object sender, EventArgs e)
+        {
+            using (var folderDialog = new FolderBrowserDialog())
+            {
+                folderDialog.Description = "Select directory for Building Block ledger file";
+                folderDialog.ShowNewFolderButton = true;
+                
+                if (!string.IsNullOrEmpty(settings.LedgerDirectory))
+                {
+                    folderDialog.SelectedPath = settings.LedgerDirectory;
+                }
+                
+                if (folderDialog.ShowDialog() == DialogResult.OK)
+                {
+                    settings.LedgerDirectory = folderDialog.SelectedPath;
+                    settings.Save();
+                    AppendResults($"Ledger directory set to: {settings.LedgerDirectory}");
+                    AppendResults("New ledger directory will take effect for the next session.");
+                }
             }
         }
 

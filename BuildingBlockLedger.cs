@@ -62,8 +62,8 @@ namespace BuildingBlocksManager
         {
             System.Diagnostics.Debug.WriteLine("*** LEDGER CONSTRUCTOR: Creating BuildingBlockLedger ***");
             
-            // Always use the top-level BBM_Logs directory (not session subdirectory)
-            ledgerDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BuildingBlocksManager", "BBM_Logs");
+            // Use configured ledger directory or default
+            ledgerDirectory = GetLedgerDirectory();
             ledgerFile = Path.Combine(ledgerDirectory, "building_blocks_ledger.txt");
             
             System.Diagnostics.Debug.WriteLine($"*** LEDGER CONSTRUCTOR: Will load from {ledgerFile} ***");
@@ -77,17 +77,26 @@ namespace BuildingBlocksManager
         {
             System.Diagnostics.Debug.WriteLine($"*** LEDGER CONSTRUCTOR(logDir): Creating BuildingBlockLedger with logDirectory: '{logDirectory}' ***");
             
-            // Extract the base log directory (remove session folder if present)
-            // Logger passes session-specific directory, but ledger should be at top level
-            if (logDirectory != null && Path.GetFileName(logDirectory).Contains("-"))
+            // Use configured ledger directory, or fall back to log directory logic for compatibility
+            var configuredDir = GetLedgerDirectory();
+            if (!string.IsNullOrEmpty(configuredDir))
             {
-                // This looks like a session directory, get parent
-                ledgerDirectory = Path.GetDirectoryName(logDirectory);
+                ledgerDirectory = configuredDir;
             }
             else
             {
-                // This is already the base log directory
-                ledgerDirectory = logDirectory ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BuildingBlocksManager", "BBM_Logs");
+                // Extract the base log directory (remove session folder if present)
+                // Logger passes session-specific directory, but ledger should be at top level
+                if (logDirectory != null && Path.GetFileName(logDirectory).Contains("-"))
+                {
+                    // This looks like a session directory, get parent
+                    ledgerDirectory = Path.GetDirectoryName(logDirectory);
+                }
+                else
+                {
+                    // This is already the base log directory
+                    ledgerDirectory = logDirectory ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BuildingBlocksManager", "BBM_Logs");
+                }
             }
             
             ledgerFile = Path.Combine(ledgerDirectory, "building_blocks_ledger.txt");
@@ -97,6 +106,28 @@ namespace BuildingBlocksManager
             ledgerEntries = new Dictionary<string, LedgerEntry>();
             removedEntries = new Dictionary<string, LedgerEntry>();
             Load();
+        }
+
+        /// <summary>
+        /// Get the configured ledger directory from settings, or default location
+        /// </summary>
+        private string GetLedgerDirectory()
+        {
+            try
+            {
+                var settings = Settings.Load();
+                if (!string.IsNullOrEmpty(settings.LedgerDirectory) && Directory.Exists(settings.LedgerDirectory))
+                {
+                    return settings.LedgerDirectory;
+                }
+            }
+            catch
+            {
+                // If settings can't be loaded, fall back to default
+            }
+            
+            // Default location
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BuildingBlocksManager", "BBM_Logs");
         }
 
         /// <summary>
