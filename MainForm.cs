@@ -601,8 +601,7 @@ namespace BuildingBlocksManager
                 dialog.Filter = "Word Template Files (*.dotm)|*.dotm|All Files (*.*)|*.*";
                 dialog.CheckFileExists = true;
                 
-                var currentPath = txtTemplatePath.Text;
-                var startDir = GetValidStartDirectory(Path.GetDirectoryName(currentPath));
+                var startDir = GetValidStartDirectory(Path.GetDirectoryName(fullTemplatePath));
                 dialog.InitialDirectory = startDir;
                 
                 if (dialog.ShowDialog() == DialogResult.OK)
@@ -620,9 +619,9 @@ namespace BuildingBlocksManager
             {
                 dialog.Description = "Select Source Directory";
                 dialog.ShowNewFolderButton = false;
+                dialog.RootFolder = Environment.SpecialFolder.MyComputer;
                 
-                var currentPath = txtSourceDirectory.Text;
-                var startDir = GetValidStartDirectory(currentPath);
+                var startDir = GetValidStartDirectory(fullSourceDirectoryPath);
                 dialog.SelectedPath = startDir;
                 
                 if (dialog.ShowDialog() == DialogResult.OK)
@@ -640,9 +639,9 @@ namespace BuildingBlocksManager
             {
                 dialog.Description = "Select Export Directory";
                 dialog.ShowNewFolderButton = true;
+                dialog.RootFolder = Environment.SpecialFolder.MyComputer;
                 
-                var currentPath = txtExportDirectory.Text;
-                var startDir = GetValidStartDirectory(currentPath);
+                var startDir = GetValidStartDirectory(fullExportDirectoryPath);
                 dialog.SelectedPath = startDir;
                 
                 if (dialog.ShowDialog() == DialogResult.OK)
