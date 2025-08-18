@@ -2494,6 +2494,9 @@ BACKUP PROCESS:
 
             try
             {
+                // Initialize ledger for tracking deletions
+                var ledger = new BuildingBlockLedger(logger.GetLogDirectory());
+                
                 using (var wordManager = new WordManager(fullTemplatePath))
                 {
                     // Create backup before deleting
@@ -2511,6 +2514,9 @@ BACKUP PROCESS:
                             wordManager.DeleteBuildingBlock(buildingBlock.Name, buildingBlock.Category);
                             AppendResults($"Deleted Building Block: {buildingBlock.Name} from category {buildingBlock.Category}");
                             logger.LogDeletion(buildingBlock.Name, buildingBlock.Category);
+                            
+                            // Update ledger to track the deletion
+                            ledger.RemoveEntry(buildingBlock.Name, buildingBlock.Category);
                             
                             // Remove from the data collections
                             allBuildingBlocks.RemoveAll(bb => bb.Name == buildingBlock.Name && bb.Category == buildingBlock.Category);

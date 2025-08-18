@@ -56,6 +56,7 @@ namespace BuildingBlocksManager
         private string ledgerFile;
 
         private Dictionary<string, LedgerEntry> ledgerEntries;
+        private Dictionary<string, LedgerEntry> removedEntries;
 
         public BuildingBlockLedger()
         {
@@ -64,6 +65,7 @@ namespace BuildingBlocksManager
             ledgerFile = Path.Combine(ledgerDirectory, "building_blocks_ledger.txt");
             
             ledgerEntries = new Dictionary<string, LedgerEntry>();
+            removedEntries = new Dictionary<string, LedgerEntry>();
             Load();
         }
 
@@ -85,6 +87,7 @@ namespace BuildingBlocksManager
             ledgerFile = Path.Combine(ledgerDirectory, "building_blocks_ledger.txt");
             
             ledgerEntries = new Dictionary<string, LedgerEntry>();
+            removedEntries = new Dictionary<string, LedgerEntry>();
             Load();
         }
 
@@ -132,14 +135,57 @@ namespace BuildingBlocksManager
         }
 
         /// <summary>
-        /// Remove a Building Block entry from the ledger
+        /// Remove a Building Block entry from the active ledger and move it to removed section
         /// </summary>
         public void RemoveEntry(string name, string category)
         {
             var key = GetLedgerKey(name, category);
             if (ledgerEntries.ContainsKey(key))
             {
+                // Move entry from active to removed section
+                var entry = ledgerEntries[key];
+                entry.LastModified = DateTime.Now; // Update timestamp when removed
+                removedEntries[key] = entry;
                 ledgerEntries.Remove(key);
+                Save();
+            }
+            else
+            {
+                // Item doesn't exist in active ledger - create new removed entry
+                AddRemovedEntry(name, category, DateTime.Now);
+            }
+        }
+
+        /// <summary>
+        /// Add a Building Block directly to the removed section (for items deleted before being tracked)
+        /// </summary>
+        public void AddRemovedEntry(string name, string category, DateTime removedTime)
+        {
+            var key = GetLedgerKey(name, category);
+            var entry = new LedgerEntry
+            {
+                Name = name,
+                Category = category ?? "",
+                LastModified = removedTime
+            };
+            
+            removedEntries[key] = entry;
+            Save();
+        }
+
+        /// <summary>
+        /// Restore a removed Building Block entry back to the active ledger
+        /// </summary>
+        public void RestoreEntry(string name, string category, DateTime lastModified)
+        {
+            var key = GetLedgerKey(name, category);
+            if (removedEntries.ContainsKey(key))
+            {
+                // Move entry from removed back to active section
+                var entry = removedEntries[key];
+                entry.LastModified = lastModified;
+                ledgerEntries[key] = entry;
+                removedEntries.Remove(key);
                 Save();
             }
         }
@@ -159,8 +205,18 @@ namespace BuildingBlocksManager
 
                 if (!ledgerEntries.ContainsKey(key))
                 {
-                    // New Building Block - not in ledger
-                    analysis.NewFiles.Add(file);
+                    // Check if this file was previously removed and should be restored
+                    if (removedEntries.ContainsKey(key))
+                    {
+                        // File was removed but now exists again - restore it and treat as modified
+                        RestoreEntry(file.Name, file.Category, file.LastModified);
+                        analysis.ModifiedFiles.Add(file);
+                    }
+                    else
+                    {
+                        // New Building Block - not in ledger
+                        analysis.NewFiles.Add(file);
+                    }
                 }
                 else
                 {
@@ -194,11 +250,19 @@ namespace BuildingBlocksManager
         }
 
         /// <summary>
-        /// Get all entries in the ledger
+        /// Get all active entries in the ledger
         /// </summary>
         public List<LedgerEntry> GetAllEntries()
         {
             return ledgerEntries.Values.OrderBy(e => e.Name).ToList();
+        }
+
+        /// <summary>
+        /// Get all removed entries in the ledger
+        /// </summary>
+        public List<LedgerEntry> GetRemovedEntries()
+        {
+            return removedEntries.Values.OrderBy(e => e.Name).ToList();
         }
 
         /// <summary>
@@ -211,11 +275,12 @@ namespace BuildingBlocksManager
         }
 
         /// <summary>
-        /// Clear all entries from the ledger
+        /// Clear all entries from the ledger (both active and removed)
         /// </summary>
         public void Clear()
         {
             ledgerEntries.Clear();
+            removedEntries.Clear();
             Save();
         }
 
@@ -229,24 +294,43 @@ namespace BuildingBlocksManager
                 if (File.Exists(ledgerFile))
                 {
                     var lines = File.ReadAllLines(ledgerFile);
+                    var currentSection = "active"; // Default to active section
+                    
                     foreach (var line in lines)
                     {
                         if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#"))
                             continue; // Skip empty lines and comments
 
+                        // Check for section headers
+                        if (line.Trim().ToLower().Contains("removed building blocks"))
+                        {
+                            currentSection = "removed";
+                            continue;
+                        }
+                        else if (line.Trim().ToLower().Contains("active building blocks") || 
+                                line.Trim().StartsWith("Name") || 
+                                currentSection == "active")
+                        {
+                            // Stay in or switch to active section
+                            if (line.Trim().StartsWith("Name"))
+                                continue; // Skip header line
+                        }
+
+                        var targetCollection = currentSection == "removed" ? removedEntries : ledgerEntries;
+                        
                         // Try tab-delimited format first (new format)
                         var parts = line.Split('\t');
                         if (parts.Length >= 3 && DateTime.TryParse(parts[2], out DateTime lastModified))
                         {
                             var entry = new LedgerEntry
                             {
-                                Name = parts[0],
-                                Category = parts[1],
+                                Name = parts[0].Trim(),
+                                Category = parts[1].Trim(),
                                 LastModified = lastModified
                             };
                             
                             var key = GetLedgerKey(entry.Name, entry.Category);
-                            ledgerEntries[key] = entry;
+                            targetCollection[key] = entry;
                         }
                         else
                         {
@@ -256,27 +340,27 @@ namespace BuildingBlocksManager
                             {
                                 var entry = new LedgerEntry
                                 {
-                                    Name = parts[0],
-                                    Category = parts[1],
+                                    Name = parts[0].Trim(),
+                                    Category = parts[1].Trim(),
                                     LastModified = lastModified
                                 };
                                 
                                 var key = GetLedgerKey(entry.Name, entry.Category);
-                                ledgerEntries[key] = entry;
+                                targetCollection[key] = entry;
                             }
                             // Support old format (4 columns) for backward compatibility
                             else if (parts.Length >= 4 && DateTime.TryParse(parts[2], out lastModified))
                             {
                                 var entry = new LedgerEntry
                                 {
-                                    Name = parts[0],
-                                    Category = parts[1],
+                                    Name = parts[0].Trim(),
+                                    Category = parts[1].Trim(),
                                     LastModified = lastModified
                                     // Ignore the old SourceFilePath (parts[3])
                                 };
                                 
                                 var key = GetLedgerKey(entry.Name, entry.Category);
-                                ledgerEntries[key] = entry;
+                                targetCollection[key] = entry;
                             }
                         }
                     }
@@ -286,6 +370,7 @@ namespace BuildingBlocksManager
             {
                 // Silently handle errors - start with empty ledger
                 ledgerEntries.Clear();
+                removedEntries.Clear();
             }
         }
 
@@ -304,6 +389,7 @@ namespace BuildingBlocksManager
                     $"# Last Updated: {DateTime.Now:yyyy-MM-dd HH:mm}",
                     $"# Ledger Path: {ledgerFile}",
                     "#",
+                    "# Active Building Blocks",
                     "# Name".PadRight(40) + "\t" + "Category".PadRight(30) + "\t" + "LastModified",
                     ""
                 };
@@ -311,6 +397,20 @@ namespace BuildingBlocksManager
                 foreach (var entry in ledgerEntries.Values.OrderBy(e => e.Name))
                 {
                     lines.Add($"{entry.Name.PadRight(40)}\t{entry.Category.PadRight(30)}\t{entry.LastModified:yyyy-MM-dd HH:mm}");
+                }
+                
+                // Add removed entries section if any exist
+                if (removedEntries.Count > 0)
+                {
+                    lines.Add("");
+                    lines.Add("# Removed Building Blocks");
+                    lines.Add("# Name".PadRight(40) + "\t" + "Category".PadRight(30) + "\t" + "RemovedDate");
+                    lines.Add("");
+                    
+                    foreach (var entry in removedEntries.Values.OrderBy(e => e.Name))
+                    {
+                        lines.Add($"{entry.Name.PadRight(40)}\t{entry.Category.PadRight(30)}\t{entry.LastModified:yyyy-MM-dd HH:mm}");
+                    }
                 }
                 
                 File.WriteAllLines(ledgerFile, lines);
@@ -364,8 +464,9 @@ namespace BuildingBlocksManager
         {
             try
             {
-                // Clear existing entries
+                // Clear existing entries (both active and removed)
                 ledgerEntries.Clear();
+                removedEntries.Clear();
 
                 // Use WordManager to get Building Blocks from template
                 using (var wordManager = new WordManager(templatePath))
