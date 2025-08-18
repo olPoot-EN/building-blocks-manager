@@ -130,6 +130,13 @@ namespace BuildingBlocksManager
             {
                 var relativePath = GetRelativePath(sourceDirectory, filePath);
                 var directory = Path.GetDirectoryName(relativePath);
+                
+                // DEBUG: Show category extraction details
+                var debugInfo = $"[CATEGORY] FilePath: {filePath}\n" +
+                              $"SourceDirectory: {sourceDirectory}\n" +
+                              $"RelativePath: '{relativePath}'\n" +
+                              $"Directory: '{directory}'";
+                System.Windows.Forms.MessageBox.Show(debugInfo, "Category Extraction Debug");
 
                 if (string.IsNullOrEmpty(directory) || directory == ".")
                 {
