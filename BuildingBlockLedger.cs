@@ -60,17 +60,25 @@ namespace BuildingBlocksManager
 
         public BuildingBlockLedger()
         {
+            System.Diagnostics.Debug.WriteLine("*** LEDGER CONSTRUCTOR: Creating BuildingBlockLedger ***");
+            
             // Always use the top-level BBM_Logs directory (not session subdirectory)
             ledgerDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BuildingBlocksManager", "BBM_Logs");
             ledgerFile = Path.Combine(ledgerDirectory, "building_blocks_ledger.txt");
             
+            System.Diagnostics.Debug.WriteLine($"*** LEDGER CONSTRUCTOR: Will load from {ledgerFile} ***");
+            
             ledgerEntries = new Dictionary<string, LedgerEntry>();
             removedEntries = new Dictionary<string, LedgerEntry>();
             Load();
+            
+            System.Diagnostics.Debug.WriteLine($"*** LEDGER CONSTRUCTOR: Finished - {ledgerEntries.Count} active, {removedEntries.Count} removed ***");
         }
 
         public BuildingBlockLedger(string logDirectory)
         {
+            System.Diagnostics.Debug.WriteLine($"*** LEDGER CONSTRUCTOR(logDir): Creating BuildingBlockLedger with logDirectory: '{logDirectory}' ***");
+            
             // Extract the base log directory (remove session folder if present)
             // Logger passes session-specific directory, but ledger should be at top level
             if (logDirectory != null && Path.GetFileName(logDirectory).Contains("-"))
@@ -86,9 +94,13 @@ namespace BuildingBlocksManager
             
             ledgerFile = Path.Combine(ledgerDirectory, "building_blocks_ledger.txt");
             
+            System.Diagnostics.Debug.WriteLine($"*** LEDGER CONSTRUCTOR(logDir): Will load from {ledgerFile} ***");
+            
             ledgerEntries = new Dictionary<string, LedgerEntry>();
             removedEntries = new Dictionary<string, LedgerEntry>();
             Load();
+            
+            System.Diagnostics.Debug.WriteLine($"*** LEDGER CONSTRUCTOR(logDir): Finished - {ledgerEntries.Count} active, {removedEntries.Count} removed ***");
         }
 
         /// <summary>
