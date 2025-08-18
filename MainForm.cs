@@ -1273,8 +1273,9 @@ namespace BuildingBlocksManager
                         // Export the Building Block
                         wordManager.ExportBuildingBlock(bb.Name, bb.Category, outputFilePath);
                         
-                        // Update ledger with current timestamp to match exported file
-                        ledger.UpdateEntry(bb.Name, bb.Category, DateTime.Now);
+                        // Update ledger with exported file's timestamp to match exported file
+                        var exportedFileInfo = new FileInfo(outputFilePath);
+                        ledger.UpdateEntry(bb.Name, bb.Category, exportedFileInfo.LastWriteTime);
                         
                         successCount++;
                         var displayPath = GetRelativePath(exportPath, outputFilePath);
@@ -1464,8 +1465,9 @@ namespace BuildingBlocksManager
                         // Export the Building Block
                         wordManager.ExportBuildingBlock(bb.Name, bb.Category, outputFilePath);
                         
-                        // Update ledger with current timestamp to match exported file
-                        ledger.UpdateEntry(bb.Name, bb.Category, DateTime.Now);
+                        // Update ledger with exported file's timestamp to match exported file
+                        var exportedFileInfo = new FileInfo(outputFilePath);
+                        ledger.UpdateEntry(bb.Name, bb.Category, exportedFileInfo.LastWriteTime);
                         
                         successCount++;
                         var displayPath = GetRelativePath(exportPath, outputFilePath);
