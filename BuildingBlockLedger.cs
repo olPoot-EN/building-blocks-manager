@@ -418,7 +418,7 @@ namespace BuildingBlocksManager
                 
                 foreach (var entry in ledgerEntries.Values.OrderBy(e => e.Name))
                 {
-                    lines.Add($"{entry.Name.PadRight(40)}\t{entry.Category.PadRight(30)}\t{entry.LastModified:yyyy-MM-dd HH:mm}");
+                    lines.Add($"{entry.Name}\t{entry.Category}\t{entry.LastModified:yyyy-MM-dd HH:mm}");
                 }
                 
                 // Add removed entries section if any exist
@@ -430,7 +430,7 @@ namespace BuildingBlocksManager
                     
                     foreach (var entry in removedEntries.Values.OrderBy(e => e.Name))
                     {
-                        lines.Add($"{entry.Name.PadRight(40)}\t{entry.Category.PadRight(30)}\t{entry.LastModified:yyyy-MM-dd HH:mm}");
+                        lines.Add($"{entry.Name}\t{entry.Category}\t{entry.LastModified:yyyy-MM-dd HH:mm}");
                     }
                 }
                 
