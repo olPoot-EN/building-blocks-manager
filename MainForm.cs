@@ -528,6 +528,32 @@ namespace BuildingBlocksManager
             lblExportDirectoryPathDisplay.Text = string.IsNullOrEmpty(parentPath) ? "" : parentPath + Path.DirectorySeparatorChar;
         }
 
+        private bool EnsureTemplateQueried()
+        {
+            if (allBuildingBlocks.Count > 0)
+                return true; // Template already queried
+            
+            var result = MessageBox.Show(
+                "No Building Blocks have been loaded from the template.\n\n" +
+                "Would you like to query the template now to load Building Blocks?\n\n" +
+                "• YES: Run Query Template automatically\n" +
+                "• NO: Cancel this operation",
+                "Query Template Required",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+            
+            if (result == DialogResult.Yes)
+            {
+                // Run the template query
+                BtnQueryTemplate_Click(this, EventArgs.Empty);
+                
+                // Check if the query was successful
+                return allBuildingBlocks.Count > 0;
+            }
+            
+            return false; // User cancelled or query failed
+        }
+
         private void TabControl_SelectedIndexChanged(object sender, EventArgs e)
         {
             // Auto-query when Directory or Template tabs are first accessed and empty
@@ -1161,9 +1187,8 @@ namespace BuildingBlocksManager
                 ledger = new BuildingBlockLedger(logger.GetLogDirectory());
                 
                 // Check if building blocks have been loaded (user must run Query Template first)
-                if (allBuildingBlocks.Count == 0)
+                if (!EnsureTemplateQueried())
                 {
-                    AppendResults("No Building Blocks loaded. Please run Query Template first to load and filter Building Blocks.");
                     HideStopButton();
                     return;
                 }
@@ -1324,6 +1349,9 @@ namespace BuildingBlocksManager
         private void BtnExportSelected_Click(object sender, EventArgs e)
         {
             if (!ValidatePaths()) return;
+            
+            // Ensure template has been queried first
+            if (!EnsureTemplateQueried()) return;
 
             // Check if any building blocks are selected in the ListView
             if (listViewTemplate.SelectedItems.Count == 0)
