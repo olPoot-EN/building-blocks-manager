@@ -342,11 +342,11 @@ namespace BuildingBlocksManager
                         var targetCollection = currentSection == "removed" ? removedEntries : ledgerEntries;
                         
                         // Parse space-aligned format: "Name                    Category                2025-08-18 14:26"
-                        var dateMatch = System.Text.RegularExpressions.Regex.Match(line, @"(\d{4}-\d{2}-\d{2} \d{2}:\d{2})$");
+                        var dateMatch = System.Text.RegularExpressions.Regex.Match(line, @"\s+(\d{4}-\d{2}-\d{2} \d{2}:\d{2})$");
                         if (dateMatch.Success && DateTime.TryParse(dateMatch.Groups[1].Value, out DateTime lastModified))
                         {
-                            // Remove the date part and split the remaining name/category part
-                            var nameAndCategory = line.Substring(0, line.Length - dateMatch.Groups[1].Value.Length).Trim();
+                            // Remove the date part and its preceding whitespace
+                            var nameAndCategory = line.Substring(0, dateMatch.Index).Trim();
                             
                             // Split into words and find the boundary between name and category
                             // The name ends where we find 2+ consecutive spaces (indicating column separation)
@@ -362,6 +362,15 @@ namespace BuildingBlocksManager
                                 
                                 var key = GetLedgerKey(entry.Name, entry.Category);
                                 targetCollection[key] = entry;
+                                
+                                // DEBUG: Log successful parsing
+                                System.Diagnostics.Debug.WriteLine($"[LEDGER PARSE] Loaded entry: Name='{entry.Name}', Category='{entry.Category}', Key='{key}'");
+                            }
+                            else
+                            {
+                                // DEBUG: Log parsing failures
+                                System.Diagnostics.Debug.WriteLine($"[LEDGER PARSE] Failed to parse line: '{line}'");
+                                System.Diagnostics.Debug.WriteLine($"[LEDGER PARSE] NameAndCategory: '{nameAndCategory}'");
                             }
                         }
                     }
