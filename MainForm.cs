@@ -749,8 +749,6 @@ namespace BuildingBlocksManager
                 
                 AppendResults("Ledger analysis complete:");
                 AppendResults(analysis.GetSummary());
-                AppendResults($"Ledger file: {ledger.GetLedgerFilePath()}");
-                AppendResults($"Ledger exists: {ledger.LedgerFileExists()}");
                 AppendResults("");
 
                 // Show analysis dialog to user
@@ -1143,6 +1141,34 @@ namespace BuildingBlocksManager
 
                 AppendResults($"Found {buildingBlocks.Count} Building Blocks to export based on current filters");
                 AppendResults("");
+
+                // Check for ledger and offer to create one
+                var ledger = new BuildingBlockLedger(logger.GetLogDirectory());
+                if (!ledger.LedgerFileExists())
+                {
+                    var result = MessageBox.Show(
+                        "No Building Block ledger found. Create one from current template?\n\n" +
+                        "This will track all Building Blocks for future change detection and imports.",
+                        "Create Building Block Ledger?", 
+                        MessageBoxButtons.YesNo, 
+                        MessageBoxIcon.Question);
+                        
+                    if (result == DialogResult.Yes) 
+                    {
+                        AppendResults("Creating Building Block ledger from template...");
+                        try
+                        {
+                            ledger.GenerateFromTemplate(fullTemplatePath);
+                            AppendResults($"✓ Ledger created with {ledger.GetAllEntries().Count} Building Blocks");
+                            AppendResults($"Ledger saved to: {ledger.GetLedgerFilePath()}");
+                        }
+                        catch (Exception ex)
+                        {
+                            AppendResults($"✗ Failed to create ledger: {ex.Message}");
+                        }
+                        AppendResults("");
+                    }
+                }
 
                 // Start export session logging
                 logger.StartExportSession(exportPath);

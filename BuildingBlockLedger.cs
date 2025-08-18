@@ -66,12 +66,6 @@ namespace BuildingBlocksManager
             
             ledgerEntries = new Dictionary<string, LedgerEntry>();
             Load();
-            
-            // Create empty ledger file if it doesn't exist
-            if (!File.Exists(ledgerFile))
-            {
-                Save();
-            }
         }
 
         public BuildingBlockLedger(string logDirectory)
@@ -93,12 +87,6 @@ namespace BuildingBlocksManager
             
             ledgerEntries = new Dictionary<string, LedgerEntry>();
             Load();
-            
-            // Create empty ledger file if it doesn't exist
-            if (!File.Exists(ledgerFile))
-            {
-                Save();
-            }
         }
 
         /// <summary>
@@ -337,6 +325,39 @@ namespace BuildingBlocksManager
         public bool LedgerFileExists()
         {
             return File.Exists(ledgerFile);
+        }
+
+        /// <summary>
+        /// Generate ledger from current template Building Blocks
+        /// </summary>
+        public void GenerateFromTemplate(string templatePath)
+        {
+            try
+            {
+                // Clear existing entries
+                ledgerEntries.Clear();
+
+                // Use WordManager to get Building Blocks from template
+                using (var wordManager = new WordManager(templatePath))
+                {
+                    var buildingBlocks = wordManager.GetBuildingBlocks();
+                    var templateModTime = File.GetLastWriteTime(templatePath);
+                    
+                    foreach (var bb in buildingBlocks)
+                    {
+                        // Use template modification time as baseline
+                        // Source path is the template since these come from template
+                        UpdateEntry(bb.Name, bb.Category, templateModTime, templatePath);
+                    }
+                }
+                
+                // Save the newly generated ledger
+                Save();
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Failed to generate ledger from template: {ex.Message}", ex);
+            }
         }
     }
 }
