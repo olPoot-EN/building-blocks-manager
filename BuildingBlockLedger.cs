@@ -68,11 +68,17 @@ namespace BuildingBlocksManager
             
             System.Diagnostics.Debug.WriteLine($"*** LEDGER CONSTRUCTOR: Will load from {ledgerFile} ***");
             
+            // TEMPORARY DEBUG - Force visible message
+            System.Windows.Forms.MessageBox.Show($"LEDGER CONSTRUCTOR: Will load from {ledgerFile}\nFile exists: {File.Exists(ledgerFile)}", "DEBUG: Ledger Constructor");
+            
             ledgerEntries = new Dictionary<string, LedgerEntry>();
             removedEntries = new Dictionary<string, LedgerEntry>();
             Load();
             
             System.Diagnostics.Debug.WriteLine($"*** LEDGER CONSTRUCTOR: Finished - {ledgerEntries.Count} active, {removedEntries.Count} removed ***");
+            
+            // TEMPORARY DEBUG - Show final result
+            System.Windows.Forms.MessageBox.Show($"LEDGER CONSTRUCTOR: Finished loading\nActive entries: {ledgerEntries.Count}\nRemoved entries: {removedEntries.Count}", "DEBUG: Ledger Load Complete");
         }
 
         public BuildingBlockLedger(string logDirectory)
@@ -96,11 +102,17 @@ namespace BuildingBlocksManager
             
             System.Diagnostics.Debug.WriteLine($"*** LEDGER CONSTRUCTOR(logDir): Will load from {ledgerFile} ***");
             
+            // TEMPORARY DEBUG - Force visible message
+            System.Windows.Forms.MessageBox.Show($"LEDGER CONSTRUCTOR(logDir): Will load from {ledgerFile}\nFile exists: {File.Exists(ledgerFile)}", "DEBUG: Ledger Constructor with LogDir");
+            
             ledgerEntries = new Dictionary<string, LedgerEntry>();
             removedEntries = new Dictionary<string, LedgerEntry>();
             Load();
             
             System.Diagnostics.Debug.WriteLine($"*** LEDGER CONSTRUCTOR(logDir): Finished - {ledgerEntries.Count} active, {removedEntries.Count} removed ***");
+            
+            // TEMPORARY DEBUG - Show final result  
+            System.Windows.Forms.MessageBox.Show($"LEDGER CONSTRUCTOR(logDir): Finished loading\nActive entries: {ledgerEntries.Count}\nRemoved entries: {removedEntries.Count}", "DEBUG: Ledger Load Complete with LogDir");
         }
 
         /// <summary>
