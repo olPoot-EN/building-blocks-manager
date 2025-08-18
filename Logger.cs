@@ -23,7 +23,7 @@ namespace BuildingBlocksManager
         public Logger(string templatePath = null, string sourceDirectoryPath = null, bool logToTemplateDirectory = true, bool enableDetailedLogging = true)
         {
             this.enableDetailedLogging = enableDetailedLogging;
-            this.sessionId = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
+            this.sessionId = DateTime.Now.ToString("yyyy-MM-dd_HHmm");
             this.templatePath = templatePath;
             this.sourceDirectoryPath = sourceDirectoryPath;
             
