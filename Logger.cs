@@ -14,6 +14,8 @@ namespace BuildingBlocksManager
         private readonly string deleteLogFile;
         private readonly bool enableDetailedLogging;
         private readonly string sessionId;
+        private readonly string templatePath;
+        private readonly string sourceDirectoryPath;
 
         public string GetLogDirectory() => logDirectory;
 
@@ -21,6 +23,8 @@ namespace BuildingBlocksManager
         {
             this.enableDetailedLogging = enableDetailedLogging;
             this.sessionId = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
+            this.templatePath = templatePath;
+            this.sourceDirectoryPath = sourceDirectoryPath;
             
             // Determine log directory based on settings
             if (logToTemplateDirectory && !string.IsNullOrEmpty(templatePath) && File.Exists(templatePath))
@@ -74,16 +78,40 @@ namespace BuildingBlocksManager
             WriteToFile(generalLogFile, "SUCCESS", message);
         }
 
-        public void LogImport(string fileName, string buildingBlockName, string category, string sourcePath)
+        public void StartImportSession()
         {
-            var message = $"{fileName} -> {buildingBlockName} (Category: {category}) from {sourcePath}";
-            WriteToFile(importLogFile, "IMPORT", message);
+            WriteSessionHeader(importLogFile, "IMPORT SESSION START");
+            WriteSessionInfo(importLogFile, "Source", sourceDirectoryPath);
+            WriteSessionInfo(importLogFile, "Template", GetTemplateFileName());
         }
 
-        public void LogExport(string buildingBlockName, string category, string exportPath)
+        public void EndImportSession(int itemCount)
         {
-            var message = $"{buildingBlockName} (Category: {category}) to {exportPath}";
-            WriteToFile(exportLogFile, "EXPORT", message);
+            WriteSessionFooter(importLogFile, "IMPORT SESSION END", $"{itemCount} items imported");
+        }
+
+        public void LogImport(string buildingBlockName, string category)
+        {
+            var message = $"{buildingBlockName} ({category})";
+            WriteToFile(importLogFile, "", message); // No level prefix for session items
+        }
+
+        public void StartExportSession(string exportPath)
+        {
+            WriteSessionHeader(exportLogFile, "EXPORT SESSION START");
+            WriteSessionInfo(exportLogFile, "Template", GetTemplateFileName());
+            WriteSessionInfo(exportLogFile, "Destination", exportPath);
+        }
+
+        public void EndExportSession(int itemCount)
+        {
+            WriteSessionFooter(exportLogFile, "EXPORT SESSION END", $"{itemCount} items exported");
+        }
+
+        public void LogExport(string buildingBlockName, string category)
+        {
+            var message = $"{buildingBlockName} ({category})";
+            WriteToFile(exportLogFile, "", message); // No level prefix for session items
         }
 
         public void LogError(string operation, string buildingBlockName, string category, string errorMessage)
@@ -94,21 +122,80 @@ namespace BuildingBlocksManager
 
         public void LogDeletion(string buildingBlockName, string category)
         {
-            var message = $"{buildingBlockName} (Category: {category})";
-            WriteToFile(deleteLogFile, "DELETE", message);
+            var templateName = GetTemplateFileName();
+            var message = $"From: {templateName} --- {buildingBlockName} ({category})";
+            // Use timestamp but no level for delete log
+            try
+            {
+                var logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm}] {message}";
+                File.AppendAllText(deleteLogFile, logEntry + Environment.NewLine);
+            }
+            catch
+            {
+                // Silently handle logging errors
+            }
         }
 
         private void WriteToFile(string filePath, string level, string message)
         {
             try
             {
-                var logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm}] {level}: {message}";
+                var logEntry = string.IsNullOrEmpty(level) 
+                    ? message // Session items without timestamp or level
+                    : $"[{DateTime.Now:yyyy-MM-dd HH:mm}] {level}: {message}";
                 File.AppendAllText(filePath, logEntry + Environment.NewLine);
             }
             catch
             {
                 // Silently handle logging errors
             }
+        }
+
+        private void WriteSessionHeader(string filePath, string sessionType)
+        {
+            try
+            {
+                var logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm}] === {sessionType} ===";
+                File.AppendAllText(filePath, logEntry + Environment.NewLine);
+            }
+            catch
+            {
+                // Silently handle logging errors
+            }
+        }
+
+        private void WriteSessionInfo(string filePath, string label, string value)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(value))
+                {
+                    var logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm}] {label}: {value}";
+                    File.AppendAllText(filePath, logEntry + Environment.NewLine);
+                }
+            }
+            catch
+            {
+                // Silently handle logging errors
+            }
+        }
+
+        private void WriteSessionFooter(string filePath, string sessionType, string summary)
+        {
+            try
+            {
+                var logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm}] === {sessionType} === ({summary})";
+                File.AppendAllText(filePath, logEntry + Environment.NewLine + Environment.NewLine);
+            }
+            catch
+            {
+                // Silently handle logging errors
+            }
+        }
+
+        private string GetTemplateFileName()
+        {
+            return !string.IsNullOrEmpty(templatePath) ? Path.GetFileName(templatePath) : "Unknown";
         }
 
         private void WriteSessionMarker(string filePath, string marker)

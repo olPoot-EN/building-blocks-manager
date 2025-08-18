@@ -839,6 +839,9 @@ namespace BuildingBlocksManager
                 AppendResults($"Importing {filesToImport.Count} files");
                 AppendResults("");
 
+                // Start import session logging
+                logger.StartImportSession();
+
                 // Import each file
                 for (int i = 0; i < filesToImport.Count; i++)
                 {
@@ -887,7 +890,7 @@ namespace BuildingBlocksManager
                                 logger.Success($"Imported {fileName} as {importResult.FinalCategory}\\{importResult.ImportedName}");
                             }
                             
-                            logger.LogImport(fileName, importResult.ImportedName, importResult.FinalCategory, file.FilePath);
+                            logger.LogImport(importResult.ImportedName, importResult.FinalCategory);
                         }
                         else
                         {
@@ -947,7 +950,9 @@ namespace BuildingBlocksManager
                 }
             }
             
-            logger.Info($"Import All completed - Success: {successCount}, Errors: {errorCount}, Time: {processingTime:F1}s");
+            // End import session logging
+            logger.EndImportSession(successCount);
+            logger.Info($"Import completed - Success: {successCount}, Errors: {errorCount}, Time: {processingTime:F1}s");
             
             progressBar.Value = 0;
             UpdateStatus(errorCount == 0 ? "Import completed successfully" : $"Import completed with {errorCount} errors");
@@ -1137,6 +1142,9 @@ namespace BuildingBlocksManager
                 AppendResults($"Found {buildingBlocks.Count} Building Blocks to export based on current filters");
                 AppendResults("");
 
+                // Start export session logging
+                logger.StartExportSession(exportPath);
+
                 // Export each Building Block
                 for (int i = 0; i < buildingBlocks.Count; i++)
                 {
@@ -1199,7 +1207,7 @@ namespace BuildingBlocksManager
                         
                         successCount++;
                         var displayPath = GetRelativePath(exportPath, outputFilePath);
-                        logger.LogExport(bb.Name, bb.Category, displayPath);
+                        logger.LogExport(bb.Name, bb.Category);
                         AppendResults($"  ✓ Exported to {displayPath}");
                     }
                     catch (Exception ex)
@@ -1232,10 +1240,11 @@ namespace BuildingBlocksManager
             AppendResults($"Directories Created: {directoriesCreated}");
             AppendResults($"Processing Time: {processingTime:F1} seconds");
             
+            // End export session logging
+            logger.EndExportSession(successCount);
+            
             // Handle conflicted files
             HandleExportConflicts();
-            
-            // Export and error logging handled individually above
             
             progressBar.Value = 0;
             UpdateStatus(errorCount == 0 ? "Export completed successfully" : $"Export completed with {errorCount} errors");
@@ -1324,6 +1333,9 @@ namespace BuildingBlocksManager
                 // Initialize WordManager
                 wordManager = new WordManager(fullTemplatePath);
 
+                // Start export session logging
+                logger.StartExportSession(exportPath);
+
                 // Export each selected Building Block
                 for (int i = 0; i < selectedBlocks.Count; i++)
                 {
@@ -1379,7 +1391,7 @@ namespace BuildingBlocksManager
                         
                         successCount++;
                         var displayPath = GetRelativePath(exportPath, outputFilePath);
-                        logger.LogExport(bb.Name, bb.Category, displayPath);
+                        logger.LogExport(bb.Name, bb.Category);
                         AppendResults($"  ✓ Exported to {displayPath}");
                     }
                     catch (Exception ex)
@@ -1411,10 +1423,11 @@ namespace BuildingBlocksManager
             AppendResults($"Directories Created: {directoriesCreated}");
             AppendResults($"Processing Time: {processingTime:F1} seconds");
             
+            // End export session logging
+            logger.EndExportSession(successCount);
+            
             // Handle conflicted files
             HandleExportConflicts();
-            
-            // Export and error logging handled individually above
             
             progressBar.Value = 0;
             UpdateStatus(errorCount == 0 ? "Export completed successfully" : $"Export completed with {errorCount} errors");
@@ -1651,7 +1664,7 @@ namespace BuildingBlocksManager
                                 wordManager.ExportBuildingBlock(buildingBlock.Name, buildingBlock.Category, conflictedFile);
                                 
                                 var displayPath = GetRelativePath(Path.GetDirectoryName(conflictedFile), conflictedFile);
-                                logger.LogExport(buildingBlock.Name, buildingBlock.Category, displayPath);
+                                logger.LogExport(buildingBlock.Name, buildingBlock.Category);
                                 AppendResults($"  ✓ Overwritten: {Path.GetFileName(conflictedFile)}");
                                 overwriteSuccessCount++;
                             }
