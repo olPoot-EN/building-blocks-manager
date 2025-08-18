@@ -489,6 +489,41 @@ namespace BuildingBlocksManager
         }
 
         /// <summary>
+        /// Force reload the ledger and return diagnostic information
+        /// </summary>
+        public string GetDiagnosticInfo()
+        {
+            var info = new System.Text.StringBuilder();
+            info.AppendLine($"Ledger file path: {ledgerFile}");
+            info.AppendLine($"File exists: {File.Exists(ledgerFile)}");
+            
+            if (File.Exists(ledgerFile))
+            {
+                var lines = File.ReadAllLines(ledgerFile);
+                info.AppendLine($"File line count: {lines.Length}");
+                info.AppendLine("First 10 lines:");
+                for (int i = 0; i < Math.Min(10, lines.Length); i++)
+                {
+                    info.AppendLine($"  [{i}]: '{lines[i]}'");
+                }
+            }
+            
+            info.AppendLine($"Active entries in memory: {ledgerEntries.Count}");
+            info.AppendLine($"Removed entries in memory: {removedEntries.Count}");
+            
+            if (ledgerEntries.Count > 0)
+            {
+                info.AppendLine("Sample keys in memory:");
+                foreach (var key in ledgerEntries.Keys.Take(5))
+                {
+                    info.AppendLine($"  '{key}'");
+                }
+            }
+            
+            return info.ToString();
+        }
+
+        /// <summary>
         /// Generate ledger from current template Building Blocks (user-relevant only)
         /// </summary>
         public void GenerateFromTemplate(string templatePath)
