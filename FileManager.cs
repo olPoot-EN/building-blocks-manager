@@ -60,19 +60,6 @@ namespace BuildingBlocksManager
                     var category = ExtractCategory(filePath);
                     var lastImported = ledger.GetLastImportTime(name, category);
                     
-                    // DEBUG: Show debug info for first few files
-                    if (files.Count < 3)
-                    {
-                        var debugInfo = $"[SCAN] File: {fileName}\n" +
-                                      $"Extracted Name: '{name}'\n" +
-                                      $"Extracted Category: '{category}'\n" +
-                                      $"Ledger Key: '{name}|{category ?? ""}'\n" +
-                                      $"LastImported: {(lastImported == DateTime.MinValue ? "DateTime.MinValue (NEW)" : lastImported.ToString())}\n" +
-                                      $"File LastModified: {fileInfo.LastWriteTime}\n" +
-                                      $"IsNew: {lastImported == DateTime.MinValue}";
-                        
-                        System.Windows.Forms.MessageBox.Show(debugInfo, $"Debug Info - File {files.Count + 1}");
-                    }
                     
                     var fileData = new FileInfo
                     {
@@ -131,12 +118,6 @@ namespace BuildingBlocksManager
                 var relativePath = GetRelativePath(sourceDirectory, filePath);
                 var directory = Path.GetDirectoryName(relativePath);
                 
-                // DEBUG: Show category extraction details
-                var debugInfo = $"[CATEGORY] FilePath: {filePath}\n" +
-                              $"SourceDirectory: {sourceDirectory}\n" +
-                              $"RelativePath: '{relativePath}'\n" +
-                              $"Directory: '{directory}'";
-                System.Windows.Forms.MessageBox.Show(debugInfo, "Category Extraction Debug");
 
                 if (string.IsNullOrEmpty(directory) || directory == ".")
                 {
