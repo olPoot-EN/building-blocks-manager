@@ -314,20 +314,30 @@ namespace BuildingBlocksManager
         {
             try
             {
+                System.Diagnostics.Debug.WriteLine($"[LEDGER LOAD] Starting to load ledger from: {ledgerFile}");
+                
                 if (File.Exists(ledgerFile))
                 {
                     var lines = File.ReadAllLines(ledgerFile);
                     var currentSection = "active"; // Default to active section
                     
+                    System.Diagnostics.Debug.WriteLine($"[LEDGER LOAD] Found ledger file with {lines.Length} lines");
+                    
                     foreach (var line in lines)
                     {
+                        System.Diagnostics.Debug.WriteLine($"[LEDGER LOAD] Processing line: '{line}'");
+                        
                         if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#"))
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[LEDGER LOAD] Skipping comment/empty line");
                             continue; // Skip empty lines and comments
+                        }
 
                         // Check for section headers
                         if (line.Trim().ToLower().Contains("removed building blocks"))
                         {
                             currentSection = "removed";
+                            System.Diagnostics.Debug.WriteLine($"[LEDGER LOAD] Switched to removed section");
                             continue;
                         }
                         else if (line.Trim().ToLower().Contains("active building blocks") || 
@@ -336,13 +346,23 @@ namespace BuildingBlocksManager
                         {
                             // Stay in or switch to active section
                             if (line.Trim().StartsWith("Name"))
+                            {
+                                System.Diagnostics.Debug.WriteLine($"[LEDGER LOAD] Skipping header line");
                                 continue; // Skip header line
+                            }
                         }
 
                         var targetCollection = currentSection == "removed" ? removedEntries : ledgerEntries;
+                        System.Diagnostics.Debug.WriteLine($"[LEDGER LOAD] Parsing data line in section: {currentSection}");
                         
                         // Parse space-aligned format: "Name                    Category                2025-08-18 14:26"
                         var dateMatch = System.Text.RegularExpressions.Regex.Match(line, @"\s+(\d{4}-\d{2}-\d{2} \d{2}:\d{2})$");
+                        System.Diagnostics.Debug.WriteLine($"[LEDGER LOAD] Date regex match: {dateMatch.Success}");
+                        if (dateMatch.Success)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[LEDGER LOAD] Found date: '{dateMatch.Groups[1].Value}'");
+                        }
+                        
                         if (dateMatch.Success && DateTime.TryParse(dateMatch.Groups[1].Value, out DateTime lastModified))
                         {
                             // Remove the date part and its preceding whitespace
@@ -374,10 +394,17 @@ namespace BuildingBlocksManager
                             }
                         }
                     }
+                    
+                    System.Diagnostics.Debug.WriteLine($"[LEDGER LOAD] Finished loading. Active entries: {ledgerEntries.Count}, Removed entries: {removedEntries.Count}");
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"[LEDGER LOAD] Ledger file does not exist at: {ledgerFile}");
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"[LEDGER LOAD] Exception during load: {ex.Message}");
                 // Silently handle errors - start with empty ledger
                 ledgerEntries.Clear();
                 removedEntries.Clear();
