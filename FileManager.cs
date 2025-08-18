@@ -60,15 +60,19 @@ namespace BuildingBlocksManager
                     var category = ExtractCategory(filePath);
                     var lastImported = ledger.GetLastImportTime(name, category);
                     
-                    // DEBUG: Log lookup details for troubleshooting
-                    Console.WriteLine($"[SCAN] File: {fileName}");
-                    Console.WriteLine($"[SCAN] Extracted Name: '{name}'");
-                    Console.WriteLine($"[SCAN] Extracted Category: '{category}'");
-                    Console.WriteLine($"[SCAN] Ledger Key: '{name}|{category ?? ""}'");
-                    Console.WriteLine($"[SCAN] LastImported: {(lastImported == DateTime.MinValue ? "DateTime.MinValue (NEW)" : lastImported.ToString())}");
-                    Console.WriteLine($"[SCAN] File LastModified: {fileInfo.LastWriteTime}");
-                    Console.WriteLine($"[SCAN] IsNew: {lastImported == DateTime.MinValue}");
-                    Console.WriteLine("---");
+                    // DEBUG: Show debug info for first few files
+                    if (files.Count < 3)
+                    {
+                        var debugInfo = $"[SCAN] File: {fileName}\n" +
+                                      $"Extracted Name: '{name}'\n" +
+                                      $"Extracted Category: '{category}'\n" +
+                                      $"Ledger Key: '{name}|{category ?? ""}'\n" +
+                                      $"LastImported: {(lastImported == DateTime.MinValue ? "DateTime.MinValue (NEW)" : lastImported.ToString())}\n" +
+                                      $"File LastModified: {fileInfo.LastWriteTime}\n" +
+                                      $"IsNew: {lastImported == DateTime.MinValue}";
+                        
+                        System.Windows.Forms.MessageBox.Show(debugInfo, $"Debug Info - File {files.Count + 1}");
+                    }
                     
                     var fileData = new FileInfo
                     {

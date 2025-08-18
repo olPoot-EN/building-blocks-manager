@@ -932,15 +932,15 @@ namespace BuildingBlocksManager
                         if (importResult.Success)
                         {
                             // DEBUG: Log import details for troubleshooting
-                            Console.WriteLine($"[IMPORT] File: {fileName}");
-                            Console.WriteLine($"[IMPORT] Original Name: '{file.Name}'");
-                            Console.WriteLine($"[IMPORT] Original Category: '{file.Category}'");
-                            Console.WriteLine($"[IMPORT] Used Category: '{category}'");
-                            Console.WriteLine($"[IMPORT] ImportedName: '{importResult.ImportedName}'");
-                            Console.WriteLine($"[IMPORT] FinalCategory: '{importResult.FinalCategory}'");
-                            Console.WriteLine($"[IMPORT] Ledger Key: '{importResult.ImportedName}|{importResult.FinalCategory ?? ""}'");
-                            Console.WriteLine($"[IMPORT] File LastModified: {file.LastModified}");
-                            Console.WriteLine("---");
+                            System.Diagnostics.Debug.WriteLine($"[IMPORT] File: {fileName}");
+                            System.Diagnostics.Debug.WriteLine($"[IMPORT] Original Name: '{file.Name}'");
+                            System.Diagnostics.Debug.WriteLine($"[IMPORT] Original Category: '{file.Category}'");
+                            System.Diagnostics.Debug.WriteLine($"[IMPORT] Used Category: '{category}'");
+                            System.Diagnostics.Debug.WriteLine($"[IMPORT] ImportedName: '{importResult.ImportedName}'");
+                            System.Diagnostics.Debug.WriteLine($"[IMPORT] FinalCategory: '{importResult.FinalCategory}'");
+                            System.Diagnostics.Debug.WriteLine($"[IMPORT] Ledger Key: '{importResult.ImportedName}|{importResult.FinalCategory ?? ""}'");
+                            System.Diagnostics.Debug.WriteLine($"[IMPORT] File LastModified: {file.LastModified}");
+                            System.Diagnostics.Debug.WriteLine("---");
                             
                             // Update ledger with successful import
                             ledger.UpdateEntry(importResult.ImportedName, importResult.FinalCategory, file.LastModified);

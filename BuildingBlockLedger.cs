@@ -110,22 +110,22 @@ namespace BuildingBlocksManager
             var result = found ? ledgerEntries[key].LastModified : DateTime.MinValue;
             
             // DEBUG: Log ledger lookup details
-            Console.WriteLine($"[LEDGER] Lookup Key: '{key}'");
-            Console.WriteLine($"[LEDGER] Found in ledger: {found}");
+            System.Diagnostics.Debug.WriteLine($"[LEDGER] Lookup Key: '{key}'");
+            System.Diagnostics.Debug.WriteLine($"[LEDGER] Found in ledger: {found}");
             if (found)
             {
-                Console.WriteLine($"[LEDGER] Stored LastModified: {ledgerEntries[key].LastModified}");
+                System.Diagnostics.Debug.WriteLine($"[LEDGER] Stored LastModified: {ledgerEntries[key].LastModified}");
             }
             else
             {
-                Console.WriteLine($"[LEDGER] Available keys in ledger:");
+                System.Diagnostics.Debug.WriteLine($"[LEDGER] Available keys in ledger:");
                 foreach (var availableKey in ledgerEntries.Keys.Take(5))
                 {
-                    Console.WriteLine($"[LEDGER]   '{availableKey}' -> {ledgerEntries[availableKey].LastModified}");
+                    System.Diagnostics.Debug.WriteLine($"[LEDGER]   '{availableKey}' -> {ledgerEntries[availableKey].LastModified}");
                 }
                 if (ledgerEntries.Count > 5)
                 {
-                    Console.WriteLine($"[LEDGER]   ... and {ledgerEntries.Count - 5} more entries");
+                    System.Diagnostics.Debug.WriteLine($"[LEDGER]   ... and {ledgerEntries.Count - 5} more entries");
                 }
             }
             
