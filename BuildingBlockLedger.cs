@@ -341,24 +341,34 @@ namespace BuildingBlocksManager
 
                         var targetCollection = currentSection == "removed" ? removedEntries : ledgerEntries;
                         
-                        // Try tab-delimited format first (new format)
-                        var parts = line.Split('\t');
-                        if (parts.Length >= 3 && DateTime.TryParse(parts[2], out DateTime lastModified))
+                        // Try space-aligned format first (readable format)
+                        // Format: "Name                                     Category                         2025-08-18 14:26"
+                        var dateMatch = System.Text.RegularExpressions.Regex.Match(line, @"(\d{4}-\d{2}-\d{2} \d{2}:\d{2})$");
+                        if (dateMatch.Success && DateTime.TryParse(dateMatch.Groups[1].Value, out DateTime lastModified))
                         {
-                            var entry = new LedgerEntry
-                            {
-                                Name = parts[0].Trim(),
-                                Category = parts[1].Trim(),
-                                LastModified = lastModified
-                            };
+                            // Remove the date part and split the remaining name/category part
+                            var nameAndCategory = line.Substring(0, line.Length - dateMatch.Groups[1].Value.Length).Trim();
                             
-                            var key = GetLedgerKey(entry.Name, entry.Category);
-                            targetCollection[key] = entry;
+                            // Split into words and find the boundary between name and category
+                            // The name ends where we find 2+ consecutive spaces (indicating column separation)
+                            var nameMatch = System.Text.RegularExpressions.Regex.Match(nameAndCategory, @"^(\S+(?:\s+\S+)*?)\s{2,}(.+)$");
+                            if (nameMatch.Success)
+                            {
+                                var entry = new LedgerEntry
+                                {
+                                    Name = nameMatch.Groups[1].Value.Trim(),
+                                    Category = nameMatch.Groups[2].Value.Trim(),
+                                    LastModified = lastModified
+                                };
+                                
+                                var key = GetLedgerKey(entry.Name, entry.Category);
+                                targetCollection[key] = entry;
+                            }
                         }
                         else
                         {
-                            // Fall back to pipe-delimited format (old format)
-                            parts = line.Split('|');
+                            // Try tab-delimited format (new format)
+                            var parts = line.Split('\t');
                             if (parts.Length >= 3 && DateTime.TryParse(parts[2], out lastModified))
                             {
                                 var entry = new LedgerEntry
@@ -371,19 +381,36 @@ namespace BuildingBlocksManager
                                 var key = GetLedgerKey(entry.Name, entry.Category);
                                 targetCollection[key] = entry;
                             }
-                            // Support old format (4 columns) for backward compatibility
-                            else if (parts.Length >= 4 && DateTime.TryParse(parts[2], out lastModified))
+                            else
                             {
-                                var entry = new LedgerEntry
+                                // Fall back to pipe-delimited format (old format)
+                                parts = line.Split('|');
+                                if (parts.Length >= 3 && DateTime.TryParse(parts[2], out lastModified))
                                 {
-                                    Name = parts[0].Trim(),
-                                    Category = parts[1].Trim(),
-                                    LastModified = lastModified
-                                    // Ignore the old SourceFilePath (parts[3])
-                                };
-                                
-                                var key = GetLedgerKey(entry.Name, entry.Category);
-                                targetCollection[key] = entry;
+                                    var entry = new LedgerEntry
+                                    {
+                                        Name = parts[0].Trim(),
+                                        Category = parts[1].Trim(),
+                                        LastModified = lastModified
+                                    };
+                                    
+                                    var key = GetLedgerKey(entry.Name, entry.Category);
+                                    targetCollection[key] = entry;
+                                }
+                                // Support old format (4 columns) for backward compatibility
+                                else if (parts.Length >= 4 && DateTime.TryParse(parts[2], out lastModified))
+                                {
+                                    var entry = new LedgerEntry
+                                    {
+                                        Name = parts[0].Trim(),
+                                        Category = parts[1].Trim(),
+                                        LastModified = lastModified
+                                        // Ignore the old SourceFilePath (parts[3])
+                                    };
+                                    
+                                    var key = GetLedgerKey(entry.Name, entry.Category);
+                                    targetCollection[key] = entry;
+                                }
                             }
                         }
                     }
@@ -418,7 +445,7 @@ namespace BuildingBlocksManager
                 
                 foreach (var entry in ledgerEntries.Values.OrderBy(e => e.Name))
                 {
-                    lines.Add($"{entry.Name}\t{entry.Category}\t{entry.LastModified:yyyy-MM-dd HH:mm}");
+                    lines.Add($"{entry.Name.PadRight(40)} {entry.Category.PadRight(30)} {entry.LastModified:yyyy-MM-dd HH:mm}");
                 }
                 
                 // Add removed entries section if any exist
@@ -430,7 +457,7 @@ namespace BuildingBlocksManager
                     
                     foreach (var entry in removedEntries.Values.OrderBy(e => e.Name))
                     {
-                        lines.Add($"{entry.Name}\t{entry.Category}\t{entry.LastModified:yyyy-MM-dd HH:mm}");
+                        lines.Add($"{entry.Name.PadRight(40)} {entry.Category.PadRight(30)} {entry.LastModified:yyyy-MM-dd HH:mm}");
                     }
                 }
                 
