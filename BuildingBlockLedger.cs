@@ -12,7 +12,6 @@ namespace BuildingBlocksManager
             public string Name { get; set; }
             public string Category { get; set; }
             public DateTime LastModified { get; set; }
-            public string SourceFilePath { get; set; }
             
             public override string ToString()
             {
@@ -110,15 +109,14 @@ namespace BuildingBlocksManager
         /// <summary>
         /// Update or add a Building Block entry in the ledger
         /// </summary>
-        public void UpdateEntry(string name, string category, DateTime lastModified, string sourceFilePath)
+        public void UpdateEntry(string name, string category, DateTime lastModified)
         {
             var key = GetLedgerKey(name, category);
             var entry = new LedgerEntry
             {
                 Name = name,
                 Category = category ?? "",
-                LastModified = lastModified,
-                SourceFilePath = sourceFilePath
+                LastModified = lastModified
             };
             
             ledgerEntries[key] = entry;
@@ -128,9 +126,9 @@ namespace BuildingBlocksManager
         /// <summary>
         /// Update entry with current timestamp
         /// </summary>
-        public void UpdateEntry(string name, string category, string sourceFilePath)
+        public void UpdateEntry(string name, string category)
         {
-            UpdateEntry(name, category, DateTime.Now, sourceFilePath);
+            UpdateEntry(name, category, DateTime.Now);
         }
 
         /// <summary>
@@ -237,14 +235,27 @@ namespace BuildingBlocksManager
                             continue; // Skip empty lines and comments
 
                         var parts = line.Split('|');
-                        if (parts.Length >= 4 && DateTime.TryParse(parts[2], out DateTime lastModified))
+                        if (parts.Length >= 3 && DateTime.TryParse(parts[2], out DateTime lastModified))
                         {
                             var entry = new LedgerEntry
                             {
                                 Name = parts[0],
                                 Category = parts[1],
-                                LastModified = lastModified,
-                                SourceFilePath = parts[3]
+                                LastModified = lastModified
+                            };
+                            
+                            var key = GetLedgerKey(entry.Name, entry.Category);
+                            ledgerEntries[key] = entry;
+                        }
+                        // Support old format (4 columns) for backward compatibility
+                        else if (parts.Length >= 4 && DateTime.TryParse(parts[2], out lastModified))
+                        {
+                            var entry = new LedgerEntry
+                            {
+                                Name = parts[0],
+                                Category = parts[1],
+                                LastModified = lastModified
+                                // Ignore the old SourceFilePath (parts[3])
                             };
                             
                             var key = GetLedgerKey(entry.Name, entry.Category);
@@ -272,15 +283,16 @@ namespace BuildingBlocksManager
                 var lines = new List<string>
                 {
                     "# Building Blocks Ledger",
-                    "# Format: Name|Category|LastModified|SourceFilePath",
                     $"# Last Updated: {DateTime.Now:yyyy-MM-dd HH:mm}",
                     $"# Ledger Path: {ledgerFile}",
+                    "#",
+                    "# Columns: Name | Category | LastModified",
                     ""
                 };
                 
                 foreach (var entry in ledgerEntries.Values.OrderBy(e => e.Name))
                 {
-                    lines.Add($"{entry.Name}|{entry.Category}|{entry.LastModified:yyyy-MM-dd HH:mm}|{entry.SourceFilePath}");
+                    lines.Add($"{entry.Name}|{entry.Category}|{entry.LastModified:yyyy-MM-dd HH:mm}");
                 }
                 
                 File.WriteAllLines(ledgerFile, lines);
@@ -349,8 +361,7 @@ namespace BuildingBlocksManager
                     foreach (var bb in userBlocks)
                     {
                         // Use template modification time as baseline
-                        // Source path is the template since these come from template
-                        UpdateEntry(bb.Name, bb.Category, templateModTime, templatePath);
+                        UpdateEntry(bb.Name, bb.Category, templateModTime);
                     }
                 }
                 

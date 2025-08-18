@@ -870,7 +870,7 @@ namespace BuildingBlocksManager
                         if (importResult.Success)
                         {
                             // Update ledger with successful import
-                            ledger.UpdateEntry(importResult.ImportedName, importResult.FinalCategory, file.LastModified, file.FilePath);
+                            ledger.UpdateEntry(importResult.ImportedName, importResult.FinalCategory, file.LastModified);
                             
                             successCount++;
                             
