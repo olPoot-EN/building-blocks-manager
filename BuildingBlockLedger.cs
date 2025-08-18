@@ -285,6 +285,12 @@ namespace BuildingBlocksManager
                 {
                     var ledgerEntry = ledgerEntries[key];
                     
+                    // DEBUG: Show timestamp comparison details
+                    System.Diagnostics.Debug.WriteLine($"[COMPARE] {file.Name}:");
+                    System.Diagnostics.Debug.WriteLine($"[COMPARE]   File time: {file.LastModified:yyyy-MM-dd HH:mm:ss.fff}");
+                    System.Diagnostics.Debug.WriteLine($"[COMPARE]   Ledger time: {ledgerEntry.LastModified:yyyy-MM-dd HH:mm:ss.fff}");
+                    System.Diagnostics.Debug.WriteLine($"[COMPARE]   File > Ledger: {file.LastModified > ledgerEntry.LastModified}");
+                    
                     // Compare file modification time with ledger entry
                     if (file.LastModified > ledgerEntry.LastModified)
                     {
