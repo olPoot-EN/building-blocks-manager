@@ -256,16 +256,11 @@ namespace BuildingBlocksManager
                 // Validate parameters before starting Word operations
                 ValidateBuildingBlockParameters(name, category);
                 
-                System.Diagnostics.Debug.WriteLine($"[WordManager] Starting import of '{name}' from '{sourceFile}'");
-                
                 OpenTemplate();
                 sourceDoc = wordApp.Documents.Open(sourceFile);
 
                 // Verify source document has content
                 var sourceText = sourceDoc.Content.Text?.Trim() ?? "";
-                System.Diagnostics.Debug.WriteLine($"[WordManager] Source document text length: {sourceText.Length}");
-                System.Diagnostics.Debug.WriteLine($"[WordManager] Source document preview: '{sourceText.Substring(0, Math.Min(100, sourceText.Length))}'");
-                
                 if (sourceText.Length <= 1) // Word docs always have at least 1 char (paragraph mark)
                 {
                     throw new InvalidOperationException("Source document appears to be empty");
@@ -274,19 +269,16 @@ namespace BuildingBlocksManager
                 // Remove existing Building Block with same name if it exists
                 RemoveBuildingBlock(name, category);
 
-                // Use source document content directly (simpler approach)
+                // Use source document content directly
                 var sourceRange = sourceDoc.Content;
-                System.Diagnostics.Debug.WriteLine($"[WordManager] Source range length: {sourceRange.Text?.Length ?? 0}");
-                System.Diagnostics.Debug.WriteLine($"[WordManager] Source range preview: '{sourceRange.Text?.Substring(0, Math.Min(100, sourceRange.Text?.Length ?? 0))}'");
 
                 // Convert gallery type to Word enum
                 var buildingBlockType = GetBuildingBlockType(galleryType);
 
                 // Access template's BuildingBlockEntries
                 Word.Template template = (Word.Template)templateDoc.get_AttachedTemplate();
-                System.Diagnostics.Debug.WriteLine($"[WordManager] Template BuildingBlockEntries count: {template.BuildingBlockEntries.Count}");
                 
-                // Sanitize parameters one more time before Word API call
+                // Sanitize parameters before Word API call
                 string sanitizedName = SanitizeBuildingBlockName(name);
                 string sanitizedCategory = SanitizeBuildingBlockCategory(category);
                 
@@ -298,17 +290,9 @@ namespace BuildingBlocksManager
                     result.CategoryChanged = true;
                     result.OriginalCategory = category;
                     result.AssignedCategory = sanitizedCategory;
-                    System.Diagnostics.Debug.WriteLine($"[WordManager] Using 'General' for empty category");
                 }
                 
-                System.Diagnostics.Debug.WriteLine($"[WordManager] About to add Building Block:");
-                System.Diagnostics.Debug.WriteLine($"  Original Name: '{name}' -> Sanitized: '{sanitizedName}'");
-                System.Diagnostics.Debug.WriteLine($"  Original Category: '{category}' -> Sanitized: '{sanitizedCategory}'");
-                System.Diagnostics.Debug.WriteLine($"  Gallery Type: {galleryType} -> {buildingBlockType}");
-                System.Diagnostics.Debug.WriteLine($"  Source Range Text Length: {sourceRange.Text?.Length ?? 0}");
-                System.Diagnostics.Debug.WriteLine($"  Source Range Text Preview: '{sourceRange.Text?.Substring(0, Math.Min(50, sourceRange.Text?.Length ?? 0))}...'");
-                
-                // Use BuildingBlockEntries.Add() for modern Building Blocks system
+                // Add Building Block using modern BuildingBlockEntries API
                 try
                 {
                     template.BuildingBlockEntries.Add(
@@ -316,20 +300,16 @@ namespace BuildingBlocksManager
                         buildingBlockType,
                         sanitizedCategory,
                         sourceRange);
-                    System.Diagnostics.Debug.WriteLine($"[WordManager] Successfully added to {galleryType} gallery");
                 }
                 catch (COMException comEx) when ((uint)comEx.ErrorCode == 0x800A16DD && galleryType == "AutoText")
                 {
-                    System.Diagnostics.Debug.WriteLine($"[WordManager] AutoText failed with 0x800A16DD, trying Quick Parts...");
-                    
-                    // Try Quick Parts as fallback
+                    // Try Quick Parts as fallback for AutoText compatibility issues
                     var quickPartsType = GetBuildingBlockType("Quick Parts");
                     template.BuildingBlockEntries.Add(
                         sanitizedName,
                         quickPartsType,
                         sanitizedCategory,
                         sourceRange);
-                    System.Diagnostics.Debug.WriteLine($"[WordManager] Successfully added to Quick Parts gallery as fallback");
                 }
 
                 // No temporary document to close
@@ -341,7 +321,6 @@ namespace BuildingBlocksManager
                 result.ImportedName = sanitizedName;
                 result.FinalCategory = sanitizedCategory;
                 
-                System.Diagnostics.Debug.WriteLine($"[WordManager] Successfully imported '{sanitizedName}' in category '{sanitizedCategory}'");
                 return result;
             }
             catch (COMException comEx)

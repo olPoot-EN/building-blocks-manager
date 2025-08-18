@@ -719,10 +719,8 @@ namespace BuildingBlocksManager
                 AppendResults($"Using flat import category: {flatCategory}");
             }
 
-            UpdateStatus("Importing all files...");
-            progressBar.Style = ProgressBarStyle.Continuous;
-            progressBar.Value = 0;
-            ShowStopButton();
+            UpdateStatus("Analyzing files with ledger...");
+            progressBar.Style = ProgressBarStyle.Marquee;
             
             AppendResults("=== IMPORT ALL OPERATION ===");
             AppendResults($"Template: {Path.GetFileName(fullTemplatePath)}");
@@ -731,6 +729,88 @@ namespace BuildingBlocksManager
             AppendResults("");
             
             logger.Info($"Starting Import All operation - Template: {fullTemplatePath}, Directory: {fullSourceDirectoryPath}");
+
+            try
+            {
+                // Initialize file manager and scan directory
+                var fileManager = new FileManager(fullSourceDirectoryPath);
+                var allFiles = fileManager.ScanDirectory().Where(f => f.IsValid).ToList();
+
+                if (allFiles.Count == 0)
+                {
+                    AppendResults("No valid AT_ files found in directory.");
+                    UpdateStatus("No files to import");
+                    return;
+                }
+
+                // Analyze with ledger
+                var ledger = new BuildingBlockLedger();
+                var analysis = ledger.AnalyzeChanges(allFiles);
+                
+                AppendResults("Ledger analysis complete:");
+                AppendResults(analysis.GetSummary());
+                AppendResults("");
+
+                // Show analysis dialog to user
+                progressBar.Style = ProgressBarStyle.Continuous;
+                progressBar.Value = 0;
+                
+                using (var analysisDialog = new ImportAnalysisDialog(analysis, "Import All"))
+                {
+                    var dialogResult = analysisDialog.ShowDialog();
+                    
+                    if (dialogResult != DialogResult.OK || analysisDialog.Choice == ImportAnalysisDialog.UserChoice.Cancel)
+                    {
+                        AppendResults("Import operation cancelled by user.");
+                        UpdateStatus("Import cancelled");
+                        return;
+                    }
+
+                    // Determine which files to import based on user choice
+                    List<FileManager.FileInfo> filesToImport;
+                    string operationDescription;
+                    
+                    if (analysisDialog.Choice == ImportAnalysisDialog.UserChoice.ImportOnlyChanged)
+                    {
+                        filesToImport = analysis.NewFiles.Concat(analysis.ModifiedFiles).ToList();
+                        operationDescription = "Import Only Changed Files";
+                        AppendResults($"User chose to import only changed files ({filesToImport.Count} files)");
+                    }
+                    else // ImportAllAsRequested
+                    {
+                        filesToImport = allFiles;
+                        operationDescription = "Import All Files As Requested";
+                        AppendResults($"User chose to import all files as originally requested ({filesToImport.Count} files)");
+                    }
+
+                    if (filesToImport.Count == 0)
+                    {
+                        AppendResults("No files to import based on selection.");
+                        UpdateStatus("No files to import");
+                        return;
+                    }
+
+                    // Proceed with import
+                    AppendResults("");
+                    AppendResults($"=== {operationDescription.ToUpper()} ===");
+                    ExecuteImport(filesToImport, flatCategory, ledger);
+                }
+            }
+            catch (Exception ex)
+            {
+                AppendResults($"Error during analysis: {ex.Message}");
+                UpdateStatus("Analysis failed");
+                progressBar.Style = ProgressBarStyle.Continuous;
+                progressBar.Value = 0;
+            }
+        }
+
+        private void ExecuteImport(List<FileManager.FileInfo> filesToImport, string flatCategory, BuildingBlockLedger ledger)
+        {
+            UpdateStatus("Importing files...");
+            progressBar.Style = ProgressBarStyle.Continuous;
+            progressBar.Value = 0;
+            ShowStopButton();
             
             // Clear any previous category change tracking
             conflictedFiles.Clear();
@@ -743,34 +823,20 @@ namespace BuildingBlocksManager
             try
             {
                 // Check if template file is locked and handle it
-                if (!HandleTemplateFileLock(fullTemplatePath, "Import All"))
+                if (!HandleTemplateFileLock(fullTemplatePath, "Import"))
                 {
                     HideStopButton();
                     return;
                 }
 
-                // Initialize managers
+                // Initialize word manager
                 wordManager = new WordManager(fullTemplatePath);
-                var fileManager = new FileManager(fullSourceDirectoryPath);
-                var importTracker = new ImportTracker();
 
                 // Create backup
                 AppendResults("Creating backup...");
                 wordManager.CreateBackup();
 
-                // Get files to import (new and modified only)
-                var filesToImport = fileManager.ScanDirectory()
-                    .Where(f => (f.IsNew || f.IsModified) && f.IsValid)
-                    .ToList();
-
-                if (filesToImport.Count == 0)
-                {
-                    AppendResults("No files require importing.");
-                    HideStopButton();
-                    return;
-                }
-
-                AppendResults($"Found {filesToImport.Count} files to import");
+                AppendResults($"Importing {filesToImport.Count} files");
                 AppendResults("");
 
                 // Import each file
@@ -800,8 +866,8 @@ namespace BuildingBlocksManager
                         
                         if (importResult.Success)
                         {
-                            // Update import tracking
-                            importTracker.UpdateImportTime(file.FilePath);
+                            // Update ledger with successful import
+                            ledger.UpdateEntry(importResult.ImportedName, importResult.FinalCategory, file.LastModified, file.FilePath);
                             
                             successCount++;
                             
@@ -901,20 +967,14 @@ namespace BuildingBlocksManager
                 return;
             }
 
-            UpdateStatus("Importing selected files...");
-            progressBar.Style = ProgressBarStyle.Continuous;
-            progressBar.Value = 0;
+            UpdateStatus("Analyzing selected files with ledger...");
+            progressBar.Style = ProgressBarStyle.Marquee;
             
             AppendResults("=== IMPORT SELECTED FILES ===");
             AppendResults($"Selected Files: {checkedFiles.Count}");
             AppendResults($"Template: {Path.GetFileName(fullTemplatePath)}");
             AppendResults("");
 
-            WordManager wordManager = null;
-            var startTime = DateTime.Now;
-            int successCount = 0;
-            int errorCount = 0;
-            
             // Check for flat import category if needed
             string flatCategory = null;
             if (chkFlatImport.Checked)
@@ -930,101 +990,66 @@ namespace BuildingBlocksManager
 
             try
             {
-                // Initialize managers
-                wordManager = new WordManager(fullTemplatePath);
-                var fileManager = new FileManager(fullSourceDirectoryPath);
-                var importTracker = new ImportTracker();
-
-                // Create backup
-                AppendResults("Creating backup...");
-                wordManager.CreateBackup();
-
-                // Process each selected file
-                for (int i = 0; i < checkedFiles.Count; i++)
-                {
-                    var file = checkedFiles[i];
-                    
-                    try
-                    {
-                        progressBar.Value = (int)((double)(i + 1) / checkedFiles.Count * 100);
-                        UpdateStatus($"Importing: {i + 1} of {checkedFiles.Count}");
-                        
-                        var fileName = Path.GetFileName(file.FilePath);
-                        AppendResults($"Processing {fileName}...");
-
-                        var category = chkFlatImport.Checked ? flatCategory : file.Category;
-                        var name = fileManager.ExtractName(fileName);
-
-                        // Check for invalid characters
-                        var invalidChars = fileManager.GetInvalidCharacters(fileName);
-                        if (invalidChars.Count > 0)
-                        {
-                            AppendResults($"  Warning: File contains invalid characters: {string.Join(", ", invalidChars)}");
-                        }
-
-                        // Import the Building Block
-                        var importResult = wordManager.ImportBuildingBlock(file.FilePath, category, name, "AutoText");
-                        
-                        if (importResult.Success)
-                        {
-                            // Update import tracking
-                            importTracker.UpdateImportTime(file.FilePath);
-                            
-                            successCount++;
-                            
-                            // Check if category was changed
-                            if (importResult.CategoryChanged)
-                            {
-                                AppendResults($"  ✓ Imported as {importResult.FinalCategory}\\{importResult.ImportedName}");
-                                AppendResults($"    Note: Category changed from empty to '{importResult.AssignedCategory}' (legacy AutoText compatibility)");
-                                logger.Success($"Imported {fileName} as {importResult.FinalCategory}\\{importResult.ImportedName} (category auto-assigned)");
-                                
-                                // Track category changes for summary
-                                conflictedFiles.Add($"{importResult.ImportedName} (assigned to '{importResult.AssignedCategory}')");
-                            }
-                            else
-                            {
-                                AppendResults($"  ✓ Imported as {importResult.FinalCategory}\\{importResult.ImportedName}");
-                                logger.Success($"Imported {fileName} as {importResult.FinalCategory}\\{importResult.ImportedName}");
-                            }
-                            
-                            logger.LogImport(fileName, importResult.ImportedName, importResult.FinalCategory, file.FilePath);
-                        }
-                        else
-                        {
-                            throw new InvalidOperationException("Import failed without exception");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        errorCount++;
-                        var fileName = Path.GetFileName(file.FilePath);
-                        logger.Error($"Failed to import {fileName}: {ex.Message}");
-                        AppendResults($"  ✗ Failed to import {fileName}: {ex.Message}");
-                    }
-                }
+                // Analyze selected files with ledger
+                var ledger = new BuildingBlockLedger();
+                var analysis = ledger.AnalyzeChanges(checkedFiles);
                 
-                var processingTime = (DateTime.Now - startTime).TotalSeconds;
-                
+                AppendResults("Ledger analysis complete for selected files:");
+                AppendResults(analysis.GetSummary());
                 AppendResults("");
-                AppendResults($"Import Summary: Success: {successCount}, Errors: {errorCount}");
-                AppendResults($"Processing Time: {processingTime:F1} seconds");
+
+                // Show analysis dialog to user
+                progressBar.Style = ProgressBarStyle.Continuous;
+                progressBar.Value = 0;
                 
-                logger.Info($"Import Selected completed - Success: {successCount}, Errors: {errorCount}, Time: {processingTime:F1}s");
+                using (var analysisDialog = new ImportAnalysisDialog(analysis, "Import Selected"))
+                {
+                    var dialogResult = analysisDialog.ShowDialog();
+                    
+                    if (dialogResult != DialogResult.OK || analysisDialog.Choice == ImportAnalysisDialog.UserChoice.Cancel)
+                    {
+                        AppendResults("Import operation cancelled by user.");
+                        UpdateStatus("Import cancelled");
+                        return;
+                    }
+
+                    // Determine which files to import based on user choice
+                    List<FileManager.FileInfo> filesToImport;
+                    string operationDescription;
+                    
+                    if (analysisDialog.Choice == ImportAnalysisDialog.UserChoice.ImportOnlyChanged)
+                    {
+                        filesToImport = analysis.NewFiles.Concat(analysis.ModifiedFiles).ToList();
+                        operationDescription = "Import Only Changed Selected Files";
+                        AppendResults($"User chose to import only changed files ({filesToImport.Count} of {checkedFiles.Count} selected files)");
+                    }
+                    else // ImportAllAsRequested
+                    {
+                        filesToImport = checkedFiles;
+                        operationDescription = "Import All Selected Files As Requested";
+                        AppendResults($"User chose to import all selected files as requested ({filesToImport.Count} files)");
+                    }
+
+                    if (filesToImport.Count == 0)
+                    {
+                        AppendResults("No files to import based on selection.");
+                        UpdateStatus("No files to import");
+                        return;
+                    }
+
+                    // Proceed with import
+                    AppendResults("");
+                    AppendResults($"=== {operationDescription.ToUpper()} ===");
+                    ExecuteImport(filesToImport, flatCategory, ledger);
+                }
             }
             catch (Exception ex)
             {
-                AppendResults($"Import operation failed: {ex.Message}");
-                logger.Error($"Import Selected operation failed: {ex.Message}");
+                AppendResults($"Error during analysis: {ex.Message}");
+                UpdateStatus("Analysis failed");
+                progressBar.Style = ProgressBarStyle.Continuous;
+                progressBar.Value = 0;
             }
-            finally
-            {
-                wordManager?.Dispose();
-            }
-            
-            progressBar.Style = ProgressBarStyle.Continuous;
-            progressBar.Value = 0;
-            UpdateStatus(errorCount == 0 ? "Import completed successfully" : $"Import completed with {errorCount} errors");
         }
 
         private void BtnExportAll_Click(object sender, EventArgs e)

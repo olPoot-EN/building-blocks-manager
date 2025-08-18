@@ -22,7 +22,7 @@ namespace BuildingBlocksManager
         }
 
         private string sourceDirectory;
-        private ImportTracker importTracker;
+        private BuildingBlockLedger ledger;
 
         // Characters that are invalid in Word Building Block names
         private static readonly char[] InvalidChars = { '/', '\\', ':', '*', '?', '"', '<', '>', '|' };
@@ -30,7 +30,7 @@ namespace BuildingBlocksManager
         public FileManager(string sourceDirectory)
         {
             this.sourceDirectory = sourceDirectory;
-            this.importTracker = new ImportTracker();
+            this.ledger = new BuildingBlockLedger();
         }
 
         public List<FileInfo> ScanDirectory()
@@ -54,15 +54,17 @@ namespace BuildingBlocksManager
                         continue;
 
                     var fileInfo = new System.IO.FileInfo(filePath);
-                    var lastImported = importTracker.GetLastImportTime(filePath);
+                    var name = ExtractName(fileName);
+                    var category = ExtractCategory(filePath);
+                    var lastImported = ledger.GetLastImportTime(name, category);
                     
                     var fileData = new FileInfo
                     {
                         FilePath = filePath,
                         LastModified = fileInfo.LastWriteTime,
                         LastImported = lastImported,
-                        Category = ExtractCategory(filePath),
-                        Name = ExtractName(fileName),
+                        Category = category,
+                        Name = name,
                         InvalidCharacters = GetInvalidCharacters(fileName)
                     };
 
