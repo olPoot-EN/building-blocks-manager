@@ -749,6 +749,8 @@ namespace BuildingBlocksManager
                 
                 AppendResults("Ledger analysis complete:");
                 AppendResults(analysis.GetSummary());
+                AppendResults($"Ledger file: {ledger.GetLedgerFilePath()}");
+                AppendResults($"Ledger exists: {ledger.LedgerFileExists()}");
                 AppendResults("");
 
                 // Show analysis dialog to user

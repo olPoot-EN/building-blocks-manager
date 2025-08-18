@@ -66,6 +66,12 @@ namespace BuildingBlocksManager
             
             ledgerEntries = new Dictionary<string, LedgerEntry>();
             Load();
+            
+            // Create empty ledger file if it doesn't exist
+            if (!File.Exists(ledgerFile))
+            {
+                Save();
+            }
         }
 
         public BuildingBlockLedger(string logDirectory)
@@ -87,6 +93,12 @@ namespace BuildingBlocksManager
             
             ledgerEntries = new Dictionary<string, LedgerEntry>();
             Load();
+            
+            // Create empty ledger file if it doesn't exist
+            if (!File.Exists(ledgerFile))
+            {
+                Save();
+            }
         }
 
         /// <summary>
@@ -274,6 +286,7 @@ namespace BuildingBlocksManager
                     "# Building Blocks Ledger",
                     "# Format: Name|Category|LastModified|SourceFilePath",
                     $"# Last Updated: {DateTime.Now:yyyy-MM-dd HH:mm}",
+                    $"# Ledger Path: {ledgerFile}",
                     ""
                 };
                 
@@ -283,10 +296,22 @@ namespace BuildingBlocksManager
                 }
                 
                 File.WriteAllLines(ledgerFile, lines);
+                
+                // Debug: Verify file was actually created
+                if (!File.Exists(ledgerFile))
+                {
+                    System.Diagnostics.Debug.WriteLine($"ERROR: Ledger file was not created at: {ledgerFile}");
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"SUCCESS: Ledger saved to: {ledgerFile}");
+                }
             }
-            catch
+            catch (Exception ex)
             {
-                // Silently handle save errors
+                // Show save errors for debugging
+                System.Diagnostics.Debug.WriteLine($"ERROR saving ledger to {ledgerFile}: {ex.Message}");
+                System.Windows.Forms.MessageBox.Show($"Failed to save Building Block ledger:\n{ex.Message}\n\nPath: {ledgerFile}", "Ledger Save Error", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Warning);
             }
         }
 
@@ -296,6 +321,22 @@ namespace BuildingBlocksManager
         public string GetLedgerFilePath()
         {
             return ledgerFile;
+        }
+
+        /// <summary>
+        /// Get the ledger directory path
+        /// </summary>
+        public string GetLedgerDirectory()
+        {
+            return ledgerDirectory;
+        }
+        
+        /// <summary>
+        /// Check if the ledger file exists
+        /// </summary>
+        public bool LedgerFileExists()
+        {
+            return File.Exists(ledgerFile);
         }
     }
 }
