@@ -568,6 +568,31 @@ namespace BuildingBlocksManager
             cancellationTokenSource = null;
         }
 
+        private string GetValidStartDirectory(string preferredPath)
+        {
+            if (!string.IsNullOrEmpty(preferredPath))
+            {
+                if (Directory.Exists(preferredPath))
+                {
+                    return preferredPath;
+                }
+                
+                var parentDir = Path.GetDirectoryName(preferredPath);
+                if (!string.IsNullOrEmpty(parentDir) && Directory.Exists(parentDir))
+                {
+                    return parentDir;
+                }
+                
+                var grandParentDir = Path.GetDirectoryName(parentDir);
+                if (!string.IsNullOrEmpty(grandParentDir) && Directory.Exists(grandParentDir))
+                {
+                    return grandParentDir;
+                }
+            }
+            
+            return Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+        }
+
         private void BtnBrowseTemplate_Click(object sender, EventArgs e)
         {
             using (var dialog = new OpenFileDialog())
@@ -575,6 +600,10 @@ namespace BuildingBlocksManager
                 dialog.Title = "Select Word Template File";
                 dialog.Filter = "Word Template Files (*.dotm)|*.dotm|All Files (*.*)|*.*";
                 dialog.CheckFileExists = true;
+                
+                var currentPath = txtTemplatePath.Text;
+                var startDir = GetValidStartDirectory(Path.GetDirectoryName(currentPath));
+                dialog.InitialDirectory = startDir;
                 
                 if (dialog.ShowDialog() == DialogResult.OK)
                 {
@@ -592,6 +621,10 @@ namespace BuildingBlocksManager
                 dialog.Description = "Select Source Directory";
                 dialog.ShowNewFolderButton = false;
                 
+                var currentPath = txtSourceDirectory.Text;
+                var startDir = GetValidStartDirectory(currentPath);
+                dialog.SelectedPath = startDir;
+                
                 if (dialog.ShowDialog() == DialogResult.OK)
                 {
                     UpdateSourceDirectoryDisplay(dialog.SelectedPath);
@@ -607,6 +640,10 @@ namespace BuildingBlocksManager
             {
                 dialog.Description = "Select Export Directory";
                 dialog.ShowNewFolderButton = true;
+                
+                var currentPath = txtExportDirectory.Text;
+                var startDir = GetValidStartDirectory(currentPath);
+                dialog.SelectedPath = startDir;
                 
                 if (dialog.ShowDialog() == DialogResult.OK)
                 {

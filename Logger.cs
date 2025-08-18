@@ -137,13 +137,13 @@ namespace BuildingBlocksManager
                 {
                     var header = "# Building Block Deletions Log" + Environment.NewLine +
                                 $"# Session: {sessionId}" + Environment.NewLine +
-                                "# Date/Time".PadRight(20) + "\t" + "Template".PadRight(30) + "\t" + "Name".PadRight(40) + "\t" + "Category" + Environment.NewLine;
+                                "# Date/Time".PadRight(20) + "\t" + "Template".PadRight(40) + "\t" + "Name".PadRight(50) + "\t" + "Category" + Environment.NewLine;
                     File.AppendAllText(deleteLogFile, header);
                 }
                 
                 // Create columnated entry
                 var dateTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
-                var logEntry = $"{dateTime.PadRight(20)}\t{templateName.PadRight(30)}\t{buildingBlockName.PadRight(40)}\t{category ?? ""}";
+                var logEntry = $"{dateTime.PadRight(20)}\t{templateName.PadRight(40)}\t{buildingBlockName.PadRight(50)}\t{category ?? ""}";
                 File.AppendAllText(deleteLogFile, logEntry + Environment.NewLine);
             }
             catch
