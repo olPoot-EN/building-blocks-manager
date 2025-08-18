@@ -390,8 +390,7 @@ namespace BuildingBlocksManager
                     $"# Ledger Path: {ledgerFile}",
                     "#",
                     "# Active Building Blocks",
-                    "# Name".PadRight(40) + "\t" + "Category".PadRight(30) + "\t" + "LastModified",
-                    ""
+                    "# Name".PadRight(40) + "\t" + "Category".PadRight(30) + "\t" + "LastModified"
                 };
                 
                 foreach (var entry in ledgerEntries.Values.OrderBy(e => e.Name))
@@ -405,7 +404,6 @@ namespace BuildingBlocksManager
                     lines.Add("");
                     lines.Add("# Removed Building Blocks");
                     lines.Add("# Name".PadRight(40) + "\t" + "Category".PadRight(30) + "\t" + "RemovedDate");
-                    lines.Add("");
                     
                     foreach (var entry in removedEntries.Values.OrderBy(e => e.Name))
                     {

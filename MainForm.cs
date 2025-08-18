@@ -1103,6 +1103,7 @@ namespace BuildingBlocksManager
             AppendResults("");
 
             WordManager wordManager = null;
+            BuildingBlockLedger ledger = null;
             var startTime = DateTime.Now;
             int successCount = 0;
             int errorCount = 0;
@@ -1119,6 +1120,9 @@ namespace BuildingBlocksManager
 
                 // Initialize WordManager
                 wordManager = new WordManager(fullTemplatePath);
+                
+                // Initialize ledger for tracking exports
+                ledger = new BuildingBlockLedger(logger.GetLogDirectory());
                 
                 // Check if building blocks have been loaded (user must run Query Template first)
                 if (allBuildingBlocks.Count == 0)
@@ -1232,6 +1236,9 @@ namespace BuildingBlocksManager
 
                         // Export the Building Block
                         wordManager.ExportBuildingBlock(bb.Name, bb.Category, outputFilePath);
+                        
+                        // Update ledger with current timestamp to match exported file
+                        ledger.UpdateEntry(bb.Name, bb.Category, DateTime.Now);
                         
                         successCount++;
                         var displayPath = GetRelativePath(exportPath, outputFilePath);
@@ -1347,6 +1354,7 @@ namespace BuildingBlocksManager
             AppendResults("");
 
             WordManager wordManager = null;
+            BuildingBlockLedger ledger = null;
             var startTime = DateTime.Now;
             int successCount = 0;
             int errorCount = 0;
@@ -1360,6 +1368,9 @@ namespace BuildingBlocksManager
 
                 // Initialize WordManager
                 wordManager = new WordManager(fullTemplatePath);
+                
+                // Initialize ledger for tracking exports
+                ledger = new BuildingBlockLedger(logger.GetLogDirectory());
 
                 // Start export session logging
                 logger.StartExportSession(exportPath);
@@ -1416,6 +1427,9 @@ namespace BuildingBlocksManager
 
                         // Export the Building Block
                         wordManager.ExportBuildingBlock(bb.Name, bb.Category, outputFilePath);
+                        
+                        // Update ledger with current timestamp to match exported file
+                        ledger.UpdateEntry(bb.Name, bb.Category, DateTime.Now);
                         
                         successCount++;
                         var displayPath = GetRelativePath(exportPath, outputFilePath);
