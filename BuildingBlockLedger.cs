@@ -391,12 +391,12 @@ namespace BuildingBlocksManager
                     $"# Ledger Path: {ledgerFile}",
                     "#",
                     "# Active Building Blocks",
-                    "# Name".PadRight(40) + "\t" + "Category".PadRight(30) + "\t" + "LastModified"
+                    "# Name".PadRight(32) + "Category".PadRight(25) + "LastModified"
                 };
                 
                 foreach (var entry in ledgerEntries.Values.OrderBy(e => e.Name))
                 {
-                    lines.Add($"{entry.Name.PadRight(40)} {entry.Category.PadRight(30)} {entry.LastModified:yyyy-MM-dd HH:mm}");
+                    lines.Add($"{entry.Name.PadRight(32)}{entry.Category.PadRight(25)}{entry.LastModified:yyyy-MM-dd HH:mm}");
                 }
                 
                 // Add removed entries section if any exist
@@ -404,11 +404,11 @@ namespace BuildingBlocksManager
                 {
                     lines.Add("");
                     lines.Add("# Removed Building Blocks");
-                    lines.Add("# Name".PadRight(40) + "\t" + "Category".PadRight(30) + "\t" + "RemovedDate");
+                    lines.Add("# Name".PadRight(32) + "Category".PadRight(25) + "RemovedDate");
                     
                     foreach (var entry in removedEntries.Values.OrderBy(e => e.Name))
                     {
-                        lines.Add($"{entry.Name.PadRight(40)} {entry.Category.PadRight(30)} {entry.LastModified:yyyy-MM-dd HH:mm}");
+                        lines.Add($"{entry.Name.PadRight(32)}{entry.Category.PadRight(25)}{entry.LastModified:yyyy-MM-dd HH:mm}");
                     }
                 }
                 
