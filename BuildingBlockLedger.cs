@@ -63,7 +63,7 @@ namespace BuildingBlocksManager
             System.Diagnostics.Debug.WriteLine("*** LEDGER CONSTRUCTOR: Creating BuildingBlockLedger ***");
             
             // Use configured ledger directory or default
-            ledgerDirectory = GetLedgerDirectory();
+            ledgerDirectory = GetConfiguredLedgerDirectory();
             ledgerFile = Path.Combine(ledgerDirectory, "building_blocks_ledger.txt");
             
             System.Diagnostics.Debug.WriteLine($"*** LEDGER CONSTRUCTOR: Will load from {ledgerFile} ***");
@@ -78,7 +78,7 @@ namespace BuildingBlocksManager
             System.Diagnostics.Debug.WriteLine($"*** LEDGER CONSTRUCTOR(logDir): Creating BuildingBlockLedger with logDirectory: '{logDirectory}' ***");
             
             // Use configured ledger directory, or fall back to log directory logic for compatibility
-            var configuredDir = GetLedgerDirectory();
+            var configuredDir = GetConfiguredLedgerDirectory();
             if (!string.IsNullOrEmpty(configuredDir))
             {
                 ledgerDirectory = configuredDir;
@@ -111,7 +111,7 @@ namespace BuildingBlocksManager
         /// <summary>
         /// Get the configured ledger directory from settings, or default location
         /// </summary>
-        private string GetLedgerDirectory()
+        private string GetConfiguredLedgerDirectory()
         {
             try
             {
