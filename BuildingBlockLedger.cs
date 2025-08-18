@@ -328,7 +328,7 @@ namespace BuildingBlocksManager
         }
 
         /// <summary>
-        /// Generate ledger from current template Building Blocks
+        /// Generate ledger from current template Building Blocks (user-relevant only)
         /// </summary>
         public void GenerateFromTemplate(string templatePath)
         {
@@ -343,7 +343,10 @@ namespace BuildingBlocksManager
                     var buildingBlocks = wordManager.GetBuildingBlocks();
                     var templateModTime = File.GetLastWriteTime(templatePath);
                     
-                    foreach (var bb in buildingBlocks)
+                    // Filter to only user-relevant Building Blocks (same as Template tab)
+                    var userBlocks = buildingBlocks.Where(bb => !IsSystemEntry(bb) && bb.Gallery != "Placeholder").ToList();
+                    
+                    foreach (var bb in userBlocks)
                     {
                         // Use template modification time as baseline
                         // Source path is the template since these come from template
@@ -358,6 +361,18 @@ namespace BuildingBlocksManager
             {
                 throw new InvalidOperationException($"Failed to generate ledger from template: {ex.Message}", ex);
             }
+        }
+
+        /// <summary>
+        /// Detect system/internal Building Blocks that should be excluded from ledger
+        /// (Same logic as MainForm.IsSystemEntry)
+        /// </summary>
+        private bool IsSystemEntry(BuildingBlockInfo bb)
+        {
+            // More targeted system entry detection
+            return bb.Name.Length > 15 && bb.Name.All(c => "0123456789ABCDEF-".Contains(char.ToUpper(c))) ||
+                   bb.Name.StartsWith("_") ||
+                   (bb.Category != null && bb.Category.Contains("System"));
         }
     }
 }
