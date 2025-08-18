@@ -234,7 +234,8 @@ namespace BuildingBlocksManager
                         if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#"))
                             continue; // Skip empty lines and comments
 
-                        var parts = line.Split('|');
+                        // Try tab-delimited format first (new format)
+                        var parts = line.Split('\t');
                         if (parts.Length >= 3 && DateTime.TryParse(parts[2], out DateTime lastModified))
                         {
                             var entry = new LedgerEntry
@@ -247,19 +248,36 @@ namespace BuildingBlocksManager
                             var key = GetLedgerKey(entry.Name, entry.Category);
                             ledgerEntries[key] = entry;
                         }
-                        // Support old format (4 columns) for backward compatibility
-                        else if (parts.Length >= 4 && DateTime.TryParse(parts[2], out lastModified))
+                        else
                         {
-                            var entry = new LedgerEntry
+                            // Fall back to pipe-delimited format (old format)
+                            parts = line.Split('|');
+                            if (parts.Length >= 3 && DateTime.TryParse(parts[2], out lastModified))
                             {
-                                Name = parts[0],
-                                Category = parts[1],
-                                LastModified = lastModified
-                                // Ignore the old SourceFilePath (parts[3])
-                            };
-                            
-                            var key = GetLedgerKey(entry.Name, entry.Category);
-                            ledgerEntries[key] = entry;
+                                var entry = new LedgerEntry
+                                {
+                                    Name = parts[0],
+                                    Category = parts[1],
+                                    LastModified = lastModified
+                                };
+                                
+                                var key = GetLedgerKey(entry.Name, entry.Category);
+                                ledgerEntries[key] = entry;
+                            }
+                            // Support old format (4 columns) for backward compatibility
+                            else if (parts.Length >= 4 && DateTime.TryParse(parts[2], out lastModified))
+                            {
+                                var entry = new LedgerEntry
+                                {
+                                    Name = parts[0],
+                                    Category = parts[1],
+                                    LastModified = lastModified
+                                    // Ignore the old SourceFilePath (parts[3])
+                                };
+                                
+                                var key = GetLedgerKey(entry.Name, entry.Category);
+                                ledgerEntries[key] = entry;
+                            }
                         }
                     }
                 }
@@ -286,13 +304,13 @@ namespace BuildingBlocksManager
                     $"# Last Updated: {DateTime.Now:yyyy-MM-dd HH:mm}",
                     $"# Ledger Path: {ledgerFile}",
                     "#",
-                    "# Columns: Name | Category | LastModified",
+                    "# Name".PadRight(40) + "\t" + "Category".PadRight(30) + "\t" + "LastModified",
                     ""
                 };
                 
                 foreach (var entry in ledgerEntries.Values.OrderBy(e => e.Name))
                 {
-                    lines.Add($"{entry.Name}|{entry.Category}|{entry.LastModified:yyyy-MM-dd HH:mm}");
+                    lines.Add($"{entry.Name.PadRight(40)}\t{entry.Category.PadRight(30)}\t{entry.LastModified:yyyy-MM-dd HH:mm}");
                 }
                 
                 File.WriteAllLines(ledgerFile, lines);
