@@ -79,6 +79,8 @@ using Word = Microsoft.Office.Interop.Word;
 - **ALWAYS commit and push changes after completing development tasks**
 - Commit after each Claude Code session, pull and test on Windows
 - Use descriptive commit messages explaining what was implemented
+- **IMPORTANT**: This is a Git submodule - all git commands must be run from within the working directory: `cd "/Users/davidparry/claude_code/Autotext Import_Export Tool"`
+- Git workflow: `cd` into the project directory first, then `git add`, `git commit`, `git push`
 
 **Important**: Code must work on Windows with Word - don't worry about Mac compatibility. The Mac just writes the C# code. This is NOT a cross-platform application.
 

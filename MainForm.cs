@@ -1147,7 +1147,6 @@ namespace BuildingBlocksManager
                 AppendResults("");
 
                 // Check for ledger and offer to create one
-                var ledger = new BuildingBlockLedger(logger.GetLogDirectory());
                 if (!ledger.LedgerFileExists())
                 {
                     var result = MessageBox.Show(

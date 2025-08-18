@@ -11,7 +11,6 @@ namespace BuildingBlocksManager
         private Button btnOK;
         private Button btnCancel;
         private Label lblLogLocation;
-        private Label lblLogLocationValue;
 
         public LoggingConfigForm(Settings settings)
         {
