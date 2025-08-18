@@ -341,8 +341,7 @@ namespace BuildingBlocksManager
 
                         var targetCollection = currentSection == "removed" ? removedEntries : ledgerEntries;
                         
-                        // Try space-aligned format first (readable format)
-                        // Format: "Name                                     Category                         2025-08-18 14:26"
+                        // Parse space-aligned format: "Name                    Category                2025-08-18 14:26"
                         var dateMatch = System.Text.RegularExpressions.Regex.Match(line, @"(\d{4}-\d{2}-\d{2} \d{2}:\d{2})$");
                         if (dateMatch.Success && DateTime.TryParse(dateMatch.Groups[1].Value, out DateTime lastModified))
                         {
@@ -363,54 +362,6 @@ namespace BuildingBlocksManager
                                 
                                 var key = GetLedgerKey(entry.Name, entry.Category);
                                 targetCollection[key] = entry;
-                            }
-                        }
-                        else
-                        {
-                            // Try tab-delimited format (new format)
-                            var parts = line.Split('\t');
-                            if (parts.Length >= 3 && DateTime.TryParse(parts[2], out lastModified))
-                            {
-                                var entry = new LedgerEntry
-                                {
-                                    Name = parts[0].Trim(),
-                                    Category = parts[1].Trim(),
-                                    LastModified = lastModified
-                                };
-                                
-                                var key = GetLedgerKey(entry.Name, entry.Category);
-                                targetCollection[key] = entry;
-                            }
-                            else
-                            {
-                                // Fall back to pipe-delimited format (old format)
-                                parts = line.Split('|');
-                                if (parts.Length >= 3 && DateTime.TryParse(parts[2], out lastModified))
-                                {
-                                    var entry = new LedgerEntry
-                                    {
-                                        Name = parts[0].Trim(),
-                                        Category = parts[1].Trim(),
-                                        LastModified = lastModified
-                                    };
-                                    
-                                    var key = GetLedgerKey(entry.Name, entry.Category);
-                                    targetCollection[key] = entry;
-                                }
-                                // Support old format (4 columns) for backward compatibility
-                                else if (parts.Length >= 4 && DateTime.TryParse(parts[2], out lastModified))
-                                {
-                                    var entry = new LedgerEntry
-                                    {
-                                        Name = parts[0].Trim(),
-                                        Category = parts[1].Trim(),
-                                        LastModified = lastModified
-                                        // Ignore the old SourceFilePath (parts[3])
-                                    };
-                                    
-                                    var key = GetLedgerKey(entry.Name, entry.Category);
-                                    targetCollection[key] = entry;
-                                }
                             }
                         }
                     }
