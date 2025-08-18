@@ -128,11 +128,22 @@ namespace BuildingBlocksManager
         public void LogDeletion(string buildingBlockName, string category)
         {
             var templateName = GetTemplateFileName();
-            var message = $"From: {templateName} --- {buildingBlockName} ({category})";
-            // Use timestamp but no level for delete log
+            
+            // Create columnated delete log entry similar to ledger format
             try
             {
-                var logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm}] {message}";
+                // Check if file is new/empty and add header
+                if (!File.Exists(deleteLogFile) || new FileInfo(deleteLogFile).Length == 0)
+                {
+                    var header = "# Building Block Deletions Log" + Environment.NewLine +
+                                $"# Session: {sessionId}" + Environment.NewLine +
+                                "# Date/Time".PadRight(20) + "\t" + "Template".PadRight(30) + "\t" + "Name".PadRight(40) + "\t" + "Category" + Environment.NewLine;
+                    File.AppendAllText(deleteLogFile, header);
+                }
+                
+                // Create columnated entry
+                var dateTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
+                var logEntry = $"{dateTime.PadRight(20)}\t{templateName.PadRight(30)}\t{buildingBlockName.PadRight(40)}\t{category ?? ""}";
                 File.AppendAllText(deleteLogFile, logEntry + Environment.NewLine);
             }
             catch
