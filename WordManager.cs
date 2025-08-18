@@ -259,13 +259,6 @@ namespace BuildingBlocksManager
                 OpenTemplate();
                 sourceDoc = wordApp.Documents.Open(sourceFile);
 
-                // Verify source document has content
-                var sourceText = sourceDoc.Content.Text?.Trim() ?? "";
-                if (sourceText.Length <= 1) // Word docs always have at least 1 char (paragraph mark)
-                {
-                    throw new InvalidOperationException("Source document appears to be empty");
-                }
-
                 // Remove existing Building Block with same name if it exists
                 RemoveBuildingBlock(name, category);
 
@@ -427,7 +420,7 @@ namespace BuildingBlocksManager
                     return $"Invalid Building Block parameter. This usually means:\n" +
                            $"• Name '{name}' contains invalid characters or is too long\n" +
                            $"• Category '{category}' is malformed\n" +
-                           $"• Document content is corrupted or empty\n" +
+                           $"• Document content is corrupted or inaccessible\n" +
                            $"• Template file has issues\n" +
                            $"Name length: {name?.Length ?? 0}, Category length: {category?.Length ?? 0}. {baseMessage}";
                     
