@@ -514,8 +514,27 @@ namespace BuildingBlocksManager
         public string GetDiagnosticInfo()
         {
             var info = new System.Text.StringBuilder();
-            info.AppendLine($"Ledger file path: {ledgerFile}");
+            info.AppendLine($"Current ledger file path: {ledgerFile}");
             info.AppendLine($"File exists: {File.Exists(ledgerFile)}");
+            
+            // Check other possible locations
+            var localAppData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BuildingBlocksManager", "BBM_Logs", "building_blocks_ledger.txt");
+            info.AppendLine($"LocalAppData location exists: {File.Exists(localAppData)}");
+            
+            // Check if any building_blocks_ledger.txt files exist anywhere
+            var possibleDirs = new[]
+            {
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BuildingBlocksManager", "BBM_Logs"),
+                "BBM_Logs", // Current directory
+                @"C:\Kestrel\Templates\Office\Report automator testing\BBM_Logs", // From troubleshooting doc
+            };
+            
+            info.AppendLine("Checking common ledger locations:");
+            foreach (var dir in possibleDirs)
+            {
+                var ledgerPath = Path.Combine(dir, "building_blocks_ledger.txt");
+                info.AppendLine($"  {ledgerPath}: {File.Exists(ledgerPath)}");
+            }
             
             if (File.Exists(ledgerFile))
             {
