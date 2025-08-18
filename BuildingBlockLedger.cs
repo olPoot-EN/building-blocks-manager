@@ -441,10 +441,6 @@ namespace BuildingBlocksManager
                 {
                     System.Diagnostics.Debug.WriteLine($"ERROR: Ledger file was not created at: {ledgerFile}");
                 }
-                else
-                {
-                    System.Diagnostics.Debug.WriteLine($"SUCCESS: Ledger saved to: {ledgerFile}");
-                }
             }
             catch (Exception ex)
             {
