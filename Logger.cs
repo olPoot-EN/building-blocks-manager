@@ -7,6 +7,7 @@ namespace BuildingBlocksManager
     public class Logger
     {
         private readonly string logDirectory;
+        private readonly string sessionDirectory;
         private readonly string generalLogFile;
         private readonly string importLogFile;
         private readonly string exportLogFile;
@@ -46,12 +47,16 @@ namespace BuildingBlocksManager
             
             Directory.CreateDirectory(logDirectory);
             
-            // Define persistent log files
-            generalLogFile = Path.Combine(logDirectory, "general.log");
-            importLogFile = Path.Combine(logDirectory, "import.log");
-            exportLogFile = Path.Combine(logDirectory, "export.log");
-            errorLogFile = Path.Combine(logDirectory, "error.log");
-            deleteLogFile = Path.Combine(logDirectory, "delete.log");
+            // Create session-specific subdirectory
+            sessionDirectory = Path.Combine(logDirectory, sessionId);
+            Directory.CreateDirectory(sessionDirectory);
+            
+            // Define session-specific log files
+            generalLogFile = Path.Combine(sessionDirectory, "general.log");
+            importLogFile = Path.Combine(sessionDirectory, "import.log");
+            exportLogFile = Path.Combine(sessionDirectory, "export.log");
+            errorLogFile = Path.Combine(sessionDirectory, "error.log");
+            deleteLogFile = Path.Combine(sessionDirectory, "delete.log");
             
             // Write session start marker to general log
             WriteSessionMarker(generalLogFile, "SESSION START");
@@ -218,39 +223,51 @@ namespace BuildingBlocksManager
 
         public void CleanupOldLogs()
         {
-            // Archive and truncate logs that are too large (over 10MB) or very old content
+            // Clean up old session folders (older than 90 days)
             try
             {
                 if (Directory.Exists(logDirectory))
                 {
-                    var logFiles = new[] { generalLogFile, importLogFile, exportLogFile, errorLogFile, deleteLogFile };
+                    var sessionFolders = Directory.GetDirectories(logDirectory)
+                        .Where(dir => {
+                            var folderName = Path.GetFileName(dir);
+                            // Match pattern YYYY-MM-DD_HHMM
+                            return folderName.Length == 16 && 
+                                   folderName[4] == '-' && 
+                                   folderName[7] == '-' && 
+                                   folderName[10] == '_';
+                        });
                     
-                    foreach (var logFile in logFiles)
+                    foreach (var sessionFolder in sessionFolders)
                     {
-                        if (File.Exists(logFile))
+                        try
                         {
-                            var fileInfo = new FileInfo(logFile);
+                            var folderInfo = new DirectoryInfo(sessionFolder);
                             
-                            // If file is larger than 10MB, archive it and start fresh
-                            if (fileInfo.Length > 10 * 1024 * 1024)
+                            // Delete session folders older than 90 days
+                            if (folderInfo.CreationTime < DateTime.Now.AddDays(-90))
                             {
-                                var archiveName = Path.ChangeExtension(logFile, $".archive_{DateTime.Now:yyyyMMdd}.log");
-                                File.Move(logFile, archiveName);
-                                
-                                // Create new file with session marker
-                                WriteSessionMarker(logFile, "SESSION START (After Archive)");
+                                Directory.Delete(sessionFolder, true);
+                            }
+                            else
+                            {
+                                // For recent folders, check if any individual log files are too large (over 10MB)
+                                var logFiles = Directory.GetFiles(sessionFolder, "*.log");
+                                foreach (var logFile in logFiles)
+                                {
+                                    var fileInfo = new FileInfo(logFile);
+                                    if (fileInfo.Length > 10 * 1024 * 1024)
+                                    {
+                                        // Archive very large log files within the session folder
+                                        var archiveName = Path.ChangeExtension(logFile, $".archive_{DateTime.Now:yyyyMMdd}.log");
+                                        File.Move(logFile, archiveName);
+                                    }
+                                }
                             }
                         }
-                    }
-                    
-                    // Clean up old archive files (older than 90 days)
-                    var archiveFiles = Directory.GetFiles(logDirectory, "*.archive_*.log");
-                    foreach (var archiveFile in archiveFiles)
-                    {
-                        var fileInfo = new FileInfo(archiveFile);
-                        if (fileInfo.CreationTime < DateTime.Now.AddDays(-90))
+                        catch
                         {
-                            File.Delete(archiveFile);
+                            // Silently handle errors with individual session folders
                         }
                     }
                 }

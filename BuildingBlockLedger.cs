@@ -60,7 +60,7 @@ namespace BuildingBlocksManager
 
         public BuildingBlockLedger()
         {
-            // Use the same log directory as Logger class
+            // Always use the top-level BBM_Logs directory (not session subdirectory)
             ledgerDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BuildingBlocksManager", "BBM_Logs");
             ledgerFile = Path.Combine(ledgerDirectory, "building_blocks_ledger.txt");
             
@@ -70,8 +70,19 @@ namespace BuildingBlocksManager
 
         public BuildingBlockLedger(string logDirectory)
         {
-            // Allow specifying custom log directory to match Logger location
-            ledgerDirectory = logDirectory;
+            // Extract the base log directory (remove session folder if present)
+            // Logger passes session-specific directory, but ledger should be at top level
+            if (logDirectory != null && Path.GetFileName(logDirectory).Contains("-"))
+            {
+                // This looks like a session directory, get parent
+                ledgerDirectory = Path.GetDirectoryName(logDirectory);
+            }
+            else
+            {
+                // This is already the base log directory
+                ledgerDirectory = logDirectory ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BuildingBlocksManager", "BBM_Logs");
+            }
+            
             ledgerFile = Path.Combine(ledgerDirectory, "building_blocks_ledger.txt");
             
             ledgerEntries = new Dictionary<string, LedgerEntry>();
