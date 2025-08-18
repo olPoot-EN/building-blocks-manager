@@ -53,14 +53,27 @@ namespace BuildingBlocksManager
             }
         }
 
-        private static readonly string LedgerDirectory = 
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BuildingBlocksManager");
-        private static readonly string LedgerFile = Path.Combine(LedgerDirectory, "building_blocks_ledger.txt");
+        private string ledgerDirectory;
+        private string ledgerFile;
 
         private Dictionary<string, LedgerEntry> ledgerEntries;
 
         public BuildingBlockLedger()
         {
+            // Use the same log directory as Logger class
+            ledgerDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BuildingBlocksManager", "BBM_Logs");
+            ledgerFile = Path.Combine(ledgerDirectory, "building_blocks_ledger.txt");
+            
+            ledgerEntries = new Dictionary<string, LedgerEntry>();
+            Load();
+        }
+
+        public BuildingBlockLedger(string logDirectory)
+        {
+            // Allow specifying custom log directory to match Logger location
+            ledgerDirectory = logDirectory;
+            ledgerFile = Path.Combine(ledgerDirectory, "building_blocks_ledger.txt");
+            
             ledgerEntries = new Dictionary<string, LedgerEntry>();
             Load();
         }
@@ -204,9 +217,9 @@ namespace BuildingBlocksManager
         {
             try
             {
-                if (File.Exists(LedgerFile))
+                if (File.Exists(ledgerFile))
                 {
-                    var lines = File.ReadAllLines(LedgerFile);
+                    var lines = File.ReadAllLines(ledgerFile);
                     foreach (var line in lines)
                     {
                         if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#"))
@@ -243,7 +256,7 @@ namespace BuildingBlocksManager
         {
             try
             {
-                Directory.CreateDirectory(LedgerDirectory);
+                Directory.CreateDirectory(ledgerDirectory);
                 
                 var lines = new List<string>
                 {
@@ -258,7 +271,7 @@ namespace BuildingBlocksManager
                     lines.Add($"{entry.Name}|{entry.Category}|{entry.LastModified:yyyy-MM-dd HH:mm}|{entry.SourceFilePath}");
                 }
                 
-                File.WriteAllLines(LedgerFile, lines);
+                File.WriteAllLines(ledgerFile, lines);
             }
             catch
             {
@@ -271,7 +284,7 @@ namespace BuildingBlocksManager
         /// </summary>
         public string GetLedgerFilePath()
         {
-            return LedgerFile;
+            return ledgerFile;
         }
     }
 }

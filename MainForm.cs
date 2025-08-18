@@ -743,8 +743,8 @@ namespace BuildingBlocksManager
                     return;
                 }
 
-                // Analyze with ledger
-                var ledger = new BuildingBlockLedger();
+                // Analyze with ledger (use same directory as logger)
+                var ledger = new BuildingBlockLedger(logger.GetLogDirectory());
                 var analysis = ledger.AnalyzeChanges(allFiles);
                 
                 AppendResults("Ledger analysis complete:");
@@ -995,8 +995,8 @@ namespace BuildingBlocksManager
 
             try
             {
-                // Analyze selected files with ledger
-                var ledger = new BuildingBlockLedger();
+                // Analyze selected files with ledger (use same directory as logger)
+                var ledger = new BuildingBlockLedger(logger.GetLogDirectory());
                 var analysis = ledger.AnalyzeChanges(checkedFiles);
                 
                 AppendResults("Ledger analysis complete for selected files:");

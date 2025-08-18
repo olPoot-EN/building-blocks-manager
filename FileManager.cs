@@ -27,10 +27,12 @@ namespace BuildingBlocksManager
         // Characters that are invalid in Word Building Block names
         private static readonly char[] InvalidChars = { '/', '\\', ':', '*', '?', '"', '<', '>', '|' };
 
-        public FileManager(string sourceDirectory)
+        public FileManager(string sourceDirectory, string logDirectory = null)
         {
             this.sourceDirectory = sourceDirectory;
-            this.ledger = new BuildingBlockLedger();
+            this.ledger = string.IsNullOrEmpty(logDirectory) 
+                ? new BuildingBlockLedger() 
+                : new BuildingBlockLedger(logDirectory);
         }
 
         public List<FileInfo> ScanDirectory()

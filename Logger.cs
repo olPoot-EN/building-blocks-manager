@@ -92,7 +92,7 @@ namespace BuildingBlocksManager
 
         public void LogImport(string buildingBlockName, string category)
         {
-            var message = $"{buildingBlockName} ({category})";
+            var message = $"    {buildingBlockName} ({category})"; // Indented for visual hierarchy
             WriteToFile(importLogFile, "", message); // No level prefix for session items
         }
 
@@ -110,7 +110,7 @@ namespace BuildingBlocksManager
 
         public void LogExport(string buildingBlockName, string category)
         {
-            var message = $"{buildingBlockName} ({category})";
+            var message = $"    {buildingBlockName} ({category})"; // Indented for visual hierarchy
             WriteToFile(exportLogFile, "", message); // No level prefix for session items
         }
 
