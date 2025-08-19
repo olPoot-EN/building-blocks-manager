@@ -401,8 +401,8 @@ namespace BuildingBlocksManager
                         var targetCollection = currentSection == "removed" ? removedEntries : ledgerEntries;
                         System.Diagnostics.Debug.WriteLine($"[LEDGER LOAD] Parsing data line in section: {currentSection}");
                         
-                        // Parse space-aligned format: "Name                    Category                2025-08-18 14:26"
-                        var dateMatch = System.Text.RegularExpressions.Regex.Match(line, @"\s+(\d{4}-\d{2}-\d{2} \d{2}:\d{2})$");
+                        // Parse space-aligned format: "Name                    Category                2025-08-18 14:26:30"
+                        var dateMatch = System.Text.RegularExpressions.Regex.Match(line, @"\s+(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})$");
                         System.Diagnostics.Debug.WriteLine($"[LEDGER LOAD] Date regex match: {dateMatch.Success}");
                         if (dateMatch.Success)
                         {
@@ -482,7 +482,7 @@ namespace BuildingBlocksManager
                 
                 foreach (var entry in ledgerEntries.Values.OrderBy(e => e.Name))
                 {
-                    lines.Add($"{entry.Name.PadRight(45)}{entry.Category.PadRight(30)}{entry.LastModified:yyyy-MM-dd HH:mm}");
+                    lines.Add($"{entry.Name.PadRight(45)}{entry.Category.PadRight(30)}{entry.LastModified:yyyy-MM-dd HH:mm:ss}");
                 }
                 
                 // Add removed entries section if any exist
@@ -494,7 +494,7 @@ namespace BuildingBlocksManager
                     
                     foreach (var entry in removedEntries.Values.OrderBy(e => e.Name))
                     {
-                        lines.Add($"{entry.Name.PadRight(45)}{entry.Category.PadRight(30)}{entry.LastModified:yyyy-MM-dd HH:mm}");
+                        lines.Add($"{entry.Name.PadRight(45)}{entry.Category.PadRight(30)}{entry.LastModified:yyyy-MM-dd HH:mm:ss}");
                     }
                 }
                 
