@@ -2142,13 +2142,13 @@ BACKUP PROCESS:
                 
             // Use standard DirectoryInfo approach
             var rootDir = new DirectoryInfo(fullSourceDirectoryPath);
-            var rootNode = CreateDirectoryNode(rootDir, files);
+            var rootNode = CreateDirectoryNode(rootDir, files, analysis);
             
             treeDirectory.Nodes.Add(rootNode);
             rootNode.Expand();
         }
         
-        private TreeNode CreateDirectoryNode(DirectoryInfo directory, System.Collections.Generic.List<FileManager.FileInfo> scannedFiles)
+        private TreeNode CreateDirectoryNode(DirectoryInfo directory, System.Collections.Generic.List<FileManager.FileInfo> scannedFiles, BuildingBlockLedger.ChangeAnalysis analysis = null)
         {
             var node = new TreeNode(directory.Name)
             {
@@ -2161,7 +2161,7 @@ BACKUP PROCESS:
                 var subdirs = directory.GetDirectories().OrderBy(d => d.Name);
                 foreach (var subdir in subdirs)
                 {
-                    var childNode = CreateDirectoryNode(subdir, scannedFiles);
+                    var childNode = CreateDirectoryNode(subdir, scannedFiles, analysis);
                     node.Nodes.Add(childNode);
                 }
                 
