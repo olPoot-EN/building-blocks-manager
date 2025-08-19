@@ -60,13 +60,9 @@ namespace BuildingBlocksManager
 
         public BuildingBlockLedger()
         {
-            System.Diagnostics.Debug.WriteLine("*** LEDGER CONSTRUCTOR: Creating BuildingBlockLedger ***");
-            
             // Use configured ledger directory or default
             ledgerDirectory = GetConfiguredLedgerDirectory();
             ledgerFile = Path.Combine(ledgerDirectory, "building_blocks_ledger.txt");
-            
-            System.Diagnostics.Debug.WriteLine($"*** LEDGER CONSTRUCTOR: Will load from {ledgerFile} ***");
             
             ledgerEntries = new Dictionary<string, LedgerEntry>();
             removedEntries = new Dictionary<string, LedgerEntry>();
@@ -75,8 +71,6 @@ namespace BuildingBlocksManager
 
         public BuildingBlockLedger(string logDirectory)
         {
-            System.Diagnostics.Debug.WriteLine($"*** LEDGER CONSTRUCTOR(logDir): Creating BuildingBlockLedger with logDirectory: '{logDirectory}' ***");
-            
             // Use configured ledger directory, or fall back to log directory logic for compatibility
             var configuredDir = GetConfiguredLedgerDirectory();
             if (!string.IsNullOrEmpty(configuredDir))
@@ -100,8 +94,6 @@ namespace BuildingBlocksManager
             }
             
             ledgerFile = Path.Combine(ledgerDirectory, "building_blocks_ledger.txt");
-            
-            System.Diagnostics.Debug.WriteLine($"*** LEDGER CONSTRUCTOR(logDir): Will load from {ledgerFile} ***");
             
             ledgerEntries = new Dictionary<string, LedgerEntry>();
             removedEntries = new Dictionary<string, LedgerEntry>();
@@ -148,26 +140,6 @@ namespace BuildingBlocksManager
             var found = ledgerEntries.ContainsKey(key);
             var result = found ? ledgerEntries[key].LastModified : DateTime.MinValue;
             
-            // DEBUG: Log ledger lookup details
-            System.Diagnostics.Debug.WriteLine($"[LEDGER] Lookup Key: '{key}'");
-            System.Diagnostics.Debug.WriteLine($"[LEDGER] Found in ledger: {found}");
-            if (found)
-            {
-                System.Diagnostics.Debug.WriteLine($"[LEDGER] Stored LastModified: {ledgerEntries[key].LastModified}");
-            }
-            else
-            {
-                System.Diagnostics.Debug.WriteLine($"[LEDGER] Available keys in ledger:");
-                foreach (var availableKey in ledgerEntries.Keys.Take(5))
-                {
-                    System.Diagnostics.Debug.WriteLine($"[LEDGER]   '{availableKey}' -> {ledgerEntries[availableKey].LastModified}");
-                }
-                if (ledgerEntries.Count > 5)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[LEDGER]   ... and {ledgerEntries.Count - 5} more entries");
-                }
-            }
-            
             return result;
         }
 
@@ -184,7 +156,6 @@ namespace BuildingBlocksManager
                 LastModified = lastModified
             };
             
-            System.Diagnostics.Debug.WriteLine($"[LEDGER UPDATE] Adding entry: '{key}' -> {lastModified}");
             ledgerEntries[key] = entry;
             Save();
         }
@@ -285,25 +256,17 @@ namespace BuildingBlocksManager
                 {
                     var ledgerEntry = ledgerEntries[key];
                     
-                    // DEBUG: Show timestamp comparison details
-                    System.Diagnostics.Debug.WriteLine($"[COMPARE] {file.Name}:");
-                    System.Diagnostics.Debug.WriteLine($"[COMPARE]   File time: {file.LastModified:yyyy-MM-dd HH:mm:ss.fff}");
-                    System.Diagnostics.Debug.WriteLine($"[COMPARE]   Ledger time: {ledgerEntry.LastModified:yyyy-MM-dd HH:mm:ss.fff}");
-                    System.Diagnostics.Debug.WriteLine($"[COMPARE]   File > Ledger: {file.LastModified > ledgerEntry.LastModified}");
-                    
                     // Compare file modification time with ledger entry using 1-minute tolerance
                     var timeDifference = file.LastModified - ledgerEntry.LastModified;
                     if (timeDifference.TotalMinutes > 1.0)
                     {
                         // File has been modified more than 1 minute after last import
                         analysis.ModifiedFiles.Add(file);
-                        System.Diagnostics.Debug.WriteLine($"[COMPARE]   Result: MODIFIED (difference: {timeDifference.TotalMinutes:F1} minutes)");
                     }
                     else
                     {
                         // File is unchanged (within 1-minute tolerance)
                         analysis.UnchangedFiles.Add(file);
-                        System.Diagnostics.Debug.WriteLine($"[COMPARE]   Result: UNCHANGED (difference: {timeDifference.TotalMinutes:F1} minutes)");
                     }
                 }
             }
@@ -363,30 +326,20 @@ namespace BuildingBlocksManager
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine($"[LEDGER LOAD] Starting to load ledger from: {ledgerFile}");
-                
                 if (File.Exists(ledgerFile))
                 {
                     var lines = File.ReadAllLines(ledgerFile);
                     var currentSection = "active"; // Default to active section
                     
-                    System.Diagnostics.Debug.WriteLine($"[LEDGER LOAD] Found ledger file with {lines.Length} lines");
-                    
                     foreach (var line in lines)
                     {
-                        System.Diagnostics.Debug.WriteLine($"[LEDGER LOAD] Processing line: '{line}'");
-                        
                         if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#"))
-                        {
-                            System.Diagnostics.Debug.WriteLine($"[LEDGER LOAD] Skipping comment/empty line");
                             continue; // Skip empty lines and comments
-                        }
 
                         // Check for section headers
                         if (line.Trim().ToLower().Contains("removed building blocks"))
                         {
                             currentSection = "removed";
-                            System.Diagnostics.Debug.WriteLine($"[LEDGER LOAD] Switched to removed section");
                             continue;
                         }
                         else if (line.Trim().ToLower().Contains("active building blocks") || 
@@ -395,22 +348,13 @@ namespace BuildingBlocksManager
                         {
                             // Stay in or switch to active section
                             if (line.Trim().StartsWith("Name"))
-                            {
-                                System.Diagnostics.Debug.WriteLine($"[LEDGER LOAD] Skipping header line");
                                 continue; // Skip header line
-                            }
                         }
 
                         var targetCollection = currentSection == "removed" ? removedEntries : ledgerEntries;
-                        System.Diagnostics.Debug.WriteLine($"[LEDGER LOAD] Parsing data line in section: {currentSection}");
                         
                         // Parse space-aligned format: "Name                    Category                2025-08-18 14:26"
                         var dateMatch = System.Text.RegularExpressions.Regex.Match(line, @"\s+(\d{4}-\d{2}-\d{2} \d{2}:\d{2})$");
-                        System.Diagnostics.Debug.WriteLine($"[LEDGER LOAD] Date regex match: {dateMatch.Success}");
-                        if (dateMatch.Success)
-                        {
-                            System.Diagnostics.Debug.WriteLine($"[LEDGER LOAD] Found date: '{dateMatch.Groups[1].Value}'");
-                        }
                         
                         if (dateMatch.Success && DateTime.TryParse(dateMatch.Groups[1].Value, out DateTime lastModified))
                         {
@@ -431,29 +375,14 @@ namespace BuildingBlocksManager
                                 
                                 var key = GetLedgerKey(entry.Name, entry.Category);
                                 targetCollection[key] = entry;
-                                
-                                // DEBUG: Log successful parsing
-                                System.Diagnostics.Debug.WriteLine($"[LEDGER PARSE] Loaded entry: Name='{entry.Name}', Category='{entry.Category}', Key='{key}'");
-                            }
-                            else
-                            {
-                                // DEBUG: Log parsing failures
-                                System.Diagnostics.Debug.WriteLine($"[LEDGER PARSE] Failed to parse line: '{line}'");
-                                System.Diagnostics.Debug.WriteLine($"[LEDGER PARSE] NameAndCategory: '{nameAndCategory}'");
                             }
                         }
                     }
                     
-                    System.Diagnostics.Debug.WriteLine($"[LEDGER LOAD] Finished loading. Active entries: {ledgerEntries.Count}, Removed entries: {removedEntries.Count}");
-                }
-                else
-                {
-                    System.Diagnostics.Debug.WriteLine($"[LEDGER LOAD] Ledger file does not exist at: {ledgerFile}");
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                System.Diagnostics.Debug.WriteLine($"[LEDGER LOAD] Exception during load: {ex.Message}");
                 // Silently handle errors - start with empty ledger
                 ledgerEntries.Clear();
                 removedEntries.Clear();
@@ -467,10 +396,6 @@ namespace BuildingBlocksManager
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine($"[LEDGER SAVE] Attempting to save ledger to: {ledgerFile}");
-                System.Diagnostics.Debug.WriteLine($"[LEDGER SAVE] Directory: {ledgerDirectory}");
-                System.Diagnostics.Debug.WriteLine($"[LEDGER SAVE] Entries to save: {ledgerEntries.Count} active, {removedEntries.Count} removed");
-                
                 Directory.CreateDirectory(ledgerDirectory);
                 
                 var lines = new List<string>
@@ -502,24 +427,10 @@ namespace BuildingBlocksManager
                 }
                 
                 File.WriteAllLines(ledgerFile, lines);
-                
-                System.Diagnostics.Debug.WriteLine($"[LEDGER SAVE] File written successfully. Lines written: {lines.Count}");
-                
-                // Debug: Verify file was actually created
-                if (File.Exists(ledgerFile))
-                {
-                    var fileInfo = new FileInfo(ledgerFile);
-                    System.Diagnostics.Debug.WriteLine($"[LEDGER SAVE] File confirmed exists. Size: {fileInfo.Length} bytes");
-                }
-                else
-                {
-                    System.Diagnostics.Debug.WriteLine($"[LEDGER SAVE] ERROR: Ledger file was not created at: {ledgerFile}");
-                }
             }
             catch (Exception ex)
             {
                 // Show save errors for debugging
-                System.Diagnostics.Debug.WriteLine($"ERROR saving ledger to {ledgerFile}: {ex.Message}");
                 System.Windows.Forms.MessageBox.Show($"Failed to save Building Block ledger:\n{ex.Message}\n\nPath: {ledgerFile}", "Ledger Save Error", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Warning);
             }
         }

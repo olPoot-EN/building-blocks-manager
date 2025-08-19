@@ -943,17 +943,6 @@ namespace BuildingBlocksManager
                         
                         if (importResult.Success)
                         {
-                            // DEBUG: Log import details for troubleshooting
-                            System.Diagnostics.Debug.WriteLine($"[IMPORT] File: {fileName}");
-                            System.Diagnostics.Debug.WriteLine($"[IMPORT] Original Name: '{file.Name}'");
-                            System.Diagnostics.Debug.WriteLine($"[IMPORT] Original Category: '{file.Category}'");
-                            System.Diagnostics.Debug.WriteLine($"[IMPORT] Used Category: '{category}'");
-                            System.Diagnostics.Debug.WriteLine($"[IMPORT] ImportedName: '{importResult.ImportedName}'");
-                            System.Diagnostics.Debug.WriteLine($"[IMPORT] FinalCategory: '{importResult.FinalCategory}'");
-                            System.Diagnostics.Debug.WriteLine($"[IMPORT] Ledger Key: '{importResult.ImportedName}|{importResult.FinalCategory ?? ""}'");
-                            System.Diagnostics.Debug.WriteLine($"[IMPORT] File LastModified: {file.LastModified}");
-                            System.Diagnostics.Debug.WriteLine("---");
-                            
                             // Update ledger with successful import
                             ledger.UpdateEntry(importResult.ImportedName, importResult.FinalCategory, file.LastModified);
                             
