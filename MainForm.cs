@@ -760,8 +760,8 @@ namespace BuildingBlocksManager
                 AppendResults("=== CHANGE ANALYSIS ===");
                 AppendResults(analysis.GetSummary());
                 
-                // Populate Directory tab tree view
-                PopulateDirectoryTree(files);
+                // Populate Directory tab tree view using analysis results
+                PopulateDirectoryTree(files, analysis);
                 
                 // Switch to Directory tab
                 tabControl.SelectedTab = tabDirectory;
@@ -2133,7 +2133,7 @@ BACKUP PROCESS:
         }
 
 
-        private void PopulateDirectoryTree(System.Collections.Generic.List<FileManager.FileInfo> files)
+        private void PopulateDirectoryTree(System.Collections.Generic.List<FileManager.FileInfo> files, BuildingBlockLedger.ChangeAnalysis analysis = null)
         {
             treeDirectory.Nodes.Clear();
             
@@ -2173,24 +2173,56 @@ BACKUP PROCESS:
                 foreach (var file in relevantFiles)
                 {
                     var fileName = Path.GetFileName(file.FilePath);
-                    var status = file.IsNew ? " (New)" :
+                    
+                    // Use analysis results if available (with tolerance), otherwise fall back to file properties
+                    string status;
+                    System.Drawing.Color nodeColor = System.Drawing.Color.Black;
+                    
+                    if (analysis != null)
+                    {
+                        // Use analysis results with tolerance
+                        if (analysis.NewFiles.Any(f => f.FilePath.Equals(file.FilePath, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            status = " (New)";
+                            nodeColor = System.Drawing.Color.Green;
+                        }
+                        else if (analysis.ModifiedFiles.Any(f => f.FilePath.Equals(file.FilePath, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            status = " (Modified)";
+                            nodeColor = System.Drawing.Color.Blue;
+                        }
+                        else if (file.IsValid)
+                        {
+                            status = " (Up-to-date)";
+                            nodeColor = System.Drawing.Color.Black;
+                        }
+                        else
+                        {
+                            status = " (Invalid)";
+                            nodeColor = System.Drawing.Color.Red;
+                        }
+                    }
+                    else
+                    {
+                        // Fall back to old logic
+                        status = file.IsNew ? " (New)" :
                                 file.IsModified ? " (Modified)" :
                                 file.IsValid ? " (Up-to-date)" : " (Invalid)";
+                        
+                        if (!file.IsValid)
+                            nodeColor = System.Drawing.Color.Red;
+                        else if (file.IsNew)
+                            nodeColor = System.Drawing.Color.Green;
+                        else if (file.IsModified)
+                            nodeColor = System.Drawing.Color.Blue;
+                    }
                     
                     var fileNode = new TreeNode($"{fileName}{status}")
                     {
                         Tag = file
                     };
                     
-                    // Color code the file nodes
-                    if (!file.IsValid)
-                        fileNode.ForeColor = System.Drawing.Color.Red;
-                    else if (file.IsNew)
-                        fileNode.ForeColor = System.Drawing.Color.Green;
-                    else if (file.IsModified)
-                        fileNode.ForeColor = System.Drawing.Color.Blue;
-                    else
-                        fileNode.ForeColor = System.Drawing.Color.Black;
+                    fileNode.ForeColor = nodeColor;
                     
                     node.Nodes.Add(fileNode);
                 }
