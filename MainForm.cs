@@ -2639,6 +2639,10 @@ BACKUP PROCESS:
 
             try
             {
+                // Initialize progress bar for deletion operation
+                progressBar.Style = ProgressBarStyle.Continuous;
+                progressBar.Value = 0;
+                
                 // Initialize ledger for tracking deletions
                 var ledger = new BuildingBlockLedger(logger.GetLogDirectory());
                 
@@ -2648,11 +2652,18 @@ BACKUP PROCESS:
                     wordManager.CreateBackup();
                     
                     // Find the ListView items corresponding to selected building blocks
+                    int currentItem = 0;
                     foreach (var buildingBlock in selectedBlocks)
                     {
                         var correspondingItem = listViewTemplate.Items.Cast<ListViewItem>()
                             .FirstOrDefault(item => item.Tag is BuildingBlockInfo bb && 
                                            bb.Name == buildingBlock.Name && bb.Category == buildingBlock.Category);
+                        
+                        // Update progress before processing each item
+                        currentItem++;
+                        progressBar.Value = (int)((double)currentItem / selectedBlocks.Count * 100);
+                        UpdateStatus($"Deleting {currentItem} of {selectedBlocks.Count}: {buildingBlock.Name}");
+                        Application.DoEvents(); // Allow UI to update
                         
                         try
                         {
@@ -2691,11 +2702,17 @@ BACKUP PROCESS:
                     // Update template count display
                     UpdateTemplateCount(listViewTemplate.Items.Count);
                     
+                    // Reset progress bar
+                    progressBar.Value = 0;
+                    
                     UpdateStatus($"Deleted {successCount} Building Block(s)" + (errorCount > 0 ? $" ({errorCount} errors)" : ""));
                 }
             }
             catch (Exception ex)
             {
+                // Reset progress bar on error
+                progressBar.Value = 0;
+                
                 MessageBox.Show($"Failed to delete Building Block(s): {ex.Message}", "Delete Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
                 AppendResults($"Failed to delete Building Blocks: {ex.Message}");
