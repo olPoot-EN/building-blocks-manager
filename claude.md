@@ -6,13 +6,37 @@
 
 **Simple Solution**: Staff edit `AT_*.docx` files in folders. Application imports them into Word Building Blocks in template. Done.
 
-## Core Requirements
+## Current Architecture (As Built)
 
-**What it does:**
-1. **Import**: Scan folder for `AT_*.docx` files, create Building Blocks in Word template
-2. **Export**: Take Building Blocks from template, save as `AT_*.docx` files in folders
-3. **Query**: Show which files changed without importing
-4. **Selective**: Import single file or export selected Building Blocks
+**Language**: C# with Windows Forms
+**Dependencies**: Microsoft.Office.Interop.Word (standard Office COM)
+**Target**: Windows only - this is not a cross-platform application
+
+### Core Classes
+```
+MainForm            // Three-tab UI (Query, Directory, Template) + menu system
+FileManager         // Scan directories, extract names/categories from file paths
+WordManager         // Word COM automation - import/export Building Blocks
+BuildingBlockLedger // Track import timestamps with tolerance comparison (KEY CLASS)
+Settings            // Persistent settings (paths, ledger directory, logging config)
+Logger              // Session-based logging to files
+```
+
+### Key Features Implemented
+1. **Query Directory**: Scan files, show status with 1-minute tolerance comparison
+2. **Directory Tree**: Visual tree with color-coded status (New/Modified/Up-to-date)
+3. **Template Viewing**: Browse Building Blocks in current template
+4. **Tolerance Logic**: Files show as "modified" only if >1 minute newer than ledger
+5. **Configurable Ledger**: File → Ledger Directory to set storage location
+6. **Settings Persistence**: All paths and configurations saved between sessions
+
+### Critical Implementation Details
+
+**BuildingBlockLedger Class** - Core timestamp tracking:
+- Stores entries in readable format: `Name (45 chars) Category (30 chars) YYYY-MM-DD HH:mm`
+- Uses 1-minute tolerance: `timeDifference.TotalMinutes > 1.0` for modified detection
+- Configurable directory via Settings.LedgerDirectory
+- Handles both default constructor (uses settings) and parameterized (for compatibility)
 
 **File/Category Logic:**
 - `Legal\Contracts\AT_Standard.docx` → Category: `InternalAutotext\Legal\Contracts`, Name: `Standard`
@@ -20,53 +44,39 @@
 - Spaces become underscores, preserve case
 - Only process files starting with `AT_`
 
-## Technical Implementation
+## Current UI Structure
 
-**Language**: C# with Windows Forms
-**Dependencies**: Microsoft.Office.Interop.Word (standard Office COM)
-**Target**: Windows only - this is not a cross-platform application
+**Main Window**: Three-tab interface with menu system
+- **Query Tab**: Template/Directory paths, Query buttons, Results text area
+- **Directory Tab**: Tree view with color-coded file status
+- **Template Tab**: List of Building Blocks in current template
 
-### Core Classes Needed
-```
-FileManager     // Scan directories, track timestamps
-WordManager     // Open Word, manipulate Building Blocks, save template  
-ImportTracker   // Simple text file with filepath|timestamp pairs
-Logger          // Write to log file
-MainForm        // Basic Windows Form UI
-```
+**File Menu**: 
+- View Log File, Logging Configuration, Ledger Directory, Rollback
 
-### Word Automation - Keep It Simple
+**Key UI Behaviors:**
+- Auto-switches to Directory tab after Query Directory
+- Auto-queries when switching to empty Directory/Template tabs
+- Color coding: Green=New, Blue=Modified, Black=Up-to-date, Red=Invalid
+
+## Development Critical Notes
+
+**Query Directory Process** (MainForm.cs:756):
 ```csharp
-using Word = Microsoft.Office.Interop.Word;
-
-// Open template, add Building Block, save, close
-// Use using statements for COM object disposal
-// Create backup before operations
-// Handle common errors (file locked, Word not responding)
+var analysis = ledger.AnalyzeChanges(files);  // Uses tolerance comparison
+PopulateDirectoryTree(files, analysis);      // Passes analysis results to tree
 ```
 
-**Key Operations:**
-- `BuildingBlocks.Add()` - create new Building Block
-- `BuildingBlocks[name].Delete()` - remove existing
-- Copy formatted content between documents
-- Save template
+**Tolerance Comparison** (BuildingBlockLedger.cs:259):
+```csharp
+var timeDifference = file.LastModified - ledgerEntry.LastModified;
+if (timeDifference.TotalMinutes > 1.0) // Only >1 minute = modified
+```
 
-## UI Requirements - Barebones Only
-
-**Main Window Controls:**
-- Template file path + Browse button
-- Directory path + Browse button  
-- Checkboxes: "Ignore folder/category structure for: ☐ Import ☐ Export"
-- Buttons: Query Directory, Import All, Import Selected File, Export All, Export Selected, Rollback
-- Results text area
-- Progress bar
-
-**Additional Dialogs:**
-- File browser for single file import
-- Multi-select list for selective export (with Select All/None)
-- Input prompts for flat import category name and flat export folder
-
-**No fancy UI** - basic Windows Forms controls, gray background, standard buttons. This is a utility tool.
+**Settings System** (Settings.cs):
+- LedgerDirectory: Configurable path for ledger file location
+- All settings auto-saved, loaded on startup
+- Settings file: `%LOCALAPPDATA%\BuildingBlocksManager\settings.txt`
 
 ## Development Workflow
 
@@ -75,43 +85,31 @@ using Word = Microsoft.Office.Interop.Word;
 
 **Development**: Mac M4 Mini with Claude Code (writes C# code only)
 **Testing**: Windows laptop (tests actual Word automation) - testing occurs separately on Windows machine
+
 **Git**: 
 - **ALWAYS commit and push changes after completing development tasks**
-- Commit after each Claude Code session, pull and test on Windows
 - Use descriptive commit messages explaining what was implemented
-- **IMPORTANT**: This is a Git submodule - all git commands must be run from within the working directory: `cd "/Users/davidparry/claude_code/Autotext Import_Export Tool"`
-- Git workflow: `cd` into the project directory first, then `git add`, `git commit`, `git push`
+- Git commands must be run from within the working directory: `cd "/Users/davidparry/claude_code/Autotext Import_Export Tool"`
 
-**Important**: Code must work on Windows with Word - don't worry about Mac compatibility. The Mac just writes the C# code. This is NOT a cross-platform application.
+**Visual Studio Git Issues**: VS sometimes doesn't sync properly with remote changes
+- Use command line git if VS Git is stuck
+- Delete and re-clone project folder if VS won't pull latest changes
 
-## Features Summary
+## Common Development Pitfalls
 
-### Flat Structure Options
-- **Flat Import**: All files → single category (user specifies name)
-- **Flat Export**: All Building Blocks → single folder (user specifies path)
+**Ledger System**:
+- Query Directory uses `AnalyzeChanges()` with tolerance - don't bypass this
+- Directory tree must receive analysis results to show correct status
+- Both constructors (default + parameterized) must support configurable ledger directory
 
-### Selective Operations  
-- **Import Selected**: User picks one `AT_*.docx` file, import just that
-- **Export Selected**: User picks Building Blocks from list, export just those
+**UI State Management**:
+- Query Directory auto-switches to Directory tab and passes analysis results
+- Don't rely on individual file.IsNew/IsModified - use analysis results instead
 
-### Standard Operations
-- **Import All**: Process all changed files in directory
-- **Export All**: Export all Building Blocks to directory structure
-- **Query**: Show file status without importing
-- **Rollback**: Restore template from backup
+**Scoping Issues**:
+- Analysis results must be passed from Query → PopulateDirectoryTree → CreateDirectoryNode
+- Check all recursive method calls receive needed parameters
 
-## Error Handling
-- Create template backup before operations
-- Skip locked files, continue processing others
-- Show clear error messages for invalid filenames
-- Log everything to text file
-- Rollback capability if operations fail
-
-## Implementation Priority
-1. **Core Word automation** - get Building Block creation/export working
-2. **File operations** - directory scanning, timestamp tracking
-3. **Basic UI** - Windows Form with essential buttons
-4. **Error handling** - backups, logging, rollback
-5. **Selective features** - single file operations
-
-**Keep it simple.** This is straightforward Windows automation - scan files, manipulate Word Building Blocks, done. No exotic libraries or complex architectures needed.
+**Settings**:
+- All configurable paths should use Settings system
+- Settings auto-save when changed, auto-load on startup
