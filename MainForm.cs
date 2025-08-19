@@ -752,6 +752,14 @@ namespace BuildingBlocksManager
                 
                 var files = fileManager.ScanDirectory();
                 
+                // Analyze changes using ledger comparison with tolerance
+                var ledger = new BuildingBlockLedger();
+                var analysis = ledger.AnalyzeChanges(files);
+                
+                AppendResults("");
+                AppendResults("=== CHANGE ANALYSIS ===");
+                AppendResults(analysis.GetSummary());
+                
                 // Populate Directory tab tree view
                 PopulateDirectoryTree(files);
                 
