@@ -291,16 +291,19 @@ namespace BuildingBlocksManager
                     System.Diagnostics.Debug.WriteLine($"[COMPARE]   Ledger time: {ledgerEntry.LastModified:yyyy-MM-dd HH:mm:ss.fff}");
                     System.Diagnostics.Debug.WriteLine($"[COMPARE]   File > Ledger: {file.LastModified > ledgerEntry.LastModified}");
                     
-                    // Compare file modification time with ledger entry
-                    if (file.LastModified > ledgerEntry.LastModified)
+                    // Compare file modification time with ledger entry using 1-minute tolerance
+                    var timeDifference = file.LastModified - ledgerEntry.LastModified;
+                    if (timeDifference.TotalMinutes > 1.0)
                     {
-                        // File has been modified since last import
+                        // File has been modified more than 1 minute after last import
                         analysis.ModifiedFiles.Add(file);
+                        System.Diagnostics.Debug.WriteLine($"[COMPARE]   Result: MODIFIED (difference: {timeDifference.TotalMinutes:F1} minutes)");
                     }
                     else
                     {
-                        // File is unchanged
+                        // File is unchanged (within 1-minute tolerance)
                         analysis.UnchangedFiles.Add(file);
+                        System.Diagnostics.Debug.WriteLine($"[COMPARE]   Result: UNCHANGED (difference: {timeDifference.TotalMinutes:F1} minutes)");
                     }
                 }
             }
@@ -401,8 +404,8 @@ namespace BuildingBlocksManager
                         var targetCollection = currentSection == "removed" ? removedEntries : ledgerEntries;
                         System.Diagnostics.Debug.WriteLine($"[LEDGER LOAD] Parsing data line in section: {currentSection}");
                         
-                        // Parse space-aligned format: "Name                    Category                2025-08-18 14:26:30"
-                        var dateMatch = System.Text.RegularExpressions.Regex.Match(line, @"\s+(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})$");
+                        // Parse space-aligned format: "Name                    Category                2025-08-18 14:26"
+                        var dateMatch = System.Text.RegularExpressions.Regex.Match(line, @"\s+(\d{4}-\d{2}-\d{2} \d{2}:\d{2})$");
                         System.Diagnostics.Debug.WriteLine($"[LEDGER LOAD] Date regex match: {dateMatch.Success}");
                         if (dateMatch.Success)
                         {
@@ -482,7 +485,7 @@ namespace BuildingBlocksManager
                 
                 foreach (var entry in ledgerEntries.Values.OrderBy(e => e.Name))
                 {
-                    lines.Add($"{entry.Name.PadRight(45)}{entry.Category.PadRight(30)}{entry.LastModified:yyyy-MM-dd HH:mm:ss}");
+                    lines.Add($"{entry.Name.PadRight(45)}{entry.Category.PadRight(30)}{entry.LastModified:yyyy-MM-dd HH:mm}");
                 }
                 
                 // Add removed entries section if any exist
@@ -494,7 +497,7 @@ namespace BuildingBlocksManager
                     
                     foreach (var entry in removedEntries.Values.OrderBy(e => e.Name))
                     {
-                        lines.Add($"{entry.Name.PadRight(45)}{entry.Category.PadRight(30)}{entry.LastModified:yyyy-MM-dd HH:mm:ss}");
+                        lines.Add($"{entry.Name.PadRight(45)}{entry.Category.PadRight(30)}{entry.LastModified:yyyy-MM-dd HH:mm}");
                     }
                 }
                 
