@@ -58,7 +58,7 @@ namespace BuildingBlocksManager
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "Building Blocks Manager - Version 7 TEST";
+            this.Text = "Building Blocks Manager";
             this.Size = new System.Drawing.Size(600, 650);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = new System.Drawing.Size(450, 500);
@@ -240,36 +240,35 @@ namespace BuildingBlocksManager
                 Size = new System.Drawing.Size(60, 25)
             };
 
-            // Export directory section
+            // Export directory section  
             var lblExportDirectory = new Label
             {
                 Text = "Export:",
-                Location = new System.Drawing.Point(10, 200),
+                Location = new System.Drawing.Point(10, 145),
                 Size = new System.Drawing.Size(45, 23),
                 TextAlign = System.Drawing.ContentAlignment.MiddleRight
             };
 
             txtExportDirectory = new TextBox
             {
-                Location = new System.Drawing.Point(60, 200),
-                Size = new System.Drawing.Size(300, 23),
-                ReadOnly = true,
-                BackColor = System.Drawing.Color.LightYellow
+                Location = new System.Drawing.Point(60, 145),
+                Size = new System.Drawing.Size(220, 23),
+                ReadOnly = true
             };
 
             lblExportDirectoryPathDisplay = new Label
             {
                 Text = "",
-                Location = new System.Drawing.Point(60, 225),
-                Size = new System.Drawing.Size(300, 15),
+                Location = new System.Drawing.Point(60, 170),
+                Size = new System.Drawing.Size(220, 15),
                 Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, Label.DefaultFont.Size - 1, System.Drawing.FontStyle.Regular),
-                ForeColor = System.Drawing.Color.Red
+                ForeColor = System.Drawing.Color.Gray
             };
 
             btnBrowseExportDirectory = new Button
             {
                 Text = "Browse",
-                Location = new System.Drawing.Point(370, 199),
+                Location = new System.Drawing.Point(290, 144),
                 Size = new System.Drawing.Size(60, 25)
             };
 
@@ -2309,8 +2308,9 @@ BACKUP PROCESS:
             // Version 5 = 815c6ee (aggressive layout rebuild to override caching)
             // Version 6 = b36f597 (add explicit anchoring to prevent layout override)
             // Version 7 = c341da4 (remove anchoring, add title test, simplify layout)
-            // Version 8 = [current] (extreme positioning test - yellow export textbox, red text)
-            return "Version: 8";
+            // Version 8 = 92ccaa1 (extreme positioning test - yellow export textbox, red text)
+            // Version 9 = [current] (final layout - Export stacked below Source with proper spacing)
+            return "Version: 9";
         }
 
         private void BtnQueryTemplate_Click(object sender, EventArgs e)
