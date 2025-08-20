@@ -2300,9 +2300,10 @@ BACKUP PROCESS:
 
         private string GetGitCommitId()
         {
-            // Git commit ID - update this manually after each commit
-            // Current commit: git rev-parse --short HEAD
-            return "Git: [WILL_UPDATE_AFTER_COMMIT]";
+            // Version tracking - increment after each commit
+            // Version 1 = 17d13fa (original version tracking implementation)
+            // Version 2 = df5443a (simplified About dialog)
+            return "Version: 2";
         }
 
         private void BtnQueryTemplate_Click(object sender, EventArgs e)
