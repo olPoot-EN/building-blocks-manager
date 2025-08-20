@@ -1739,7 +1739,6 @@ namespace BuildingBlocksManager
             
             try
             {
-                // Use Invoke to run on UI thread
                 this.Invoke(new Action(() => {
                     if (startupCancellationTokenSource.Token.IsCancellationRequested) return;
                     
@@ -1787,7 +1786,6 @@ namespace BuildingBlocksManager
             
             try
             {
-                // Use Invoke to run on UI thread
                 this.Invoke(new Action(() => {
                     if (startupCancellationTokenSource.Token.IsCancellationRequested) return;
                     
@@ -1827,9 +1825,15 @@ namespace BuildingBlocksManager
                             }
                         }
                         
-                        // Galleries: All checked
+                        // Galleries: All checked EXCEPT "Placeholder" (if it exists)
                         var galleries = GetUniqueGalleries();
-                        selectedGalleries.AddRange(galleries);
+                        foreach (var gallery in galleries)
+                        {
+                            if (gallery != "Placeholder")
+                            {
+                                selectedGalleries.Add(gallery);
+                            }
+                        }
                         
                         // Templates: All checked
                         var templates = GetUniqueTemplates();
