@@ -85,9 +85,52 @@ namespace BuildingBlocksManager
 
         private void InitializeLogger()
         {
-            logger = new Logger(fullTemplatePath, fullSourceDirectoryPath, settings.LogToTemplateDirectory, settings.EnableDetailedLogging);
-            logger.CleanupOldLogs();
-            logger.Info("Building Blocks Manager started");
+            try
+            {
+                logger = new Logger(fullTemplatePath, fullSourceDirectoryPath, settings.LogToTemplateDirectory, settings.EnableDetailedLogging);
+                logger.CleanupOldLogs();
+                logger.Info("Building Blocks Manager started");
+            }
+            catch (Exception ex)
+            {
+                // If logger initialization fails completely, create a minimal fallback logger
+                try
+                {
+                    logger = new Logger(null, null, false, settings.EnableDetailedLogging);
+                    logger.Warning($"Logger initialization failed, using fallback location. Error: {ex.Message}");
+                }
+                catch
+                {
+                    // If even fallback fails, continue without logging
+                    logger = null;
+                }
+            }
+        }
+
+        // Safe logging methods that handle null logger
+        private void SafeLog(Action<Logger> logAction)
+        {
+            try
+            {
+                if (logger != null)
+                    logAction(logger);
+            }
+            catch
+            {
+                // Silently handle logging errors
+            }
+        }
+
+        private string GetLogDirectory()
+        {
+            try
+            {
+                return logger?.GetLogDirectory() ?? Path.GetTempPath();
+            }
+            catch
+            {
+                return Path.GetTempPath();
+            }
         }
 
         private void InitializeComponent()
@@ -817,7 +860,7 @@ namespace BuildingBlocksManager
             AppendResults($"Flat Import: {(chkFlatImport.Checked ? "Yes" : "No")}");
             AppendResults("");
             
-            logger.Info($"Starting Import All operation - Template: {fullTemplatePath}, Directory: {fullSourceDirectoryPath}");
+            SafeLog(l => l.Info($"Starting Import All operation - Template: {fullTemplatePath}, Directory: {fullSourceDirectoryPath}"));
 
             try
             {
@@ -833,7 +876,7 @@ namespace BuildingBlocksManager
                 }
 
                 // Analyze with ledger (use same directory as logger)
-                var ledger = new BuildingBlockLedger(logger.GetLogDirectory());
+                var ledger = new BuildingBlockLedger(GetLogDirectory());
                 var analysis = ledger.AnalyzeChanges(allFiles);
                 
                 AppendResults("Ledger analysis complete:");
@@ -929,7 +972,7 @@ namespace BuildingBlocksManager
                 AppendResults("");
 
                 // Start import session logging
-                logger.StartImportSession();
+                SafeLog(l => l.StartImportSession());
 
                 // Import each file
                 for (int i = 0; i < filesToImport.Count; i++)
@@ -1040,8 +1083,8 @@ namespace BuildingBlocksManager
             }
             
             // End import session logging
-            logger.EndImportSession(successCount);
-            logger.Info($"Import completed - Success: {successCount}, Errors: {errorCount}, Time: {processingTime:F1}s");
+            SafeLog(l => l.EndImportSession(successCount));
+            SafeLog(l => l.Info($"Import completed - Success: {successCount}, Errors: {errorCount}, Time: {processingTime:F1}s"));
             
             progressBar.Value = 0;
             UpdateStatus(errorCount == 0 ? "Import completed successfully" : $"Import completed with {errorCount} errors");
@@ -1085,7 +1128,7 @@ namespace BuildingBlocksManager
             try
             {
                 // Analyze selected files with ledger (use same directory as logger)
-                var ledger = new BuildingBlockLedger(logger.GetLogDirectory());
+                var ledger = new BuildingBlockLedger(GetLogDirectory());
                 var analysis = ledger.AnalyzeChanges(checkedFiles);
                 
                 AppendResults("Ledger analysis complete for selected files:");
@@ -1268,7 +1311,7 @@ namespace BuildingBlocksManager
                 wordManager = new WordManager(fullTemplatePath);
                 
                 // Initialize ledger for tracking exports
-                ledger = new BuildingBlockLedger(logger.GetLogDirectory());
+                ledger = new BuildingBlockLedger(GetLogDirectory());
                 
                 // Check if building blocks have been loaded (user must run Query Template first)
                 if (!EnsureTemplateQueried())
@@ -1416,7 +1459,7 @@ namespace BuildingBlocksManager
             AppendResults("Export Operation Completed");
             AppendResults($"Building Blocks Successfully Exported: {successCount}");
             AppendResults($"Files with Errors: {errorCount}");
-            AppendResults($"Logs saved to: {logger.GetLogDirectory()}");
+            AppendResults($"Logs saved to: {GetLogDirectory()}");
             AppendResults($"Directories Created: {directoriesCreated}");
             AppendResults($"Processing Time: {processingTime:F1} seconds");
             
@@ -1524,7 +1567,7 @@ namespace BuildingBlocksManager
                 wordManager = new WordManager(fullTemplatePath);
                 
                 // Initialize ledger for tracking exports
-                ledger = new BuildingBlockLedger(logger.GetLogDirectory());
+                ledger = new BuildingBlockLedger(GetLogDirectory());
 
                 // Start export session logging
                 logger.StartExportSession(exportPath);
@@ -1616,7 +1659,7 @@ namespace BuildingBlocksManager
             AppendResults("Export Selected Operation Completed");
             AppendResults($"Building Blocks Successfully Exported: {successCount}");
             AppendResults($"Files with Errors: {errorCount}");
-            AppendResults($"Logs saved to: {logger.GetLogDirectory()}");
+            AppendResults($"Logs saved to: {GetLogDirectory()}");
             AppendResults($"Directories Created: {directoriesCreated}");
             AppendResults($"Processing Time: {processingTime:F1} seconds");
             
@@ -2133,7 +2176,7 @@ namespace BuildingBlocksManager
         {
             try
             {
-                var logDirectory = logger.GetLogDirectory();
+                var logDirectory = GetLogDirectory();
                 
                 if (Directory.Exists(logDirectory))
                 {
@@ -2884,7 +2927,7 @@ BACKUP PROCESS:
                 progressBar.Value = 0;
                 
                 // Initialize ledger for tracking deletions
-                var ledger = new BuildingBlockLedger(logger.GetLogDirectory());
+                var ledger = new BuildingBlockLedger(GetLogDirectory());
                 
                 using (var wordManager = new WordManager(fullTemplatePath))
                 {

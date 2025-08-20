@@ -27,29 +27,37 @@ namespace BuildingBlocksManager
             this.templatePath = templatePath;
             this.sourceDirectoryPath = sourceDirectoryPath;
             
-            // Determine log directory based on settings
+            // Determine log directory based on settings with proper fallback handling
+            string primaryLogDirectory = null;
+            
             if (logToTemplateDirectory && !string.IsNullOrEmpty(templatePath) && File.Exists(templatePath))
             {
                 // Use template directory for logs
                 var templateDir = Path.GetDirectoryName(templatePath);
-                logDirectory = Path.Combine(templateDir, "BBM_Logs");
+                primaryLogDirectory = Path.Combine(templateDir, "BBM_Logs");
             }
             else if (!string.IsNullOrEmpty(sourceDirectoryPath) && Directory.Exists(sourceDirectoryPath))
             {
                 // Fall back to source directory
-                logDirectory = Path.Combine(sourceDirectoryPath, "BBM_Logs");
-            }
-            else
-            {
-                // Final fallback to user's local app data
-                logDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BuildingBlocksManager", "BBM_Logs");
+                primaryLogDirectory = Path.Combine(sourceDirectoryPath, "BBM_Logs");
             }
             
-            Directory.CreateDirectory(logDirectory);
+            // Try to create primary log directory, fall back to local app data if fails
+            logDirectory = TryCreateLogDirectory(primaryLogDirectory) ?? 
+                          TryCreateLogDirectory(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BuildingBlocksManager", "BBM_Logs")) ??
+                          Path.GetTempPath(); // Final fallback to temp directory
             
-            // Create session-specific subdirectory
+            // Create session-specific subdirectory with error handling
             sessionDirectory = Path.Combine(logDirectory, sessionId);
-            Directory.CreateDirectory(sessionDirectory);
+            try
+            {
+                Directory.CreateDirectory(sessionDirectory);
+            }
+            catch
+            {
+                // If session directory creation fails, use the log directory itself
+                sessionDirectory = logDirectory;
+            }
             
             // Define session-specific log files
             generalLogFile = Path.Combine(sessionDirectory, "general.log");
@@ -230,6 +238,38 @@ namespace BuildingBlocksManager
         public void EndSession()
         {
             WriteSessionMarker(generalLogFile, "SESSION END");
+        }
+
+        private string TryCreateLogDirectory(string directoryPath)
+        {
+            if (string.IsNullOrEmpty(directoryPath))
+                return null;
+                
+            try
+            {
+                Directory.CreateDirectory(directoryPath);
+                return directoryPath;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Access denied - return null to try fallback
+                return null;
+            }
+            catch (IOException)
+            {
+                // General IO issues - return null to try fallback
+                return null;
+            }
+            catch (NotSupportedException)
+            {
+                // Path format issues - return null to try fallback
+                return null;
+            }
+            catch
+            {
+                // Any other exception - return null to try fallback
+                return null;
+            }
         }
 
         public void CleanupOldLogs()
