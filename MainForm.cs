@@ -164,6 +164,12 @@ namespace BuildingBlocksManager
             importRulesMenuItem.Click += ImportRulesMenuItem_Click;
             helpMenu.DropDownItems.Add(importRulesMenuItem);
             
+            helpMenu.DropDownItems.Add(new ToolStripSeparator());
+            
+            var aboutMenuItem = new ToolStripMenuItem("About");
+            aboutMenuItem.Click += AboutMenuItem_Click;
+            helpMenu.DropDownItems.Add(aboutMenuItem);
+            
             menuStrip.Items.Add(fileMenu);
             menuStrip.Items.Add(helpMenu);
             
@@ -2281,6 +2287,52 @@ BACKUP PROCESS:
 
             MessageBox.Show(helpMessage, "Import/Export Rules", 
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void AboutMenuItem_Click(object sender, EventArgs e)
+        {
+            var gitCommitId = GetGitCommitId();
+            var aboutMessage = $@"Building Blocks Manager
+
+Version: {gitCommitId}
+Copyright © 2024
+
+This application manages Word Building Blocks by importing/exporting 
+autotext files between folders and Word template files.";
+
+            MessageBox.Show(aboutMessage, "About Building Blocks Manager", 
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private string GetGitCommitId()
+        {
+            try
+            {
+                var process = new System.Diagnostics.Process();
+                process.StartInfo.FileName = "git";
+                process.StartInfo.Arguments = "rev-parse --short HEAD";
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.RedirectStandardOutput = true;
+                process.StartInfo.CreateNoWindow = true;
+                process.StartInfo.WorkingDirectory = Application.StartupPath;
+                
+                process.Start();
+                string output = process.StandardOutput.ReadToEnd().Trim();
+                process.WaitForExit();
+                
+                if (process.ExitCode == 0 && !string.IsNullOrEmpty(output))
+                {
+                    return $"Git: {output}";
+                }
+                else
+                {
+                    return "Version: Unknown (not in git repository)";
+                }
+            }
+            catch (Exception)
+            {
+                return "Version: Unknown (git not available)";
+            }
         }
 
         private void BtnQueryTemplate_Click(object sender, EventArgs e)

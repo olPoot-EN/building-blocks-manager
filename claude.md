@@ -91,9 +91,16 @@ if (timeDifference.TotalMinutes > 1.0) // Only >1 minute = modified
 - Use descriptive commit messages explaining what was implemented
 - Git commands must be run from within the working directory: `cd "/Users/davidparry/claude_code/Autotext Import_Export Tool"`
 
+**Version Tracking**: 
+- **Help → About menu displays current git commit ID** for version verification during testing
+- When testing on Windows, check Help → About to confirm you're running the latest version
+- If git commit ID doesn't match expected version, rebuild the application from latest code
+- This helps identify when compiled version is outdated vs. source code changes
+
 **Visual Studio Git Issues**: VS sometimes doesn't sync properly with remote changes
 - Use command line git if VS Git is stuck
 - Delete and re-clone project folder if VS won't pull latest changes
+- **After pulling latest changes, always rebuild before testing** to ensure UI/logic changes take effect
 
 ## Common Development Pitfalls
 
