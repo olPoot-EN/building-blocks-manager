@@ -274,7 +274,7 @@ namespace BuildingBlocksManager
 
         public void CleanupOldLogs()
         {
-            // Clean up old session folders (older than 90 days)
+            // Keep only the 10 most recent session folders
             try
             {
                 if (Directory.Exists(logDirectory))
@@ -287,32 +287,41 @@ namespace BuildingBlocksManager
                                    folderName[4] == '-' && 
                                    folderName[7] == '-' && 
                                    folderName[10] == '_';
-                        });
+                        })
+                        .Select(dir => new DirectoryInfo(dir))
+                        .OrderByDescending(dir => dir.CreationTime)
+                        .ToList();
                     
-                    foreach (var sessionFolder in sessionFolders)
+                    // Keep only the 10 most recent, delete the rest
+                    var foldersToDelete = sessionFolders.Skip(10);
+                    
+                    foreach (var sessionFolder in foldersToDelete)
                     {
                         try
                         {
-                            var folderInfo = new DirectoryInfo(sessionFolder);
-                            
-                            // Delete session folders older than 90 days
-                            if (folderInfo.CreationTime < DateTime.Now.AddDays(-90))
+                            Directory.Delete(sessionFolder.FullName, true);
+                        }
+                        catch
+                        {
+                            // Silently handle errors with individual session folders
+                        }
+                    }
+                    
+                    // For the recent folders we're keeping, check if any individual log files are too large (over 10MB)
+                    var foldersToKeep = sessionFolders.Take(10);
+                    foreach (var sessionFolder in foldersToKeep)
+                    {
+                        try
+                        {
+                            var logFiles = Directory.GetFiles(sessionFolder.FullName, "*.log");
+                            foreach (var logFile in logFiles)
                             {
-                                Directory.Delete(sessionFolder, true);
-                            }
-                            else
-                            {
-                                // For recent folders, check if any individual log files are too large (over 10MB)
-                                var logFiles = Directory.GetFiles(sessionFolder, "*.log");
-                                foreach (var logFile in logFiles)
+                                var fileInfo = new FileInfo(logFile);
+                                if (fileInfo.Length > 10 * 1024 * 1024)
                                 {
-                                    var fileInfo = new FileInfo(logFile);
-                                    if (fileInfo.Length > 10 * 1024 * 1024)
-                                    {
-                                        // Archive very large log files within the session folder
-                                        var archiveName = Path.ChangeExtension(logFile, $".archive_{DateTime.Now:yyyyMMdd}.log");
-                                        File.Move(logFile, archiveName);
-                                    }
+                                    // Archive very large log files within the session folder
+                                    var archiveName = Path.ChangeExtension(logFile, $".archive_{DateTime.Now:yyyyMMdd}.log");
+                                    File.Move(logFile, archiveName);
                                 }
                             }
                         }

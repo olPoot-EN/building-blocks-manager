@@ -39,6 +39,7 @@ namespace BuildingBlocksManager
         private Label lblStatus;
         private Settings settings;
         private Logger logger;
+        private BuildingBlockLedger ledger;
         private System.Threading.CancellationTokenSource cancellationTokenSource;
         
         // Store the actual full paths since text boxes now show partial info
@@ -79,6 +80,9 @@ namespace BuildingBlocksManager
             // Initialize logger (will be reinitialized when source directory is selected)
             InitializeLogger();
             
+            // Initialize ledger and check status
+            InitializeLedger();
+            
             // Start automatic startup process if paths are valid
             this.Load += MainForm_Load;
         }
@@ -104,6 +108,37 @@ namespace BuildingBlocksManager
                     // If even fallback fails, continue without logging
                     logger = null;
                 }
+            }
+        }
+
+        private void InitializeLedger()
+        {
+            try
+            {
+                ledger = new BuildingBlockLedger();
+                
+                // Check if ledger file exists and warn if not
+                if (!ledger.LedgerFileExists())
+                {
+                    SafeLogWarning("Ledger file not found - change detection may not work properly until first import");
+                    
+                    // Show a non-blocking notification in the results area when form loads
+                    this.Shown += (s, e) => {
+                        AppendResults("NOTICE: Ledger file not found. All files will appear as 'New' until first import.");
+                        AppendResults($"Expected location: {ledger.GetLedgerDirectory()}\\building_blocks_ledger.txt");
+                        AppendResults("Use File → Ledger Status to see more details.");
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                SafeLogError($"Failed to initialize ledger: {ex.Message}");
+                
+                // Create a fallback notification
+                this.Shown += (s, e) => {
+                    AppendResults($"ERROR: Failed to initialize ledger system: {ex.Message}");
+                    AppendResults("Change detection may not work properly. Check File → Ledger Status for details.");
+                };
             }
         }
 
@@ -152,6 +187,10 @@ namespace BuildingBlocksManager
             var ledgerConfigMenuItem = new ToolStripMenuItem("Ledger Directory...");
             ledgerConfigMenuItem.Click += LedgerConfigMenuItem_Click;
             fileMenu.DropDownItems.Add(ledgerConfigMenuItem);
+            
+            var ledgerStatusMenuItem = new ToolStripMenuItem("Ledger Status...");
+            ledgerStatusMenuItem.Click += LedgerStatusMenuItem_Click;
+            fileMenu.DropDownItems.Add(ledgerStatusMenuItem);
             
             fileMenu.DropDownItems.Add(new ToolStripSeparator());
             
@@ -2252,6 +2291,35 @@ namespace BuildingBlocksManager
                     AppendResults($"Ledger directory set to: {settings.LedgerDirectory}");
                     AppendResults("New ledger directory will take effect for the next session.");
                 }
+            }
+        }
+
+        private void LedgerStatusMenuItem_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                var diagnosticInfo = ledger.GetDiagnosticInfo();
+                var currentLocation = ledger.GetLedgerDirectory();
+                var fileExists = ledger.LedgerFileExists();
+                
+                var statusMessage = $"LEDGER FILE STATUS\n\n";
+                statusMessage += $"Current ledger directory: {currentLocation}\n";
+                statusMessage += $"Ledger file exists: {(fileExists ? "Yes" : "No")}\n\n";
+                statusMessage += $"DIAGNOSTIC DETAILS:\n{diagnosticInfo}";
+                
+                if (!fileExists)
+                {
+                    statusMessage += "\n\nWARNING: Ledger file not found. This means:\n";
+                    statusMessage += "• All files will appear as 'New' until first import\n";
+                    statusMessage += "• Change detection will not work properly\n";
+                    statusMessage += "• Consider running an import to create the ledger\n";
+                }
+                
+                MessageBox.Show(statusMessage, "Ledger Status", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error checking ledger status: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
