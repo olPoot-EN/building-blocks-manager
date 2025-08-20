@@ -523,6 +523,10 @@ namespace BuildingBlocksManager
             });
 
             ResumeLayout(false);
+            
+            // Force layout update to ensure positioning changes take effect
+            this.PerformLayout();
+            this.Refresh();
         }
 
         private void UpdateTemplatePathDisplay(string fullPath)
@@ -2304,7 +2308,8 @@ BACKUP PROCESS:
             // Version 1 = 17d13fa (original version tracking implementation)
             // Version 2 = df5443a (simplified About dialog)
             // Version 3 = 4ce2d7f (simple version numbering system)
-            return "Version: 3";
+            // Version 4 = [current] (force layout refresh to fix GUI positioning)
+            return "Version: 4";
         }
 
         private void BtnQueryTemplate_Click(object sender, EventArgs e)
