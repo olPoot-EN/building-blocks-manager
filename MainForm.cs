@@ -912,7 +912,7 @@ namespace BuildingBlocksManager
                 }
 
                 // Analyze with ledger (use same directory as logger)
-                var ledger = new BuildingBlockLedger(GetLogDirectory());
+                var ledger = new BuildingBlockLedger();
                 var analysis = ledger.AnalyzeChanges(allFiles);
                 
                 AppendResults("Ledger analysis complete:");
@@ -1164,7 +1164,7 @@ namespace BuildingBlocksManager
             try
             {
                 // Analyze selected files with ledger (use same directory as logger)
-                var ledger = new BuildingBlockLedger(GetLogDirectory());
+                var ledger = new BuildingBlockLedger();
                 var analysis = ledger.AnalyzeChanges(checkedFiles);
                 
                 AppendResults("Ledger analysis complete for selected files:");
@@ -1358,7 +1358,7 @@ namespace BuildingBlocksManager
                 wordManager = new WordManager(fullTemplatePath);
                 
                 // Initialize ledger for tracking exports
-                ledger = new BuildingBlockLedger(GetLogDirectory());
+                ledger = new BuildingBlockLedger();
                 
                 // Check if building blocks have been loaded (user must run Query Template first)
                 if (!EnsureTemplateQueried())
@@ -1614,7 +1614,7 @@ namespace BuildingBlocksManager
                 wordManager = new WordManager(fullTemplatePath);
                 
                 // Initialize ledger for tracking exports
-                ledger = new BuildingBlockLedger(GetLogDirectory());
+                ledger = new BuildingBlockLedger();
 
                 // Start export session logging
                 logger.StartExportSession(exportPath);
@@ -1825,6 +1825,7 @@ namespace BuildingBlocksManager
                 AppendResults("=== AUTOMATIC STARTUP QUERIES ===");
                 AppendResults($"Template: {fullTemplatePath}");
                 AppendResults($"Directory: {fullSourceDirectoryPath}");
+                AppendResults($"Ledger: {ledger?.GetLedgerDirectory() ?? "Not initialized"}");
                 AppendResults("");
                 
                 // Run directory query first
@@ -2298,21 +2299,15 @@ namespace BuildingBlocksManager
         {
             try
             {
-                var diagnosticInfo = ledger.GetDiagnosticInfo();
-                var currentLocation = ledger.GetLedgerDirectory();
+                var ledgerInfo = ledger.GetLedgerInfo();
                 var fileExists = ledger.LedgerFileExists();
                 
-                var statusMessage = $"LEDGER FILE STATUS\n\n";
-                statusMessage += $"Current ledger directory: {currentLocation}\n";
-                statusMessage += $"Ledger file exists: {(fileExists ? "Yes" : "No")}\n\n";
-                statusMessage += $"DIAGNOSTIC DETAILS:\n{diagnosticInfo}";
+                var statusMessage = "LEDGER STATUS\n\n" + ledgerInfo;
                 
                 if (!fileExists)
                 {
-                    statusMessage += "\n\nWARNING: Ledger file not found. This means:\n";
-                    statusMessage += "• All files will appear as 'New' until first import\n";
-                    statusMessage += "• Change detection will not work properly\n";
-                    statusMessage += "• Consider running an import to create the ledger\n";
+                    statusMessage += "\n\nWARNING: Ledger file not found.\n";
+                    statusMessage += "All files will appear as 'New' until first import.";
                 }
                 
                 MessageBox.Show(statusMessage, "Ledger Status", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -3004,7 +2999,7 @@ BACKUP PROCESS:
                 progressBar.Value = 0;
                 
                 // Initialize ledger for tracking deletions
-                var ledger = new BuildingBlockLedger(GetLogDirectory());
+                var ledger = new BuildingBlockLedger();
                 
                 using (var wordManager = new WordManager(fullTemplatePath))
                 {

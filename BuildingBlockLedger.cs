@@ -61,57 +61,29 @@ namespace BuildingBlocksManager
             Load();
         }
 
-        public BuildingBlockLedger(string logDirectory)
-        {
-            // Use configured ledger directory, or fall back to log directory logic for compatibility
-            var configuredDir = GetConfiguredLedgerDirectory();
-            if (!string.IsNullOrEmpty(configuredDir))
-            {
-                ledgerDirectory = configuredDir;
-            }
-            else
-            {
-                // Extract the base log directory (remove session folder if present)
-                // Logger passes session-specific directory, but ledger should be at top level
-                if (logDirectory != null && Path.GetFileName(logDirectory).Contains("-"))
-                {
-                    // This looks like a session directory, get parent
-                    ledgerDirectory = Path.GetDirectoryName(logDirectory);
-                }
-                else
-                {
-                    // This is already the base log directory
-                    ledgerDirectory = logDirectory ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BuildingBlocksManager", "BBM_Logs");
-                }
-            }
-            
-            ledgerFile = Path.Combine(ledgerDirectory, "building_blocks_ledger.txt");
-            
-            ledgerEntries = new Dictionary<string, LedgerEntry>();
-            removedEntries = new Dictionary<string, LedgerEntry>();
-            Load();
-        }
 
         /// <summary>
-        /// Get the configured ledger directory from settings, or default location
+        /// Get the configured ledger directory from settings - NO FALLBACKS
         /// </summary>
         private string GetConfiguredLedgerDirectory()
         {
             try
             {
                 var settings = Settings.Load();
-                if (!string.IsNullOrEmpty(settings.LedgerDirectory) && Directory.Exists(settings.LedgerDirectory))
+                if (!string.IsNullOrEmpty(settings.LedgerDirectory))
                 {
                     return settings.LedgerDirectory;
                 }
             }
             catch
             {
-                // If settings can't be loaded, fall back to default
+                // If settings can't be loaded, use default
             }
             
-            // Default location
-            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BuildingBlocksManager", "BBM_Logs");
+            // Default location - create if it doesn't exist
+            var defaultPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BuildingBlocksManager", "BBM_Logs");
+            Directory.CreateDirectory(defaultPath);
+            return defaultPath;
         }
 
         /// <summary>
@@ -452,57 +424,11 @@ namespace BuildingBlocksManager
         }
 
         /// <summary>
-        /// Force reload the ledger and return diagnostic information
+        /// Get simple ledger information
         /// </summary>
-        public string GetDiagnosticInfo()
+        public string GetLedgerInfo()
         {
-            var info = new System.Text.StringBuilder();
-            info.AppendLine($"Current ledger file path: {ledgerFile}");
-            info.AppendLine($"File exists: {File.Exists(ledgerFile)}");
-            
-            // Check other possible locations
-            var localAppData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BuildingBlocksManager", "BBM_Logs", "building_blocks_ledger.txt");
-            info.AppendLine($"LocalAppData location exists: {File.Exists(localAppData)}");
-            
-            // Check if any building_blocks_ledger.txt files exist anywhere
-            var possibleDirs = new[]
-            {
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BuildingBlocksManager", "BBM_Logs"),
-                "BBM_Logs", // Current directory
-                @"C:\Kestrel\Templates\Office\Report automator testing\BBM_Logs", // From troubleshooting doc
-            };
-            
-            info.AppendLine("Checking common ledger locations:");
-            foreach (var dir in possibleDirs)
-            {
-                var ledgerPath = Path.Combine(dir, "building_blocks_ledger.txt");
-                info.AppendLine($"  {ledgerPath}: {File.Exists(ledgerPath)}");
-            }
-            
-            if (File.Exists(ledgerFile))
-            {
-                var lines = File.ReadAllLines(ledgerFile);
-                info.AppendLine($"File line count: {lines.Length}");
-                info.AppendLine("First 10 lines:");
-                for (int i = 0; i < Math.Min(10, lines.Length); i++)
-                {
-                    info.AppendLine($"  [{i}]: '{lines[i]}'");
-                }
-            }
-            
-            info.AppendLine($"Active entries in memory: {ledgerEntries.Count}");
-            info.AppendLine($"Removed entries in memory: {removedEntries.Count}");
-            
-            if (ledgerEntries.Count > 0)
-            {
-                info.AppendLine("Sample keys in memory:");
-                foreach (var key in ledgerEntries.Keys.Take(5))
-                {
-                    info.AppendLine($"  '{key}'");
-                }
-            }
-            
-            return info.ToString();
+            return $"Directory: {ledgerDirectory}\nFile: {(File.Exists(ledgerFile) ? "Exists" : "Not found")}\nActive entries: {ledgerEntries.Count}\nRemoved entries: {removedEntries.Count}";
         }
 
         /// <summary>

@@ -30,9 +30,7 @@ namespace BuildingBlocksManager
         public FileManager(string sourceDirectory, string logDirectory = null)
         {
             this.sourceDirectory = sourceDirectory;
-            this.ledger = string.IsNullOrEmpty(logDirectory) 
-                ? new BuildingBlockLedger() 
-                : new BuildingBlockLedger(logDirectory);
+            this.ledger = new BuildingBlockLedger();
         }
 
         public List<FileInfo> ScanDirectory()
