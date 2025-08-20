@@ -221,7 +221,8 @@ namespace BuildingBlocksManager
             {
                 Location = new System.Drawing.Point(60, 95),
                 Size = new System.Drawing.Size(220, 23),
-                ReadOnly = true
+                ReadOnly = true,
+                Anchor = AnchorStyles.Top | AnchorStyles.Left
             };
 
             lblSourceDirectoryPathDisplay = new Label
@@ -230,7 +231,8 @@ namespace BuildingBlocksManager
                 Location = new System.Drawing.Point(60, 120),
                 Size = new System.Drawing.Size(220, 15),
                 Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, Label.DefaultFont.Size - 1, System.Drawing.FontStyle.Regular),
-                ForeColor = System.Drawing.Color.Gray
+                ForeColor = System.Drawing.Color.Gray,
+                Anchor = AnchorStyles.Top | AnchorStyles.Left
             };
 
             btnBrowseDirectory = new Button
@@ -253,7 +255,8 @@ namespace BuildingBlocksManager
             {
                 Location = new System.Drawing.Point(60, 145),
                 Size = new System.Drawing.Size(220, 23),
-                ReadOnly = true
+                ReadOnly = true,
+                Anchor = AnchorStyles.Top | AnchorStyles.Left
             };
 
             lblExportDirectoryPathDisplay = new Label
@@ -262,7 +265,8 @@ namespace BuildingBlocksManager
                 Location = new System.Drawing.Point(60, 170),
                 Size = new System.Drawing.Size(220, 15),
                 Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, Label.DefaultFont.Size - 1, System.Drawing.FontStyle.Regular),
-                ForeColor = System.Drawing.Color.Gray
+                ForeColor = System.Drawing.Color.Gray,
+                Anchor = AnchorStyles.Top | AnchorStyles.Left
             };
 
             btnBrowseExportDirectory = new Button
@@ -2313,8 +2317,9 @@ BACKUP PROCESS:
             // Version 2 = df5443a (simplified About dialog)
             // Version 3 = 4ce2d7f (simple version numbering system)
             // Version 4 = 9894f4b (force layout refresh to fix GUI positioning)
-            // Version 5 = [current] (aggressive layout rebuild to override caching)
-            return "Version: 5";
+            // Version 5 = 815c6ee (aggressive layout rebuild to override caching)
+            // Version 6 = [current] (add explicit anchoring to prevent layout override)
+            return "Version: 6";
         }
 
         private void BtnQueryTemplate_Click(object sender, EventArgs e)
