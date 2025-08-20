@@ -1093,8 +1093,6 @@ namespace BuildingBlocksManager
                     
                     AppendResults($"Single file selected: {fileName}");
                     AppendResults($"File status: {status}");
-                    AppendResults($"DEBUG: NewFiles contains file: {analysis.NewFiles.Contains(file)}");
-                    AppendResults($"DEBUG: ModifiedFiles contains file: {analysis.ModifiedFiles.Contains(file)}");
                     
                     // Show user feedback with file status
                     var statusMessage = $"Selected file: {fileName}\nStatus: {status}";
@@ -1113,6 +1111,9 @@ namespace BuildingBlocksManager
                         {
                             AppendResults("Import cancelled - user chose not to import up-to-date file.");
                             UpdateStatus("Import cancelled");
+                            progressBar.Style = ProgressBarStyle.Continuous;
+                            progressBar.Value = 0;
+                            HideStopButton();
                             return;
                         }
                         AppendResults("User confirmed import of up-to-date file.");
