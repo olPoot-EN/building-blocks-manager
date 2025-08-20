@@ -361,7 +361,7 @@ namespace BuildingBlocksManager
             btnStop = new Button
             {
                 Text = "Stop",
-                Location = new System.Drawing.Point(450, 320),
+                Location = new System.Drawing.Point(450, 265),
                 Size = new System.Drawing.Size(80, 35),
                 Visible = false,
                 BackColor = System.Drawing.Color.LightCoral
@@ -371,8 +371,8 @@ namespace BuildingBlocksManager
             // Tab control section - Form width 600px - 40px margins = 560px max (25% reduction from 740)
             tabControl = new TabControl
             {
-                Location = new System.Drawing.Point(20, 380),
-                Size = new System.Drawing.Size(555, 220)
+                Location = new System.Drawing.Point(20, 305),
+                Size = new System.Drawing.Size(555, 295)
             };
 
             // Results tab
@@ -380,7 +380,7 @@ namespace BuildingBlocksManager
             txtResults = new TextBox
             {
                 Location = new System.Drawing.Point(3, 3),
-                Size = new System.Drawing.Size(540, 185), // 25% reduction from 725
+                Size = new System.Drawing.Size(540, 260), // Expanded height
                 Multiline = true,
                 ScrollBars = ScrollBars.Both, // Enable both horizontal and vertical scrollbars
                 ReadOnly = true,
@@ -394,7 +394,7 @@ namespace BuildingBlocksManager
             treeDirectory = new TreeView
             {
                 Location = new System.Drawing.Point(3, 3),
-                Size = new System.Drawing.Size(540, 185), // 25% reduction from 725
+                Size = new System.Drawing.Size(540, 260), // Expanded height
                 Scrollable = true,
                 HotTracking = true,
                 ShowLines = true,
@@ -448,7 +448,7 @@ namespace BuildingBlocksManager
             listViewTemplate = new ListView
             {
                 Location = new System.Drawing.Point(3, 35),
-                Size = new System.Drawing.Size(540, 150), // 25% reduction from 725
+                Size = new System.Drawing.Size(540, 225), // Expanded height
                 View = View.Details,
                 FullRowSelect = true,
                 GridLines = true,

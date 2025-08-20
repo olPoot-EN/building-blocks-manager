@@ -92,10 +92,10 @@ if (timeDifference.TotalMinutes > 1.0) // Only >1 minute = modified
 - Git commands must be run from within the working directory: `cd "/Users/davidparry/claude_code/Autotext Import_Export Tool"`
 
 **Version Tracking**: 
-- **Help → About menu displays version number** for version verification during testing
-- **Increment version number after each commit** in GetGitCommitId() method in MainForm.cs
-- When testing on Windows, check Help → About to confirm you're running the latest version
-- Version number correlates to git commit ID (documented in code comments)
+- **Title bar displays version number** for version verification during testing
+- **Increment version number after each commit** in window title (MainForm constructor)
+- When testing on Windows, check title bar to confirm you're running the latest version
+- Version number correlates to git commit ID (documented in git commit messages)
 - This helps identify when compiled version is outdated vs. source code changes
 
 **Visual Studio Git Issues**: VS sometimes doesn't sync properly with remote changes
