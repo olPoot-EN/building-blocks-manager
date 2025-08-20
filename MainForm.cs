@@ -524,8 +524,12 @@ namespace BuildingBlocksManager
 
             ResumeLayout(false);
             
-            // Force layout update to ensure positioning changes take effect
+            // Force complete layout rebuild to override any cached positioning
+            this.SuspendLayout();
             this.PerformLayout();
+            this.ResumeLayout(true);
+            this.Invalidate(true);
+            this.Update();
             this.Refresh();
         }
 
@@ -2308,8 +2312,9 @@ BACKUP PROCESS:
             // Version 1 = 17d13fa (original version tracking implementation)
             // Version 2 = df5443a (simplified About dialog)
             // Version 3 = 4ce2d7f (simple version numbering system)
-            // Version 4 = [current] (force layout refresh to fix GUI positioning)
-            return "Version: 4";
+            // Version 4 = 9894f4b (force layout refresh to fix GUI positioning)
+            // Version 5 = [current] (aggressive layout rebuild to override caching)
+            return "Version: 5";
         }
 
         private void BtnQueryTemplate_Click(object sender, EventArgs e)
