@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace BuildingBlocksManager
@@ -56,8 +54,6 @@ namespace BuildingBlocksManager
         private int sortColumn = -1;
         private SortOrder sortOrder = SortOrder.None;
         private System.Collections.Generic.List<string> conflictedFiles = new System.Collections.Generic.List<string>();
-        private System.Threading.CancellationTokenSource startupCancellationTokenSource;
-        private bool isStartupProcessRunning = false;
 
         public MainForm()
         {
@@ -1635,12 +1631,12 @@ namespace BuildingBlocksManager
             }
         }
 
-        private async void MainForm_Load(object sender, EventArgs e)
+        private void MainForm_Load(object sender, EventArgs e)
         {
             // Check if we have valid paths from settings to auto-run queries
             if (ShouldRunStartupQueries())
             {
-                await RunStartupQueries();
+                RunStartupQueries();
             }
         }
 
@@ -1653,58 +1649,29 @@ namespace BuildingBlocksManager
             return hasValidTemplate && hasValidDirectory;
         }
 
-        private async Task RunStartupQueries()
+        private void RunStartupQueries()
         {
-            isStartupProcessRunning = true;
-            startupCancellationTokenSource = new System.Threading.CancellationTokenSource();
-            
             try
             {
                 // Show startup indicator
-                var originalStatus = "Ready";
-                var startupMessage = "Running startup queries... (Press ESC to cancel)";
-                UpdateStatus(startupMessage);
+                UpdateStatus("Running startup queries...");
                 progressBar.Style = ProgressBarStyle.Marquee;
-                
-                // Add key handler for cancellation
-                this.KeyPreview = true;
-                this.KeyDown += OnStartupKeyDown;
                 
                 AppendResults("=== AUTOMATIC STARTUP QUERIES ===");
                 AppendResults($"Template: {fullTemplatePath}");
                 AppendResults($"Directory: {fullSourceDirectoryPath}");
-                AppendResults("Press ESC to cancel startup queries.");
                 AppendResults("");
                 
                 // Run directory query first
-                if (!startupCancellationTokenSource.Token.IsCancellationRequested)
-                {
-                    UpdateStatus("Startup: Querying directory... (Press ESC to cancel)");
-                    await Task.Run(() => RunDirectoryQueryInternal(), startupCancellationTokenSource.Token);
-                }
+                UpdateStatus("Startup: Querying directory...");
+                RunDirectoryQueryInternal();
                 
                 // Run template query second
-                if (!startupCancellationTokenSource.Token.IsCancellationRequested)
-                {
-                    UpdateStatus("Startup: Querying template... (Press ESC to cancel)");
-                    await Task.Run(() => RunTemplateQueryInternal(), startupCancellationTokenSource.Token);
-                }
+                UpdateStatus("Startup: Querying template...");
+                RunTemplateQueryInternal();
                 
-                if (startupCancellationTokenSource.Token.IsCancellationRequested)
-                {
-                    AppendResults("Startup queries cancelled by user.");
-                    UpdateStatus("Startup cancelled");
-                }
-                else
-                {
-                    AppendResults("Startup queries completed successfully.");
-                    UpdateStatus("Startup queries completed");
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                AppendResults("Startup queries cancelled.");
-                UpdateStatus("Startup cancelled");
+                AppendResults("Startup queries completed successfully.");
+                UpdateStatus("Startup queries completed");
             }
             catch (Exception ex)
             {
@@ -1716,145 +1683,106 @@ namespace BuildingBlocksManager
                 // Clean up
                 progressBar.Style = ProgressBarStyle.Continuous;
                 progressBar.Value = 0;
-                this.KeyDown -= OnStartupKeyDown;
-                this.KeyPreview = false;
-                isStartupProcessRunning = false;
-                startupCancellationTokenSource?.Dispose();
-                startupCancellationTokenSource = null;
             }
         }
 
-        private void OnStartupKeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.KeyCode == Keys.Escape && isStartupProcessRunning)
-            {
-                startupCancellationTokenSource?.Cancel();
-                e.Handled = true;
-            }
-        }
 
         private void RunDirectoryQueryInternal()
         {
-            if (startupCancellationTokenSource.Token.IsCancellationRequested) return;
-            
             try
             {
-                this.Invoke(new Action(() => {
-                    if (startupCancellationTokenSource.Token.IsCancellationRequested) return;
-                    
-                    AppendResults("=== DIRECTORY QUERY (STARTUP) ===");
-                    AppendResults($"Scanning directory: {fullSourceDirectoryPath}");
-                    
-                    var fileManager = new FileManager(fullSourceDirectoryPath);
-                    var summary = fileManager.GetSummary();
-                    
-                    AppendResults("");
-                    AppendResults(summary);
-                    
-                    if (startupCancellationTokenSource.Token.IsCancellationRequested) return;
-                    
-                    var files = fileManager.ScanDirectory();
-                    
-                    // Analyze changes using ledger comparison with tolerance
-                    var ledger = new BuildingBlockLedger();
-                    var analysis = ledger.AnalyzeChanges(files);
-                    
-                    AppendResults("");
-                    AppendResults("=== CHANGE ANALYSIS ===");
-                    AppendResults(analysis.GetSummary());
-                    
-                    if (startupCancellationTokenSource.Token.IsCancellationRequested) return;
-                    
-                    // Populate Directory tab tree view using analysis results
-                    PopulateDirectoryTree(files, analysis);
-                    
-                    AppendResults("");
-                    AppendResults($"Directory tree populated with {files.Count} files.");
-                }));
+                AppendResults("=== DIRECTORY QUERY (STARTUP) ===");
+                AppendResults($"Scanning directory: {fullSourceDirectoryPath}");
+                
+                var fileManager = new FileManager(fullSourceDirectoryPath);
+                var summary = fileManager.GetSummary();
+                
+                AppendResults("");
+                AppendResults(summary);
+                
+                var files = fileManager.ScanDirectory();
+                
+                // Analyze changes using ledger comparison with tolerance
+                var ledger = new BuildingBlockLedger();
+                var analysis = ledger.AnalyzeChanges(files);
+                
+                AppendResults("");
+                AppendResults("=== CHANGE ANALYSIS ===");
+                AppendResults(analysis.GetSummary());
+                
+                // Populate Directory tab tree view using analysis results
+                PopulateDirectoryTree(files, analysis);
+                
+                AppendResults("");
+                AppendResults($"Directory tree populated with {files.Count} files.");
             }
-            catch (Exception ex) when (!(ex is OperationCanceledException))
+            catch (Exception ex)
             {
-                this.Invoke(new Action(() => {
-                    AppendResults($"Error during startup directory scan: {ex.Message}");
-                }));
+                AppendResults($"Error during startup directory scan: {ex.Message}");
             }
         }
 
         private void RunTemplateQueryInternal()
         {
-            if (startupCancellationTokenSource.Token.IsCancellationRequested) return;
-            
             try
             {
-                this.Invoke(new Action(() => {
-                    if (startupCancellationTokenSource.Token.IsCancellationRequested) return;
+                AppendResults("=== TEMPLATE QUERY (STARTUP) ===");
+                AppendResults($"Loading Building Blocks from: {fullTemplatePath}");
+                
+                // Check if template file is locked and handle it
+                if (!HandleTemplateFileLock(fullTemplatePath, "Startup Template Query"))
+                {
+                    AppendResults("Template query skipped - file is locked.");
+                    return;
+                }
+                
+                using (var wordManager = new WordManager(fullTemplatePath))
+                {
+                    var buildingBlocks = wordManager.GetBuildingBlocks();
                     
-                    AppendResults("=== TEMPLATE QUERY (STARTUP) ===");
-                    AppendResults($"Loading Building Blocks from: {fullTemplatePath}");
+                    // Store all building blocks for filtering
+                    allBuildingBlocks = buildingBlocks;
                     
-                    // Check if template file is locked and handle it
-                    if (!HandleTemplateFileLock(fullTemplatePath, "Startup Template Query"))
+                    // Reset filters when loading new template and apply defaults
+                    selectedCategories.Clear();
+                    selectedGalleries.Clear();
+                    selectedTemplates.Clear();
+                    
+                    // Categories: All checked EXCEPT "System/Hex Entries" (if it exists)
+                    var categories = GetUniqueCategories();
+                    foreach (var category in categories)
                     {
-                        AppendResults("Template query skipped - file is locked.");
-                        return;
+                        if (category != "System/Hex Entries")
+                        {
+                            selectedCategories.Add(category);
+                        }
                     }
                     
-                    if (startupCancellationTokenSource.Token.IsCancellationRequested) return;
-                    
-                    using (var wordManager = new WordManager(fullTemplatePath))
+                    // Galleries: All checked EXCEPT "Placeholder" (if it exists)
+                    var galleries = GetUniqueGalleries();
+                    foreach (var gallery in galleries)
                     {
-                        var buildingBlocks = wordManager.GetBuildingBlocks();
-                        
-                        // Store all building blocks for filtering
-                        allBuildingBlocks = buildingBlocks;
-                        
-                        // Reset filters when loading new template and apply defaults
-                        selectedCategories.Clear();
-                        selectedGalleries.Clear();
-                        selectedTemplates.Clear();
-                        
-                        if (startupCancellationTokenSource.Token.IsCancellationRequested) return;
-                        
-                        // Categories: All checked EXCEPT "System/Hex Entries" (if it exists)
-                        var categories = GetUniqueCategories();
-                        foreach (var category in categories)
+                        if (gallery != "Placeholder")
                         {
-                            if (category != "System/Hex Entries")
-                            {
-                                selectedCategories.Add(category);
-                            }
+                            selectedGalleries.Add(gallery);
                         }
-                        
-                        // Galleries: All checked EXCEPT "Placeholder" (if it exists)
-                        var galleries = GetUniqueGalleries();
-                        foreach (var gallery in galleries)
-                        {
-                            if (gallery != "Placeholder")
-                            {
-                                selectedGalleries.Add(gallery);
-                            }
-                        }
-                        
-                        // Templates: All checked
-                        var templates = GetUniqueTemplates();
-                        selectedTemplates.AddRange(templates);
-                        
-                        if (startupCancellationTokenSource.Token.IsCancellationRequested) return;
-                        
-                        // Update filter button text and apply template filter
-                        UpdateFilterButtonText();
-                        ApplyTemplateFilter();
-                        
-                        AppendResults("");
-                        AppendResults($"Template loaded with {buildingBlocks.Count} Building Blocks.");
                     }
-                }));
+                    
+                    // Templates: All checked
+                    var templates = GetUniqueTemplates();
+                    selectedTemplates.AddRange(templates);
+                    
+                    // Update filter button text and apply template filter
+                    UpdateFilterButtonText();
+                    ApplyTemplateFilter();
+                    
+                    AppendResults("");
+                    AppendResults($"Template loaded with {buildingBlocks.Count} Building Blocks.");
+                }
             }
-            catch (Exception ex) when (!(ex is OperationCanceledException))
+            catch (Exception ex)
             {
-                this.Invoke(new Action(() => {
-                    AppendResults($"Error during startup template query: {ex.Message}");
-                }));
+                AppendResults($"Error during startup template query: {ex.Message}");
             }
         }
 
