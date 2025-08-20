@@ -2292,47 +2292,17 @@ BACKUP PROCESS:
         private void AboutMenuItem_Click(object sender, EventArgs e)
         {
             var gitCommitId = GetGitCommitId();
-            var aboutMessage = $@"Building Blocks Manager
+            var aboutMessage = $"Building Blocks Manager\n\n{gitCommitId}";
 
-Version: {gitCommitId}
-Copyright © 2024
-
-This application manages Word Building Blocks by importing/exporting 
-autotext files between folders and Word template files.";
-
-            MessageBox.Show(aboutMessage, "About Building Blocks Manager", 
+            MessageBox.Show(aboutMessage, "Version", 
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private string GetGitCommitId()
         {
-            try
-            {
-                var process = new System.Diagnostics.Process();
-                process.StartInfo.FileName = "git";
-                process.StartInfo.Arguments = "rev-parse --short HEAD";
-                process.StartInfo.UseShellExecute = false;
-                process.StartInfo.RedirectStandardOutput = true;
-                process.StartInfo.CreateNoWindow = true;
-                process.StartInfo.WorkingDirectory = Application.StartupPath;
-                
-                process.Start();
-                string output = process.StandardOutput.ReadToEnd().Trim();
-                process.WaitForExit();
-                
-                if (process.ExitCode == 0 && !string.IsNullOrEmpty(output))
-                {
-                    return $"Git: {output}";
-                }
-                else
-                {
-                    return "Version: Unknown (not in git repository)";
-                }
-            }
-            catch (Exception)
-            {
-                return "Version: Unknown (git not available)";
-            }
+            // Git commit ID - update this manually after each commit
+            // Current commit: git rev-parse --short HEAD
+            return "Git: [WILL_UPDATE_AFTER_COMMIT]";
         }
 
         private void BtnQueryTemplate_Click(object sender, EventArgs e)
