@@ -2303,7 +2303,8 @@ BACKUP PROCESS:
             // Version tracking - increment after each commit
             // Version 1 = 17d13fa (original version tracking implementation)
             // Version 2 = df5443a (simplified About dialog)
-            return "Version: 2";
+            // Version 3 = 4ce2d7f (simple version numbering system)
+            return "Version: 3";
         }
 
         private void BtnQueryTemplate_Click(object sender, EventArgs e)
