@@ -648,19 +648,25 @@ namespace BuildingBlocksManager
 
         private void BtnBrowseDirectory_Click(object sender, EventArgs e)
         {
-            using (var dialog = new FolderBrowserDialog())
+            using (var dialog = new OpenFileDialog())
             {
-                dialog.Description = "Select Source Directory";
-                dialog.ShowNewFolderButton = false;
-                dialog.RootFolder = Environment.SpecialFolder.MyComputer;
+                dialog.Title = "Select Source Directory";
+                dialog.CheckFileExists = false;
+                dialog.CheckPathExists = true;
+                dialog.ValidateNames = false;
+                dialog.FileName = "Select Folder";
+                dialog.Filter = "Folders|\n";
+                dialog.FilterIndex = 1;
+                dialog.RestoreDirectory = true;
                 
                 var startDir = GetValidStartDirectory(fullSourceDirectoryPath);
-                dialog.SelectedPath = startDir;
+                dialog.InitialDirectory = startDir;
                 
                 if (dialog.ShowDialog() == DialogResult.OK)
                 {
-                    UpdateSourceDirectoryDisplay(dialog.SelectedPath);
-                    UpdateStatus("Source directory selected: " + dialog.SelectedPath);
+                    string selectedPath = Path.GetDirectoryName(dialog.FileName);
+                    UpdateSourceDirectoryDisplay(selectedPath);
+                    UpdateStatus("Source directory selected: " + selectedPath);
                     SaveSettings();
                 }
             }
@@ -668,19 +674,25 @@ namespace BuildingBlocksManager
 
         private void BtnBrowseExportDirectory_Click(object sender, EventArgs e)
         {
-            using (var dialog = new FolderBrowserDialog())
+            using (var dialog = new OpenFileDialog())
             {
-                dialog.Description = "Select Export Directory";
-                dialog.ShowNewFolderButton = true;
-                dialog.RootFolder = Environment.SpecialFolder.MyComputer;
+                dialog.Title = "Select Export Directory";
+                dialog.CheckFileExists = false;
+                dialog.CheckPathExists = true;
+                dialog.ValidateNames = false;
+                dialog.FileName = "Select Folder";
+                dialog.Filter = "Folders|\n";
+                dialog.FilterIndex = 1;
+                dialog.RestoreDirectory = true;
                 
                 var startDir = GetValidStartDirectory(fullExportDirectoryPath);
-                dialog.SelectedPath = startDir;
+                dialog.InitialDirectory = startDir;
                 
                 if (dialog.ShowDialog() == DialogResult.OK)
                 {
-                    UpdateExportDirectoryDisplay(dialog.SelectedPath);
-                    UpdateStatus("Export directory selected: " + dialog.SelectedPath);
+                    string selectedPath = Path.GetDirectoryName(dialog.FileName);
+                    UpdateExportDirectoryDisplay(selectedPath);
+                    UpdateStatus("Export directory selected: " + selectedPath);
                     SaveSettings();
                 }
             }
@@ -1197,22 +1209,28 @@ namespace BuildingBlocksManager
             }
             else
             {
-                using (var dialog = new FolderBrowserDialog())
+                using (var dialog = new OpenFileDialog())
                 {
                     if (chkFlatExport.Checked)
                     {
-                        dialog.Description = "Select Export Folder (Flat Structure - All files in one folder)";
+                        dialog.Title = "Select Export Folder (Flat Structure - All files in one folder)";
                     }
                     else
                     {
-                        dialog.Description = "Select Export Folder (Hierarchical Structure - Files organized in category folders)";
+                        dialog.Title = "Select Export Folder (Hierarchical Structure - Files organized in category folders)";
                     }
                     
-                    dialog.ShowNewFolderButton = true;
-                    dialog.SelectedPath = !string.IsNullOrEmpty(fullExportDirectoryPath) ? fullExportDirectoryPath : fullSourceDirectoryPath;
+                    dialog.CheckFileExists = false;
+                    dialog.CheckPathExists = true;
+                    dialog.ValidateNames = false;
+                    dialog.FileName = "Select Folder";
+                    dialog.Filter = "Folders|\n";
+                    dialog.FilterIndex = 1;
+                    dialog.RestoreDirectory = true;
+                    dialog.InitialDirectory = !string.IsNullOrEmpty(fullExportDirectoryPath) ? fullExportDirectoryPath : fullSourceDirectoryPath;
                     
                     if (dialog.ShowDialog() != DialogResult.OK) return;
-                    exportPath = dialog.SelectedPath;
+                    exportPath = Path.GetDirectoryName(dialog.FileName);
                 }
             }
 
@@ -1452,22 +1470,28 @@ namespace BuildingBlocksManager
             }
             else
             {
-                using (var dialog = new FolderBrowserDialog())
+                using (var dialog = new OpenFileDialog())
                 {
                     if (chkFlatExport.Checked)
                     {
-                        dialog.Description = "Select Export Folder (Flat Structure - All files in one folder)";
+                        dialog.Title = "Select Export Folder (Flat Structure - All files in one folder)";
                     }
                     else
                     {
-                        dialog.Description = "Select Export Folder (Hierarchical Structure - Files organized in category folders)";
+                        dialog.Title = "Select Export Folder (Hierarchical Structure - Files organized in category folders)";
                     }
                     
-                    dialog.ShowNewFolderButton = true;
-                    dialog.SelectedPath = !string.IsNullOrEmpty(fullExportDirectoryPath) ? fullExportDirectoryPath : fullSourceDirectoryPath;
+                    dialog.CheckFileExists = false;
+                    dialog.CheckPathExists = true;
+                    dialog.ValidateNames = false;
+                    dialog.FileName = "Select Folder";
+                    dialog.Filter = "Folders|\n";
+                    dialog.FilterIndex = 1;
+                    dialog.RestoreDirectory = true;
+                    dialog.InitialDirectory = !string.IsNullOrEmpty(fullExportDirectoryPath) ? fullExportDirectoryPath : fullSourceDirectoryPath;
                     
                     if (dialog.ShowDialog() != DialogResult.OK) return;
-                    exportPath = dialog.SelectedPath;
+                    exportPath = Path.GetDirectoryName(dialog.FileName);
                 }
             }
 
@@ -2153,19 +2177,26 @@ namespace BuildingBlocksManager
 
         private void LedgerConfigMenuItem_Click(object sender, EventArgs e)
         {
-            using (var folderDialog = new FolderBrowserDialog())
+            using (var folderDialog = new OpenFileDialog())
             {
-                folderDialog.Description = "Select directory for Building Block ledger file";
-                folderDialog.ShowNewFolderButton = true;
+                folderDialog.Title = "Select directory for Building Block ledger file";
+                folderDialog.CheckFileExists = false;
+                folderDialog.CheckPathExists = true;
+                folderDialog.ValidateNames = false;
+                folderDialog.FileName = "Select Folder";
+                folderDialog.Filter = "Folders|\n";
+                folderDialog.FilterIndex = 1;
+                folderDialog.RestoreDirectory = true;
                 
                 if (!string.IsNullOrEmpty(settings.LedgerDirectory))
                 {
-                    folderDialog.SelectedPath = settings.LedgerDirectory;
+                    folderDialog.InitialDirectory = settings.LedgerDirectory;
                 }
                 
                 if (folderDialog.ShowDialog() == DialogResult.OK)
                 {
-                    settings.LedgerDirectory = folderDialog.SelectedPath;
+                    string selectedPath = Path.GetDirectoryName(folderDialog.FileName);
+                    settings.LedgerDirectory = selectedPath;
                     settings.Save();
                     AppendResults($"Ledger directory set to: {settings.LedgerDirectory}");
                     AppendResults("New ledger directory will take effect for the next session.");
