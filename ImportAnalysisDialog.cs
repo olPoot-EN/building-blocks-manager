@@ -182,7 +182,16 @@ namespace BuildingBlocksManager
             {
                 btnImportChanged.Text = $"Import Only Changed ({analysis.TotalChangedFiles} files)";
             }
-            btnImportAll.Text = $"Import All ({analysis.TotalFiles} files)";
+            
+            // Make the "Import All" button text clearer for selected file operations
+            if (originalRequestType.Contains("Selected"))
+            {
+                btnImportAll.Text = $"Import All Selected ({analysis.TotalFiles} files)";
+            }
+            else
+            {
+                btnImportAll.Text = $"Import All ({analysis.TotalFiles} files)";
+            }
         }
 
         private void BtnImportChanged_Click(object sender, EventArgs e)

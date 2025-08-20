@@ -1080,50 +1080,66 @@ namespace BuildingBlocksManager
                 AppendResults(analysis.GetSummary());
                 AppendResults("");
 
-                // Show analysis dialog to user
-                progressBar.Style = ProgressBarStyle.Continuous;
-                progressBar.Value = 0;
-                
-                using (var analysisDialog = new ImportAnalysisDialog(analysis, "Import Selected"))
+                List<FileManager.FileInfo> filesToImport;
+                string operationDescription;
+
+                // For single file selections, skip the analysis dialog and import directly
+                if (checkedFiles.Count == 1)
                 {
-                    var dialogResult = analysisDialog.ShowDialog();
+                    filesToImport = checkedFiles;
+                    operationDescription = "Import Selected File";
+                    AppendResults($"Importing single selected file: {Path.GetFileName(checkedFiles[0].FilePath)}");
                     
-                    if (dialogResult != DialogResult.OK || analysisDialog.Choice == ImportAnalysisDialog.UserChoice.Cancel)
-                    {
-                        AppendResults("Import operation cancelled by user.");
-                        UpdateStatus("Import cancelled");
-                        return;
-                    }
-
-                    // Determine which files to import based on user choice
-                    List<FileManager.FileInfo> filesToImport;
-                    string operationDescription;
-                    
-                    if (analysisDialog.Choice == ImportAnalysisDialog.UserChoice.ImportOnlyChanged)
-                    {
-                        filesToImport = analysis.NewFiles.Concat(analysis.ModifiedFiles).ToList();
-                        operationDescription = "Import Only Changed Selected Files";
-                        AppendResults($"User chose to import only changed files ({filesToImport.Count} of {checkedFiles.Count} selected files)");
-                    }
-                    else // ImportAllAsRequested
-                    {
-                        filesToImport = checkedFiles;
-                        operationDescription = "Import All Selected Files As Requested";
-                        AppendResults($"User chose to import all selected files as requested ({filesToImport.Count} files)");
-                    }
-
-                    if (filesToImport.Count == 0)
-                    {
-                        AppendResults("No files to import based on selection.");
-                        UpdateStatus("No files to import");
-                        return;
-                    }
-
-                    // Proceed with import
-                    AppendResults("");
-                    AppendResults($"=== {operationDescription.ToUpper()} ===");
-                    ExecuteImport(filesToImport, flatCategory, ledger);
+                    // Show brief status about the file
+                    var file = checkedFiles[0];
+                    var status = analysis.NewFiles.Contains(file) ? "New" : 
+                                analysis.ModifiedFiles.Contains(file) ? "Modified" : "Up-to-date";
+                    AppendResults($"File status: {status}");
                 }
+                else
+                {
+                    // For multiple files, show analysis dialog to let user choose
+                    progressBar.Style = ProgressBarStyle.Continuous;
+                    progressBar.Value = 0;
+                    
+                    using (var analysisDialog = new ImportAnalysisDialog(analysis, "Import Selected Files"))
+                    {
+                        var dialogResult = analysisDialog.ShowDialog();
+                        
+                        if (dialogResult != DialogResult.OK || analysisDialog.Choice == ImportAnalysisDialog.UserChoice.Cancel)
+                        {
+                            AppendResults("Import operation cancelled by user.");
+                            UpdateStatus("Import cancelled");
+                            return;
+                        }
+
+                        // Determine which files to import based on user choice
+                        if (analysisDialog.Choice == ImportAnalysisDialog.UserChoice.ImportOnlyChanged)
+                        {
+                            filesToImport = analysis.NewFiles.Concat(analysis.ModifiedFiles).ToList();
+                            operationDescription = "Import Only Changed Selected Files";
+                            AppendResults($"User chose to import only changed files ({filesToImport.Count} of {checkedFiles.Count} selected files)");
+                        }
+                        else // ImportAllAsRequested
+                        {
+                            filesToImport = checkedFiles;
+                            operationDescription = "Import All Selected Files As Requested";
+                            AppendResults($"User chose to import all selected files as requested ({filesToImport.Count} files)");
+                        }
+
+                        if (filesToImport.Count == 0)
+                        {
+                            AppendResults("No files to import based on selection.");
+                            UpdateStatus("No files to import");
+                            return;
+                        }
+                    }
+                }
+
+                // Proceed with import
+                AppendResults("");
+                AppendResults($"=== {operationDescription.ToUpper()} ===");
+                ExecuteImport(filesToImport, flatCategory, ledger);
             }
             catch (Exception ex)
             {
