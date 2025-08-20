@@ -58,7 +58,7 @@ namespace BuildingBlocksManager
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "Building Blocks Manager";
+            this.Text = "Building Blocks Manager - Version 12";
             this.Size = new System.Drawing.Size(600, 650);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = new System.Drawing.Size(450, 500);
@@ -164,12 +164,6 @@ namespace BuildingBlocksManager
             importRulesMenuItem.Click += ImportRulesMenuItem_Click;
             helpMenu.DropDownItems.Add(importRulesMenuItem);
             
-            helpMenu.DropDownItems.Add(new ToolStripSeparator());
-            
-            var aboutMenuItem = new ToolStripMenuItem("About");
-            aboutMenuItem.Click += AboutMenuItem_Click;
-            helpMenu.DropDownItems.Add(aboutMenuItem);
-            
             menuStrip.Items.Add(fileMenu);
             menuStrip.Items.Add(helpMenu);
             
@@ -196,7 +190,7 @@ namespace BuildingBlocksManager
             {
                 Text = "",
                 Location = new System.Drawing.Point(100, 70),
-                Size = new System.Drawing.Size(280, 15),
+                Size = new System.Drawing.Size(500, 15),
                 Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, Label.DefaultFont.Size - 1, System.Drawing.FontStyle.Regular),
                 ForeColor = System.Drawing.Color.Gray
             };
@@ -228,7 +222,7 @@ namespace BuildingBlocksManager
             {
                 Text = "",
                 Location = new System.Drawing.Point(60, 120),
-                Size = new System.Drawing.Size(400, 15),
+                Size = new System.Drawing.Size(500, 15),
                 Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, Label.DefaultFont.Size - 1, System.Drawing.FontStyle.Regular),
                 ForeColor = System.Drawing.Color.Gray
             };
@@ -260,7 +254,7 @@ namespace BuildingBlocksManager
             {
                 Text = "",
                 Location = new System.Drawing.Point(60, 170),
-                Size = new System.Drawing.Size(400, 15),
+                Size = new System.Drawing.Size(500, 15),
                 Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, Label.DefaultFont.Size - 1, System.Drawing.FontStyle.Regular),
                 ForeColor = System.Drawing.Color.Gray
             };
@@ -276,21 +270,21 @@ namespace BuildingBlocksManager
             var lblStructure = new Label
             {
                 Text = "Ignore folder/category structure for:",
-                Location = new System.Drawing.Point(300, 95),
+                Location = new System.Drawing.Point(480, 95),
                 Size = new System.Drawing.Size(180, 23)
             };
 
             chkFlatImport = new CheckBox
             {
                 Text = "Import",
-                Location = new System.Drawing.Point(300, 120),
+                Location = new System.Drawing.Point(480, 120),
                 Size = new System.Drawing.Size(70, 23)
             };
 
             chkFlatExport = new CheckBox
             {
                 Text = "Export",
-                Location = new System.Drawing.Point(380, 120),
+                Location = new System.Drawing.Point(480, 145),
                 Size = new System.Drawing.Size(70, 23)
             };
 
@@ -2289,30 +2283,6 @@ BACKUP PROCESS:
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
-        private void AboutMenuItem_Click(object sender, EventArgs e)
-        {
-            var gitCommitId = GetGitCommitId();
-            var aboutMessage = $"Building Blocks Manager\n\n{gitCommitId}";
-
-            MessageBox.Show(aboutMessage, "Version", 
-                MessageBoxButtons.OK, MessageBoxIcon.Information);
-        }
-
-        private string GetGitCommitId()
-        {
-            // Version tracking - increment after each commit
-            // Version 1 = 17d13fa (original version tracking implementation)
-            // Version 2 = df5443a (simplified About dialog)
-            // Version 3 = 4ce2d7f (simple version numbering system)
-            // Version 4 = 9894f4b (force layout refresh to fix GUI positioning)
-            // Version 5 = 815c6ee (aggressive layout rebuild to override caching)
-            // Version 6 = b36f597 (add explicit anchoring to prevent layout override)
-            // Version 7 = c341da4 (remove anchoring, add title test, simplify layout)
-            // Version 8 = 92ccaa1 (extreme positioning test - yellow export textbox, red text)
-            // Version 9 = c0a162b (final layout - Export stacked below Source with proper spacing)  
-            // Version 10 = [current] (ACTUAL width extensions - 400px textboxes and path labels)
-            return "Version: 10";
-        }
 
         private void BtnQueryTemplate_Click(object sender, EventArgs e)
         {
