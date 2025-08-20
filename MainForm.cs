@@ -220,7 +220,7 @@ namespace BuildingBlocksManager
             txtSourceDirectory = new TextBox
             {
                 Location = new System.Drawing.Point(60, 95),
-                Size = new System.Drawing.Size(220, 23),
+                Size = new System.Drawing.Size(400, 23),
                 ReadOnly = true
             };
 
@@ -228,7 +228,7 @@ namespace BuildingBlocksManager
             {
                 Text = "",
                 Location = new System.Drawing.Point(60, 120),
-                Size = new System.Drawing.Size(220, 15),
+                Size = new System.Drawing.Size(400, 15),
                 Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, Label.DefaultFont.Size - 1, System.Drawing.FontStyle.Regular),
                 ForeColor = System.Drawing.Color.Gray
             };
@@ -236,7 +236,7 @@ namespace BuildingBlocksManager
             btnBrowseDirectory = new Button
             {
                 Text = "Browse",
-                Location = new System.Drawing.Point(290, 94),
+                Location = new System.Drawing.Point(470, 94),
                 Size = new System.Drawing.Size(60, 25)
             };
 
@@ -252,7 +252,7 @@ namespace BuildingBlocksManager
             txtExportDirectory = new TextBox
             {
                 Location = new System.Drawing.Point(60, 145),
-                Size = new System.Drawing.Size(220, 23),
+                Size = new System.Drawing.Size(400, 23),
                 ReadOnly = true
             };
 
@@ -260,7 +260,7 @@ namespace BuildingBlocksManager
             {
                 Text = "",
                 Location = new System.Drawing.Point(60, 170),
-                Size = new System.Drawing.Size(220, 15),
+                Size = new System.Drawing.Size(400, 15),
                 Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, Label.DefaultFont.Size - 1, System.Drawing.FontStyle.Regular),
                 ForeColor = System.Drawing.Color.Gray
             };
@@ -268,7 +268,7 @@ namespace BuildingBlocksManager
             btnBrowseExportDirectory = new Button
             {
                 Text = "Browse",
-                Location = new System.Drawing.Point(290, 144),
+                Location = new System.Drawing.Point(470, 144),
                 Size = new System.Drawing.Size(60, 25)
             };
 
@@ -276,21 +276,21 @@ namespace BuildingBlocksManager
             var lblStructure = new Label
             {
                 Text = "Ignore folder/category structure for:",
-                Location = new System.Drawing.Point(20, 200),
-                Size = new System.Drawing.Size(200, 23)
+                Location = new System.Drawing.Point(300, 95),
+                Size = new System.Drawing.Size(180, 23)
             };
 
             chkFlatImport = new CheckBox
             {
                 Text = "Import",
-                Location = new System.Drawing.Point(230, 200),
+                Location = new System.Drawing.Point(300, 120),
                 Size = new System.Drawing.Size(70, 23)
             };
 
             chkFlatExport = new CheckBox
             {
                 Text = "Export",
-                Location = new System.Drawing.Point(310, 200),
+                Location = new System.Drawing.Point(380, 120),
                 Size = new System.Drawing.Size(70, 23)
             };
 
@@ -2309,8 +2309,9 @@ BACKUP PROCESS:
             // Version 6 = b36f597 (add explicit anchoring to prevent layout override)
             // Version 7 = c341da4 (remove anchoring, add title test, simplify layout)
             // Version 8 = 92ccaa1 (extreme positioning test - yellow export textbox, red text)
-            // Version 9 = [current] (final layout - Export stacked below Source with proper spacing)
-            return "Version: 9";
+            // Version 9 = c0a162b (final layout - Export stacked below Source with proper spacing)  
+            // Version 10 = [current] (ACTUAL width extensions - 400px textboxes and path labels)
+            return "Version: 10";
         }
 
         private void BtnQueryTemplate_Click(object sender, EventArgs e)
