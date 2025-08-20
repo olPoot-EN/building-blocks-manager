@@ -244,31 +244,32 @@ namespace BuildingBlocksManager
             var lblExportDirectory = new Label
             {
                 Text = "Export:",
-                Location = new System.Drawing.Point(10, 145),
+                Location = new System.Drawing.Point(10, 200),
                 Size = new System.Drawing.Size(45, 23),
                 TextAlign = System.Drawing.ContentAlignment.MiddleRight
             };
 
             txtExportDirectory = new TextBox
             {
-                Location = new System.Drawing.Point(60, 145),
-                Size = new System.Drawing.Size(220, 23),
-                ReadOnly = true
+                Location = new System.Drawing.Point(60, 200),
+                Size = new System.Drawing.Size(300, 23),
+                ReadOnly = true,
+                BackColor = System.Drawing.Color.LightYellow
             };
 
             lblExportDirectoryPathDisplay = new Label
             {
                 Text = "",
-                Location = new System.Drawing.Point(60, 170),
-                Size = new System.Drawing.Size(220, 15),
+                Location = new System.Drawing.Point(60, 225),
+                Size = new System.Drawing.Size(300, 15),
                 Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, Label.DefaultFont.Size - 1, System.Drawing.FontStyle.Regular),
-                ForeColor = System.Drawing.Color.Gray
+                ForeColor = System.Drawing.Color.Red
             };
 
             btnBrowseExportDirectory = new Button
             {
                 Text = "Browse",
-                Location = new System.Drawing.Point(290, 144),
+                Location = new System.Drawing.Point(370, 199),
                 Size = new System.Drawing.Size(60, 25)
             };
 
@@ -2307,8 +2308,9 @@ BACKUP PROCESS:
             // Version 4 = 9894f4b (force layout refresh to fix GUI positioning)
             // Version 5 = 815c6ee (aggressive layout rebuild to override caching)
             // Version 6 = b36f597 (add explicit anchoring to prevent layout override)
-            // Version 7 = [current] (remove anchoring, add title test, simplify layout)
-            return "Version: 7";
+            // Version 7 = c341da4 (remove anchoring, add title test, simplify layout)
+            // Version 8 = [current] (extreme positioning test - yellow export textbox, red text)
+            return "Version: 8";
         }
 
         private void BtnQueryTemplate_Click(object sender, EventArgs e)
