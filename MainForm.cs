@@ -1083,18 +1083,52 @@ namespace BuildingBlocksManager
                 List<FileManager.FileInfo> filesToImport;
                 string operationDescription;
 
-                // For single file selections, skip the analysis dialog and import directly
+                // For single file selections, provide appropriate user feedback and confirmation
                 if (checkedFiles.Count == 1)
                 {
-                    filesToImport = checkedFiles;
-                    operationDescription = "Import Selected File";
-                    AppendResults($"Importing single selected file: {Path.GetFileName(checkedFiles[0].FilePath)}");
-                    
-                    // Show brief status about the file
                     var file = checkedFiles[0];
+                    var fileName = Path.GetFileName(file.FilePath);
                     var status = analysis.NewFiles.Contains(file) ? "New" : 
                                 analysis.ModifiedFiles.Contains(file) ? "Modified" : "Up-to-date";
+                    
+                    AppendResults($"Single file selected: {fileName}");
                     AppendResults($"File status: {status}");
+                    AppendResults($"DEBUG: NewFiles contains file: {analysis.NewFiles.Contains(file)}");
+                    AppendResults($"DEBUG: ModifiedFiles contains file: {analysis.ModifiedFiles.Contains(file)}");
+                    
+                    // Show user feedback with file status
+                    var statusMessage = $"Selected file: {fileName}\nStatus: {status}";
+                    
+                    // For up-to-date files, confirm with user since this is unusual
+                    if (status == "Up-to-date")
+                    {
+                        var confirmResult = MessageBox.Show(
+                            $"{statusMessage}\n\nThis file appears to be up-to-date (not modified since last import).\n\nDo you still want to import it?",
+                            "Confirm Import of Up-to-Date File",
+                            MessageBoxButtons.YesNo,
+                            MessageBoxIcon.Question,
+                            MessageBoxDefaultButton.Button2); // Default to "No"
+                            
+                        if (confirmResult != DialogResult.Yes)
+                        {
+                            AppendResults("Import cancelled - user chose not to import up-to-date file.");
+                            UpdateStatus("Import cancelled");
+                            return;
+                        }
+                        AppendResults("User confirmed import of up-to-date file.");
+                    }
+                    else
+                    {
+                        // For new/modified files, show informational message
+                        MessageBox.Show(
+                            $"{statusMessage}\n\nProceeding with import...",
+                            "Import Single File",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Information);
+                    }
+                    
+                    filesToImport = checkedFiles;
+                    operationDescription = $"Import Selected {status} File";
                 }
                 else
                 {
