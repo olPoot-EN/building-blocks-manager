@@ -58,7 +58,7 @@ namespace BuildingBlocksManager
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "Building Blocks Manager - Version 12";
+            this.Text = "Building Blocks Manager - Version 13";
             this.Size = new System.Drawing.Size(600, 650);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = new System.Drawing.Size(450, 500);
@@ -270,21 +270,21 @@ namespace BuildingBlocksManager
             var lblStructure = new Label
             {
                 Text = "Ignore folder/category structure for:",
-                Location = new System.Drawing.Point(480, 95),
-                Size = new System.Drawing.Size(180, 23)
+                Location = new System.Drawing.Point(20, 200),
+                Size = new System.Drawing.Size(220, 23)
             };
 
             chkFlatImport = new CheckBox
             {
                 Text = "Import",
-                Location = new System.Drawing.Point(480, 120),
+                Location = new System.Drawing.Point(250, 200),
                 Size = new System.Drawing.Size(70, 23)
             };
 
             chkFlatExport = new CheckBox
             {
                 Text = "Export",
-                Location = new System.Drawing.Point(480, 145),
+                Location = new System.Drawing.Point(330, 200),
                 Size = new System.Drawing.Size(70, 23)
             };
 
