@@ -158,7 +158,11 @@ namespace BuildingBlocksManager
             
             if (analysis.RemovedEntries.Count > 0)
             {
-                details += $"\n\nNOTE: {analysis.RemovedEntries.Count} Building Blocks in template are no longer found in source files.";
+                details += $"\n\nNOTE: {analysis.RemovedEntries.Count} Building Blocks in template are no longer found in source files:\n";
+                foreach (var entry in analysis.RemovedEntries)
+                {
+                    details += $"• {entry.Name} ({entry.Category})\n";
+                }
             }
 
             txtDetails.Text = details;

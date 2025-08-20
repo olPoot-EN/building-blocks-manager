@@ -120,7 +120,7 @@ namespace BuildingBlocksManager
                 // Check if ledger file exists and warn if not
                 if (!ledger.LedgerFileExists())
                 {
-                    SafeLogWarning("Ledger file not found - change detection may not work properly until first import");
+                    SafeLog(log => log.Warning("Ledger file not found - change detection may not work properly until first import"));
                     
                     // Show a non-blocking notification in the results area when form loads
                     this.Shown += (s, e) => {
@@ -132,7 +132,7 @@ namespace BuildingBlocksManager
             }
             catch (Exception ex)
             {
-                SafeLogError($"Failed to initialize ledger: {ex.Message}");
+                SafeLog(log => log.Error($"Failed to initialize ledger: {ex.Message}"));
                 
                 // Create a fallback notification
                 this.Shown += (s, e) => {
