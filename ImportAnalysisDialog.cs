@@ -76,27 +76,28 @@ namespace BuildingBlocksManager
             {
                 Text = "Import Only Changed",
                 Location = new Point(20, 320),
-                Size = new Size(140, 30),
+                Size = new Size(160, 30),
                 BackColor = Color.LightGreen,
                 UseVisualStyleBackColor = false,
-                Font = new Font(Font.FontFamily, 9, FontStyle.Bold)
+                Font = new Font(Font.FontFamily, 8, FontStyle.Bold)
             };
             btnImportChanged.Click += BtnImportChanged_Click;
 
             btnImportAll = new Button
             {
                 Text = "Import All As Requested",
-                Location = new Point(180, 320),
-                Size = new Size(140, 30),
+                Location = new Point(190, 320),
+                Size = new Size(160, 30),
                 BackColor = Color.LightBlue,
-                UseVisualStyleBackColor = false
+                UseVisualStyleBackColor = false,
+                Font = new Font(Font.FontFamily, 8)
             };
             btnImportAll.Click += BtnImportAll_Click;
 
             btnCancel = new Button
             {
                 Text = "Cancel",
-                Location = new Point(340, 320),
+                Location = new Point(360, 320),
                 Size = new Size(100, 30),
                 BackColor = Color.LightCoral,
                 UseVisualStyleBackColor = false
