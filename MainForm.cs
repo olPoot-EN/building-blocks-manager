@@ -486,7 +486,7 @@ namespace BuildingBlocksManager
             // Progress and status section
             progressBar = new ProgressBar
             {
-                Location = new System.Drawing.Point(20, 610),
+                Location = new System.Drawing.Point(20, 605),
                 Size = new System.Drawing.Size(390, 23),
                 Style = ProgressBarStyle.Continuous
             };
@@ -494,7 +494,7 @@ namespace BuildingBlocksManager
             lblStatus = new Label
             {
                 Text = "Ready",
-                Location = new System.Drawing.Point(420, 610),
+                Location = new System.Drawing.Point(420, 605),
                 Size = new System.Drawing.Size(160, 23),
                 TextAlign = System.Drawing.ContentAlignment.MiddleLeft
             };
