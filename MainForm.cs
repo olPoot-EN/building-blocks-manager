@@ -1837,9 +1837,9 @@ namespace BuildingBlocksManager
                         
                         if (startupCancellationTokenSource.Token.IsCancellationRequested) return;
                         
-                        // Populate the template tab
-                        PopulateTemplateList();
-                        PopulateFilterCheckboxes();
+                        // Update filter button text and apply template filter
+                        UpdateFilterButtonText();
+                        ApplyTemplateFilter();
                         
                         AppendResults("");
                         AppendResults($"Template loaded with {buildingBlocks.Count} Building Blocks.");
