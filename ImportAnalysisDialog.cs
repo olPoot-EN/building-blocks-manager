@@ -121,59 +121,44 @@ namespace BuildingBlocksManager
             // Set summary text
             lblSummary.Text = analysis.GetSummary();
 
-            // Build detailed breakdown
-            var details = $"Analysis for '{originalRequestType}' operation:\n\n";
+            // Build concise details
+            var details = "";
 
-            if (analysis.NewFiles.Count > 0)
-            {
-                details += $"NEW FILES ({analysis.NewFiles.Count}):\n";
-                foreach (var file in analysis.NewFiles)
-                {
-                    details += $"  • {file.Name} ({file.Category})\n";
-                }
-                details += "\n";
-            }
-
-            if (analysis.ModifiedFiles.Count > 0)
-            {
-                details += $"MODIFIED FILES ({analysis.ModifiedFiles.Count}):\n";
-                foreach (var file in analysis.ModifiedFiles)
-                {
-                    details += $"  • {file.Name} ({file.Category})\n";
-                }
-                details += "\n";
-            }
-
-            if (analysis.UnchangedFiles.Count > 0)
-            {
-                details += $"UNCHANGED FILES ({analysis.UnchangedFiles.Count}):\n";
-                foreach (var file in analysis.UnchangedFiles)
-                {
-                    details += $"  • {file.Name} ({file.Category})\n";
-                }
-                details += "\n";
-            }
-
-            if (analysis.RemovedEntries.Count > 0)
-            {
-                details += $"NO LONGER IN SOURCE ({analysis.RemovedEntries.Count}):\n";
-                foreach (var entry in analysis.RemovedEntries)
-                {
-                    details += $"  • {entry.Name} ({entry.Category})\n";
-                }
-                details += "\n";
-            }
-
-            details += "RECOMMENDATION:\n";
             if (analysis.TotalChangedFiles == 0)
             {
-                details += "All files are up-to-date. Consider canceling unless you specifically need to reimport everything.";
+                details = "All files are up-to-date.\n\n";
+                details += "• No changes detected since last import\n";
+                details += "• Consider canceling unless you need to reimport everything\n";
+                
                 btnImportChanged.Text = "No Import Needed";
                 btnImportChanged.BackColor = Color.LightGray;
             }
             else
             {
-                details += $"Import only the {analysis.TotalChangedFiles} changed files to save time and avoid unnecessary processing.";
+                details = "CHANGES DETECTED:\n\n";
+                
+                if (analysis.NewFiles.Count > 0)
+                {
+                    details += $"• {analysis.NewFiles.Count} new files ready to import\n";
+                }
+                
+                if (analysis.ModifiedFiles.Count > 0)
+                {
+                    details += $"• {analysis.ModifiedFiles.Count} files updated since last import\n";
+                }
+                
+                if (analysis.UnchangedFiles.Count > 0)
+                {
+                    details += $"• {analysis.UnchangedFiles.Count} files unchanged\n";
+                }
+                
+                details += "\nRECOMMENDATION:\n";
+                details += $"Import only the {analysis.TotalChangedFiles} changed files to save time.";
+            }
+            
+            if (analysis.RemovedEntries.Count > 0)
+            {
+                details += $"\n\nNOTE: {analysis.RemovedEntries.Count} Building Blocks in template are no longer found in source files.";
             }
 
             txtDetails.Text = details;

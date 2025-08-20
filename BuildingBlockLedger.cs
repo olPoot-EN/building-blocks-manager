@@ -31,22 +31,14 @@ namespace BuildingBlocksManager
             
             public string GetSummary()
             {
-                var summary = $"Found {TotalFiles} total files";
-                if (TotalChangedFiles > 0)
+                if (TotalChangedFiles == 0)
                 {
-                    summary += $"\n• {NewFiles.Count} new files";
-                    summary += $"\n• {ModifiedFiles.Count} modified files";
-                    summary += $"\n• {UnchangedFiles.Count} unchanged files";
-                }
-                else
-                {
-                    summary += "\n• All files are unchanged since last import";
+                    return $"All {TotalFiles} files are up-to-date";
                 }
                 
-                if (RemovedEntries.Count > 0)
-                {
-                    summary += $"\n• {RemovedEntries.Count} Building Blocks no longer found in source";
-                }
+                var summary = $"{TotalChangedFiles} of {TotalFiles} files need importing";
+                if (NewFiles.Count > 0) summary += $" • {NewFiles.Count} new";
+                if (ModifiedFiles.Count > 0) summary += $" • {ModifiedFiles.Count} modified";
                 
                 return summary;
             }

@@ -1172,12 +1172,23 @@ namespace BuildingBlocksManager
                     }
                     else
                     {
-                        // For new/modified files, show informational message
-                        MessageBox.Show(
-                            $"{statusMessage}\n\nProceeding with import...",
+                        // For new/modified files, confirm import
+                        var confirmResult = MessageBox.Show(
+                            $"{statusMessage}\n\nDo you want to import this file?",
                             "Import Single File",
-                            MessageBoxButtons.OK,
-                            MessageBoxIcon.Information);
+                            MessageBoxButtons.YesNo,
+                            MessageBoxIcon.Question,
+                            MessageBoxDefaultButton.Button1); // Default to "Yes"
+                            
+                        if (confirmResult != DialogResult.Yes)
+                        {
+                            AppendResults("Import cancelled by user.");
+                            UpdateStatus("Import cancelled");
+                            progressBar.Style = ProgressBarStyle.Continuous;
+                            progressBar.Value = 0;
+                            HideStopButton();
+                            return;
+                        }
                     }
                     
                     filesToImport = checkedFiles;
