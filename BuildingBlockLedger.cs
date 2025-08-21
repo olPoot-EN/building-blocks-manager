@@ -96,15 +96,37 @@ namespace BuildingBlocksManager
         }
 
         /// <summary>
+        /// Find matching ledger entry for a file, handling space/underscore variations
+        /// </summary>
+        private LedgerEntry FindMatchingLedgerEntry(string fileName, string fileCategory)
+        {
+            var exactKey = GetLedgerKey(fileName, fileCategory);
+            
+            // First try exact match
+            if (ledgerEntries.ContainsKey(exactKey))
+            {
+                return ledgerEntries[exactKey];
+            }
+            
+            // Try with space/underscore conversion
+            var alternateFileName = fileName.Contains('_') ? fileName.Replace('_', ' ') : fileName.Replace(' ', '_');
+            var alternateKey = GetLedgerKey(alternateFileName, fileCategory);
+            
+            if (ledgerEntries.ContainsKey(alternateKey))
+            {
+                return ledgerEntries[alternateKey];
+            }
+            
+            return null;
+        }
+
+        /// <summary>
         /// Get the last import time for a specific Building Block
         /// </summary>
         public DateTime GetLastImportTime(string name, string category)
         {
-            var key = GetLedgerKey(name, category);
-            var found = ledgerEntries.ContainsKey(key);
-            var result = found ? ledgerEntries[key].LastModified : DateTime.MinValue;
-            
-            return result;
+            var matchingEntry = FindMatchingLedgerEntry(name, category);
+            return matchingEntry?.LastModified ?? DateTime.MinValue;
         }
 
         /// <summary>
@@ -198,30 +220,17 @@ namespace BuildingBlocksManager
 
             foreach (var file in scannedFiles)
             {
-                var key = GetLedgerKey(file.Name, file.Category);
-                foundInSource.Add(key);
-
-                if (!ledgerEntries.ContainsKey(key))
+                // Find matching ledger entry using flexible name matching
+                var matchingEntry = FindMatchingLedgerEntry(file.Name, file.Category);
+                
+                if (matchingEntry != null)
                 {
-                    // Check if this file was previously removed and should be restored
-                    if (removedEntries.ContainsKey(key))
-                    {
-                        // File was removed but now exists again - restore it and treat as modified
-                        RestoreEntry(file.Name, file.Category, file.LastModified);
-                        analysis.ModifiedFiles.Add(file);
-                    }
-                    else
-                    {
-                        // New Building Block - not in ledger
-                        analysis.NewFiles.Add(file);
-                    }
-                }
-                else
-                {
-                    var ledgerEntry = ledgerEntries[key];
+                    // Mark this ledger entry as found (use the ledger entry's actual key)
+                    var ledgerKey = GetLedgerKey(matchingEntry.Name, matchingEntry.Category);
+                    foundInSource.Add(ledgerKey);
                     
                     // Compare file modification time with ledger entry using 1-minute tolerance
-                    var timeDifference = file.LastModified - ledgerEntry.LastModified;
+                    var timeDifference = file.LastModified - matchingEntry.LastModified;
                     if (timeDifference.TotalMinutes > 1.0)
                     {
                         // File has been modified more than 1 minute after last import
@@ -231,6 +240,23 @@ namespace BuildingBlocksManager
                     {
                         // File is unchanged (within 1-minute tolerance)
                         analysis.UnchangedFiles.Add(file);
+                    }
+                }
+                else
+                {
+                    // Check if this file was previously removed and should be restored
+                    var fileKey = GetLedgerKey(file.Name, file.Category);
+                    if (removedEntries.ContainsKey(fileKey))
+                    {
+                        // File was removed but now exists again - restore it and treat as modified
+                        RestoreEntry(file.Name, file.Category, file.LastModified);
+                        foundInSource.Add(fileKey);
+                        analysis.ModifiedFiles.Add(file);
+                    }
+                    else
+                    {
+                        // New Building Block - not in ledger
+                        analysis.NewFiles.Add(file);
                     }
                 }
             }
@@ -453,12 +479,8 @@ namespace BuildingBlocksManager
                     
                     foreach (var bb in userBlocks)
                     {
-                        // Normalize Building Block name to match file system naming (spaces to underscores)
-                        // This ensures consistency with FileManager.ExtractName() which converts spaces to underscores
-                        var normalizedName = bb.Name.Replace(' ', '_');
-                        
-                        // Use template modification time as baseline
-                        UpdateEntry(normalizedName, bb.Category, templateModTime);
+                        // Use template modification time as baseline - preserve original Building Block names
+                        UpdateEntry(bb.Name, bb.Category, templateModTime);
                     }
                 }
                 

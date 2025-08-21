@@ -1091,10 +1091,8 @@ namespace BuildingBlocksManager
                         
                         if (importResult.Success)
                         {
-                            // Update ledger with successful import
-                            // Normalize the imported name to ensure consistency with file scanning (spaces to underscores)
-                            var normalizedImportedName = importResult.ImportedName.Replace(' ', '_');
-                            ledger.UpdateEntry(normalizedImportedName, importResult.FinalCategory, file.LastModified);
+                            // Update ledger with successful import - preserve original imported name
+                            ledger.UpdateEntry(importResult.ImportedName, importResult.FinalCategory, file.LastModified);
                             
                             successCount++;
                             
@@ -1541,11 +1539,9 @@ namespace BuildingBlocksManager
                         // Export the Building Block
                         wordManager.ExportBuildingBlock(bb.Name, bb.Category, outputFilePath);
                         
-                        // Update ledger with exported file's timestamp to match exported file
+                        // Update ledger with exported file's timestamp to match exported file - preserve original name
                         var exportedFileInfo = new FileInfo(outputFilePath);
-                        // Normalize Building Block name to ensure consistency (spaces to underscores)
-                        var normalizedName = bb.Name.Replace(' ', '_');
-                        ledger.UpdateEntry(normalizedName, bb.Category, exportedFileInfo.LastWriteTime);
+                        ledger.UpdateEntry(bb.Name, bb.Category, exportedFileInfo.LastWriteTime);
                         
                         successCount++;
                         var displayPath = GetRelativePath(exportPath, outputFilePath);
@@ -1744,11 +1740,9 @@ namespace BuildingBlocksManager
                         // Export the Building Block
                         wordManager.ExportBuildingBlock(bb.Name, bb.Category, outputFilePath);
                         
-                        // Update ledger with exported file's timestamp to match exported file
+                        // Update ledger with exported file's timestamp to match exported file - preserve original name
                         var exportedFileInfo = new FileInfo(outputFilePath);
-                        // Normalize Building Block name to ensure consistency (spaces to underscores)
-                        var normalizedName = bb.Name.Replace(' ', '_');
-                        ledger.UpdateEntry(normalizedName, bb.Category, exportedFileInfo.LastWriteTime);
+                        ledger.UpdateEntry(bb.Name, bb.Category, exportedFileInfo.LastWriteTime);
                         
                         successCount++;
                         var displayPath = GetRelativePath(exportPath, outputFilePath);
