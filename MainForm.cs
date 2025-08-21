@@ -62,7 +62,7 @@ namespace BuildingBlocksManager
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "Building Blocks Manager - Version 239";
+            this.Text = "Building Blocks Manager - Version 240";
             this.Size = new System.Drawing.Size(600, 680);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = new System.Drawing.Size(450, 500);
@@ -491,6 +491,31 @@ namespace BuildingBlocksManager
                 ForeColor = System.Drawing.Color.Gray
             };
             
+            // Test buttons for column resize
+            var btnTestA = new Button
+            {
+                Text = "A",
+                Location = new System.Drawing.Point(530, 5),
+                Size = new System.Drawing.Size(25, 25)
+            };
+            btnTestA.Click += BtnTestA_Click;
+            
+            var btnTestB = new Button
+            {
+                Text = "B",
+                Location = new System.Drawing.Point(530, 32),
+                Size = new System.Drawing.Size(25, 25)
+            };
+            btnTestB.Click += BtnTestB_Click;
+            
+            var btnTestC = new Button
+            {
+                Text = "C",
+                Location = new System.Drawing.Point(530, 59),
+                Size = new System.Drawing.Size(25, 25)
+            };
+            btnTestC.Click += BtnTestC_Click;
+            
             // ListView (moved down to accommodate filter controls)
             listViewTemplate = new ListView
             {
@@ -524,6 +549,9 @@ namespace BuildingBlocksManager
             tabTemplate.Controls.Add(lblTemplateCount);
             tabTemplate.Controls.Add(btnSelectAll);
             tabTemplate.Controls.Add(lblDeleteTip);
+            tabTemplate.Controls.Add(btnTestA);
+            tabTemplate.Controls.Add(btnTestB);
+            tabTemplate.Controls.Add(btnTestC);
             tabTemplate.Controls.Add(listViewTemplate);
 
             // Add tabs to tab control
@@ -3342,6 +3370,40 @@ BACKUP PROCESS:
                 MessageBox.Show($"Failed to delete Building Block(s): {ex.Message}", "Delete Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
                 AppendResults($"Failed to delete Building Blocks: {ex.Message}");
+            }
+        }
+        
+        // Test button methods for column resize testing
+        private void BtnTestA_Click(object sender, EventArgs e)
+        {
+            // Method A: AutoResizeColumns with HeaderSize
+            if (listViewTemplate.Items.Count > 0)
+            {
+                listViewTemplate.AutoResizeColumns(ColumnHeaderAutoResizeStyle.HeaderSize);
+            }
+        }
+        
+        private void BtnTestB_Click(object sender, EventArgs e)
+        {
+            // Method B: Individual column Width = -2
+            if (listViewTemplate.Items.Count > 0)
+            {
+                for (int i = 0; i < listViewTemplate.Columns.Count; i++)
+                {
+                    listViewTemplate.Columns[i].Width = -2;
+                }
+            }
+        }
+        
+        private void BtnTestC_Click(object sender, EventArgs e)
+        {
+            // Method C: Individual AutoResizeColumn with HeaderSize
+            if (listViewTemplate.Items.Count > 0)
+            {
+                for (int i = 0; i < listViewTemplate.Columns.Count; i++)
+                {
+                    listViewTemplate.AutoResizeColumn(i, ColumnHeaderAutoResizeStyle.HeaderSize);
+                }
             }
         }
     }
