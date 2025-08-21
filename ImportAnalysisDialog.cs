@@ -94,6 +94,9 @@ namespace BuildingBlocksManager
             // Set default button and cancel button
             this.AcceptButton = btnImportChanged; // Default to recommended option
             this.CancelButton = btnCancel;
+            
+            // Set initial focus to the default button to prevent text selection
+            this.ActiveControl = btnImportChanged;
         }
 
         private void PopulateContent(BuildingBlockLedger.ChangeAnalysis analysis, string originalRequestType)
@@ -133,6 +136,10 @@ namespace BuildingBlocksManager
             }
 
             txtDetails.Text = details;
+            
+            // Clear text selection and move cursor to start
+            txtDetails.SelectionStart = 0;
+            txtDetails.SelectionLength = 0;
 
             // Update button text to show counts
             if (analysis.TotalChangedFiles > 0)
