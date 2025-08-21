@@ -56,10 +56,18 @@ namespace BuildingBlocksManager
         private SortOrder sortOrder = SortOrder.None;
         private System.Collections.Generic.List<string> conflictedFiles = new System.Collections.Generic.List<string>();
 
+        // Win32 API for sending messages to ListView
+        [DllImport("user32.dll")]
+        private static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+        
+        private const uint LVM_SETCOLUMNWIDTH = 0x1000 + 30;
+        private const int LVSCW_AUTOSIZE = -1;
+        private const int LVSCW_AUTOSIZE_USEHEADER = -2;
+
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "Building Blocks Manager - Version 233";
+            this.Text = "Building Blocks Manager - Version 234";
             this.Size = new System.Drawing.Size(600, 680);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = new System.Drawing.Size(450, 500);
@@ -3102,10 +3110,10 @@ BACKUP PROCESS:
             if (listViewTemplate.Items.Count == 0)
                 return;
 
-            // Manually resize each column (same as double-clicking each column divider)
+            // Use Win32 API to exactly replicate double-click column resize behavior
             for (int i = 0; i < listViewTemplate.Columns.Count; i++)
             {
-                listViewTemplate.AutoResizeColumn(i, ColumnHeaderAutoResizeStyle.HeaderSize);
+                SendMessage(listViewTemplate.Handle, LVM_SETCOLUMNWIDTH, new IntPtr(i), new IntPtr(LVSCW_AUTOSIZE_USEHEADER));
             }
             
             // Set reasonable minimum widths to prevent columns from being too narrow
