@@ -34,7 +34,7 @@ namespace BuildingBlocksManager
         private void InitializeComponent()
         {
             this.Text = "Import Analysis Results";
-            this.Size = new Size(500, 400);
+            this.Size = new Size(500, 410);
             this.StartPosition = FormStartPosition.CenterParent;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
@@ -76,7 +76,7 @@ namespace BuildingBlocksManager
             {
                 Text = "Import Only Changed",
                 Location = new Point(20, 320),
-                Size = new Size(160, 30),
+                Size = new Size(160, 40),
                 BackColor = Color.LightGreen,
                 UseVisualStyleBackColor = false,
                 Font = new Font(Font.FontFamily, 8, FontStyle.Bold)
@@ -87,7 +87,7 @@ namespace BuildingBlocksManager
             {
                 Text = "Import All As Requested",
                 Location = new Point(190, 320),
-                Size = new Size(160, 30),
+                Size = new Size(160, 40),
                 BackColor = Color.LightBlue,
                 UseVisualStyleBackColor = false,
                 Font = new Font(Font.FontFamily, 8)
@@ -98,7 +98,7 @@ namespace BuildingBlocksManager
             {
                 Text = "Cancel",
                 Location = new Point(360, 320),
-                Size = new Size(100, 30),
+                Size = new Size(100, 40),
                 BackColor = Color.LightCoral,
                 UseVisualStyleBackColor = false
             };
