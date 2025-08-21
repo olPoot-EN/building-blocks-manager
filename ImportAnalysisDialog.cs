@@ -62,8 +62,8 @@ namespace BuildingBlocksManager
             // Details text box
             txtDetails = new TextBox
             {
-                Location = new Point(20, 125),
-                Size = new Size(450, 180),
+                Location = new Point(20, 55),
+                Size = new Size(450, 250),
                 Multiline = true,
                 ReadOnly = true,
                 ScrollBars = ScrollBars.Vertical,
@@ -124,11 +124,11 @@ namespace BuildingBlocksManager
             // Build all content in the text box with proper Windows line breaks
             var details = "SUMMARY\r\n";
             if (analysis.NewFiles.Count > 0)
-                details += $"+{analysis.NewFiles.Count} new file(s)\r\n";
+                details += $"• {analysis.NewFiles.Count} new file(s)\r\n";
             if (analysis.ModifiedFiles.Count > 0)
-                details += $"+{analysis.ModifiedFiles.Count} file(s) modified\r\n";
-            details += $"{analysis.UnchangedFiles.Count} files unchanged\r\n";
-            details += $"{analysis.TotalFiles} total files";
+                details += $"• {analysis.ModifiedFiles.Count} file(s) modified\r\n";
+            details += $"• {analysis.UnchangedFiles.Count} files unchanged\r\n";
+            details += $"• {analysis.TotalFiles} total files";
 
             if (analysis.TotalChangedFiles == 0)
             {
