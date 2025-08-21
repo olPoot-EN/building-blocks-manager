@@ -159,8 +159,7 @@ namespace BuildingBlocksManager
                     name = name.Substring(0, name.Length - 5); // Remove ".docx"
                 }
 
-                // Convert spaces to underscores
-                name = name.Replace(' ', '_');
+                // Preserve original name with spaces - no conversion needed
 
                 return name;
             }
