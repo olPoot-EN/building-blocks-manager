@@ -118,8 +118,8 @@ namespace BuildingBlocksManager
 
         private void PopulateContent(BuildingBlockLedger.ChangeAnalysis analysis, string originalRequestType)
         {
-            // Set summary text
-            lblSummary.Text = analysis.GetSummary();
+            // Set summary text with proper line breaks
+            lblSummary.Text = analysis.GetSummary().Replace("|", "\n");
 
             // Build concise details
             var details = "";

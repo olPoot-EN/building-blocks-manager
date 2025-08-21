@@ -60,7 +60,7 @@ namespace BuildingBlocksManager
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "Building Blocks Manager - Version 249";
+            this.Text = "Building Blocks Manager - Version 250";
             this.Size = new System.Drawing.Size(600, 680);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = new System.Drawing.Size(450, 500);
@@ -962,7 +962,10 @@ namespace BuildingBlocksManager
                 var analysis = ledger.AnalyzeChanges(allFiles);
                 
                 AppendResults("Ledger analysis complete:");
-                AppendResults(analysis.GetSummary());
+                foreach (var line in analysis.GetSummary().Split('|'))
+                {
+                    AppendResults(line);
+                }
                 AppendResults("");
 
                 // Show analysis dialog to user
@@ -1219,7 +1222,10 @@ namespace BuildingBlocksManager
                 var analysis = ledger.AnalyzeChanges(checkedFiles);
                 
                 AppendResults("Ledger analysis complete for selected files:");
-                AppendResults(analysis.GetSummary());
+                foreach (var line in analysis.GetSummary().Split('|'))
+                {
+                    AppendResults(line);
+                }
                 AppendResults("");
 
                 List<FileManager.FileInfo> filesToImport;
