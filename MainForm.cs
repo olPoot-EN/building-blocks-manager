@@ -20,6 +20,7 @@ namespace BuildingBlocksManager
         private Label lblTemplatePathDisplay;
         private Label lblSourceDirectoryPathDisplay;
         private Label lblExportDirectoryPathDisplay;
+        private Label lblTemplateComments;
         private Button btnQueryDirectory;
         private Button btnImportAll;
         private Button btnImportSelected;
@@ -60,7 +61,7 @@ namespace BuildingBlocksManager
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "Building Blocks Manager - Version 261";
+            this.Text = "Building Blocks Manager - Version 264";
             this.Size = new System.Drawing.Size(600, 680);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = new System.Drawing.Size(450, 500);
@@ -239,6 +240,20 @@ namespace BuildingBlocksManager
                 Text = "Browse",
                 Location = new System.Drawing.Point(260, 44),
                 Size = new System.Drawing.Size(60, 25)
+            };
+
+            // Template comments display (green box area)
+            lblTemplateComments = new Label
+            {
+                Text = "",
+                Location = new System.Drawing.Point(350, 45),
+                Size = new System.Drawing.Size(230, 40),
+                Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, 9, System.Drawing.FontStyle.Regular),
+                ForeColor = System.Drawing.Color.Aqua,
+                BorderStyle = BorderStyle.FixedSingle,
+                TextAlign = System.Drawing.ContentAlignment.MiddleLeft,
+                Padding = new Padding(5),
+                AutoEllipsis = true
             };
 
             // Source directory section
@@ -544,7 +559,7 @@ namespace BuildingBlocksManager
             // Add all controls to form
             Controls.AddRange(new Control[]
             {
-                lblTemplate, txtTemplatePath, lblTemplatePathDisplay, btnBrowseTemplate,
+                lblTemplate, txtTemplatePath, lblTemplatePathDisplay, btnBrowseTemplate, lblTemplateComments,
                 lblDirectory, txtSourceDirectory, lblSourceDirectoryPathDisplay, btnBrowseDirectory,
                 lblExportDirectory, txtExportDirectory, lblExportDirectoryPathDisplay, btnBrowseExportDirectory,
                 lblStructure, chkFlatImport, chkFlatExport,
@@ -584,6 +599,59 @@ namespace BuildingBlocksManager
             else
             {
                 txtTemplatePath.BackColor = System.Drawing.Color.Yellow;
+            }
+            
+            // Update template comments display
+            UpdateTemplateComments(fullPath);
+        }
+
+        private void UpdateTemplateComments(string filePath)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+                {
+                    lblTemplateComments.Text = "";
+                    return;
+                }
+
+                string comments = GetFileComments(filePath);
+                lblTemplateComments.Text = string.IsNullOrEmpty(comments) ? "(No comments)" : comments;
+            }
+            catch (Exception ex)
+            {
+                lblTemplateComments.Text = $"Error reading comments: {ex.Message}";
+                SafeLog(log => log.Warning($"Failed to read template comments: {ex.Message}"));
+            }
+        }
+
+        private string GetFileComments(string filePath)
+        {
+            try
+            {
+                Type shellType = Type.GetTypeFromProgID("Shell.Application");
+                dynamic shell = Activator.CreateInstance(shellType);
+                
+                string directory = Path.GetDirectoryName(filePath);
+                string fileName = Path.GetFileName(filePath);
+                
+                dynamic folder = shell.Namespace(directory);
+                dynamic file = folder.ParseName(fileName);
+                
+                // ExtendedProperty "Comments" - property index 24 is typically Comments
+                string comments = folder.GetDetailsOf(file, 24);
+                
+                // Clean up COM objects
+                Marshal.ReleaseComObject(file);
+                Marshal.ReleaseComObject(folder);
+                Marshal.ReleaseComObject(shell);
+                
+                return string.IsNullOrEmpty(comments) ? "" : comments.Trim();
+            }
+            catch (Exception ex)
+            {
+                SafeLog(log => log.Warning($"Failed to get file comments using Shell32: {ex.Message}"));
+                return "";
             }
         }
 
