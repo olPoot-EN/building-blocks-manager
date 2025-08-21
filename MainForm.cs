@@ -59,7 +59,7 @@ namespace BuildingBlocksManager
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "Building Blocks Manager - Version 228";
+            this.Text = "Building Blocks Manager - Version 229";
             this.Size = new System.Drawing.Size(600, 680);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = new System.Drawing.Size(450, 500);
@@ -2600,14 +2600,53 @@ BACKUP PROCESS:
         
         private TreeNode CreateDirectoryNode(DirectoryInfo directory, System.Collections.Generic.List<FileManager.FileInfo> scannedFiles, BuildingBlockLedger.ChangeAnalysis analysis = null)
         {
-            // Count total files in this directory and all subdirectories
-            var totalFileCount = CountFilesInDirectory(directory.FullName, scannedFiles);
-            var nodeText = totalFileCount > 0 ? $"{directory.Name} ({totalFileCount})" : directory.Name;
+            // Analyze folder status for detailed counts and coloring
+            var folderStatus = AnalyzeFolderStatus(directory.FullName, scannedFiles, analysis);
+            
+            // Build folder name with status counts
+            string nodeText = directory.Name;
+            if (folderStatus.TotalCount > 0)
+            {
+                nodeText += $" ({folderStatus.TotalCount}";
+                
+                if (folderStatus.NewCount > 0 && folderStatus.ModifiedCount > 0)
+                {
+                    nodeText += $", {folderStatus.NewCount} new, {folderStatus.ModifiedCount} modified";
+                }
+                else if (folderStatus.NewCount > 0)
+                {
+                    nodeText += $", {folderStatus.NewCount} new";
+                }
+                else if (folderStatus.ModifiedCount > 0)
+                {
+                    nodeText += $", {folderStatus.ModifiedCount} modified";
+                }
+                
+                nodeText += ")";
+            }
             
             var node = new TreeNode(nodeText)
             {
                 Tag = directory.FullName
             };
+            
+            // Set folder color based on contents
+            if (folderStatus.NewCount > 0 && folderStatus.ModifiedCount > 0)
+            {
+                node.ForeColor = System.Drawing.Color.Purple; // Both new and modified
+            }
+            else if (folderStatus.NewCount > 0)
+            {
+                node.ForeColor = System.Drawing.Color.Green; // New files only
+            }
+            else if (folderStatus.ModifiedCount > 0)
+            {
+                node.ForeColor = System.Drawing.Color.Blue; // Modified files only
+            }
+            else
+            {
+                node.ForeColor = System.Drawing.Color.Black; // Up-to-date or no files
+            }
             
             try
             {
@@ -2694,6 +2733,37 @@ BACKUP PROCESS:
         private int CountFilesInDirectory(string directoryPath, System.Collections.Generic.List<FileManager.FileInfo> scannedFiles)
         {
             return scannedFiles.Count(f => f.FilePath.StartsWith(directoryPath, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private class FolderStatus
+        {
+            public int NewCount { get; set; }
+            public int ModifiedCount { get; set; }
+            public int TotalCount { get; set; }
+        }
+
+        private FolderStatus AnalyzeFolderStatus(string directoryPath, System.Collections.Generic.List<FileManager.FileInfo> scannedFiles, BuildingBlockLedger.ChangeAnalysis analysis)
+        {
+            var status = new FolderStatus();
+            
+            if (analysis == null)
+                return status;
+
+            // Get all files in this directory and subdirectories
+            var filesInFolder = scannedFiles.Where(f => 
+                f.FilePath.StartsWith(directoryPath, StringComparison.OrdinalIgnoreCase)).ToList();
+            
+            status.TotalCount = filesInFolder.Count;
+            
+            // Count new files
+            status.NewCount = analysis.NewFiles.Count(f => 
+                f.FilePath.StartsWith(directoryPath, StringComparison.OrdinalIgnoreCase));
+            
+            // Count modified files
+            status.ModifiedCount = analysis.ModifiedFiles.Count(f => 
+                f.FilePath.StartsWith(directoryPath, StringComparison.OrdinalIgnoreCase));
+            
+            return status;
         }
 
         private void BtnFilterTemplate_Click(object sender, EventArgs e)
