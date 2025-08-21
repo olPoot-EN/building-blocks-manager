@@ -62,7 +62,7 @@ namespace BuildingBlocksManager
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "Building Blocks Manager - Version 238";
+            this.Text = "Building Blocks Manager - Version 239";
             this.Size = new System.Drawing.Size(600, 680);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = new System.Drawing.Size(450, 500);
@@ -3090,10 +3090,18 @@ BACKUP PROCESS:
 
         private void ListViewTemplate_Layout(object sender, LayoutEventArgs e)
         {
-            // Auto-resize columns when ListView layout is complete
-            if (needsColumnResize && listViewTemplate.Items.Count > 0)
+            // Auto-resize columns when ListView layout is complete and visible
+            if (needsColumnResize && listViewTemplate.Items.Count > 0 && 
+                listViewTemplate.Visible && listViewTemplate.IsHandleCreated)
             {
                 needsColumnResize = false;
+                
+                // Force complete redraw to ensure proper measurement
+                listViewTemplate.Invalidate();
+                listViewTemplate.Update();
+                
+                // Small delay to let the invalidate/update complete
+                Application.DoEvents();
                 
                 for (int i = 0; i < listViewTemplate.Columns.Count; i++)
                 {
