@@ -56,12 +56,13 @@ namespace BuildingBlocksManager
         private SortOrder sortOrder = SortOrder.None;
         private System.Collections.Generic.List<string> conflictedFiles = new System.Collections.Generic.List<string>();
         private System.Windows.Forms.Timer columnResizeTimer;
+        private bool needsColumnResize = false;
 
 
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "Building Blocks Manager - Version 237";
+            this.Text = "Building Blocks Manager - Version 238";
             this.Size = new System.Drawing.Size(600, 680);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = new System.Drawing.Size(450, 500);
@@ -513,6 +514,7 @@ namespace BuildingBlocksManager
             // Enable column sorting and resizing
             listViewTemplate.ColumnClick += ListViewTemplate_ColumnClick;
             listViewTemplate.ColumnWidthChanged += ListViewTemplate_ColumnWidthChanged;
+            listViewTemplate.Layout += ListViewTemplate_Layout;
             
             // Enable context menu for template management
             listViewTemplate.ContextMenuStrip = CreateTemplateContextMenu();
@@ -3078,20 +3080,27 @@ BACKUP PROCESS:
                 listViewTemplate.Items.Add(item);
             }
 
+            // Signal that we need to auto-resize when layout is complete
+            needsColumnResize = (filteredBlocks.Count > 0);
+            
             listViewTemplate.EndUpdate();
             
-            // Force UI to complete processing before auto-resize
-            Application.DoEvents();
-            
-            // Auto-resize columns after UI is fully updated
-            if (filteredBlocks.Count > 0)
+            UpdateTemplateCount(filteredBlocks.Count);
+        }
+
+        private void ListViewTemplate_Layout(object sender, LayoutEventArgs e)
+        {
+            // Auto-resize columns when ListView layout is complete
+            if (needsColumnResize && listViewTemplate.Items.Count > 0)
             {
+                needsColumnResize = false;
+                
                 for (int i = 0; i < listViewTemplate.Columns.Count; i++)
                 {
                     listViewTemplate.Columns[i].Width = -2; // -2 = size to both header and content
                 }
                 
-                // Enforce reasonable minimum widths
+                // Enforce minimum widths
                 int[] minWidths = { 100, 80, 120, 100 }; // Name, Gallery, Category, Template
                 for (int i = 0; i < listViewTemplate.Columns.Count && i < minWidths.Length; i++)
                 {
@@ -3099,12 +3108,6 @@ BACKUP PROCESS:
                         listViewTemplate.Columns[i].Width = minWidths[i];
                 }
             }
-            
-            UpdateTemplateCount(filteredBlocks.Count);
-            
-            // Fallback: Start timer for delayed resize in case DoEvents didn't work
-            columnResizeTimer.Stop();
-            columnResizeTimer.Start();
         }
 
         private void ColumnResizeTimer_Tick(object sender, EventArgs e)
