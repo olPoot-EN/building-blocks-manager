@@ -59,7 +59,7 @@ namespace BuildingBlocksManager
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "Building Blocks Manager - Version 227";
+            this.Text = "Building Blocks Manager - Version 228";
             this.Size = new System.Drawing.Size(600, 680);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = new System.Drawing.Size(450, 500);
@@ -496,15 +496,16 @@ namespace BuildingBlocksManager
                 MultiSelect = true // Enable multi-selection
             };
 
-            // Add columns - adjusted for 25% width reduction (540px total width)
-            listViewTemplate.Columns.Add("Name", 135);      // 135px (25% reduction from 180)
-            listViewTemplate.Columns.Add("Gallery", 135);   // 135px (25% reduction from 180) 
-            listViewTemplate.Columns.Add("Category", 135);  // 135px (25% reduction from 180)
-            listViewTemplate.Columns.Add("Template", 120);  // 120px (25% reduction from 160)
-            // Total: 525px, leaving 15px buffer for scrollbars
+            // Add columns with intelligent initial widths (540px total width)
+            listViewTemplate.Columns.Add("Name", 160);      // Wider for building block names
+            listViewTemplate.Columns.Add("Gallery", 90);    // Narrower for gallery types 
+            listViewTemplate.Columns.Add("Category", 180);  // Wider for category paths
+            listViewTemplate.Columns.Add("Template", 100);  // Moderate width for template names
+            // Total: 530px, leaving 10px buffer for scrollbars
             
-            // Enable column sorting
+            // Enable column sorting and resizing
             listViewTemplate.ColumnClick += ListViewTemplate_ColumnClick;
+            listViewTemplate.ColumnWidthChanged += ListViewTemplate_ColumnWidthChanged;
             
             // Enable context menu for template management
             listViewTemplate.ContextMenuStrip = CreateTemplateContextMenu();
@@ -2988,6 +2989,7 @@ BACKUP PROCESS:
             }
 
             UpdateTemplateCount(filteredBlocks.Count);
+            AutoResizeTemplateColumns();
         }
 
         private void UpdateFilterButtonText()
@@ -3013,6 +3015,30 @@ BACKUP PROCESS:
             {
                 lblTemplateCount.Text = $"Showing {filteredCount} of {allBuildingBlocks.Count} Building Blocks";
             }
+        }
+
+        private void AutoResizeTemplateColumns()
+        {
+            if (listViewTemplate.Items.Count == 0)
+                return;
+
+            // Auto-resize columns based on content, with minimum widths
+            listViewTemplate.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent);
+            
+            // Set reasonable minimum widths to prevent columns from being too narrow
+            int minNameWidth = 100;
+            int minGalleryWidth = 80;
+            int minCategoryWidth = 120;
+            int minTemplateWidth = 100;
+            
+            if (listViewTemplate.Columns[0].Width < minNameWidth)
+                listViewTemplate.Columns[0].Width = minNameWidth;
+            if (listViewTemplate.Columns[1].Width < minGalleryWidth)
+                listViewTemplate.Columns[1].Width = minGalleryWidth;
+            if (listViewTemplate.Columns[2].Width < minCategoryWidth)
+                listViewTemplate.Columns[2].Width = minCategoryWidth;
+            if (listViewTemplate.Columns[3].Width < minTemplateWidth)
+                listViewTemplate.Columns[3].Width = minTemplateWidth;
         }
 
         private void ListViewTemplate_ColumnClick(object sender, ColumnClickEventArgs e)
@@ -3064,6 +3090,12 @@ BACKUP PROCESS:
             }
         }
 
+        private void ListViewTemplate_ColumnWidthChanged(object sender, ColumnWidthChangedEventArgs e)
+        {
+            // Optional: Could add status update or logging here
+            // For now, just ensure the change is properly handled
+            // The ListView automatically handles the visual update
+        }
 
         private void DeleteSelectedTemplate()
         {
