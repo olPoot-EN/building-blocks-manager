@@ -59,7 +59,7 @@ namespace BuildingBlocksManager
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "Building Blocks Manager - Version 14";
+            this.Text = "Building Blocks Manager - Version 15";
             this.Size = new System.Drawing.Size(600, 680);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = new System.Drawing.Size(450, 500);
@@ -563,6 +563,7 @@ namespace BuildingBlocksManager
             {
                 txtTemplatePath.Text = "";
                 lblTemplatePathDisplay.Text = "";
+                txtTemplatePath.BackColor = System.Drawing.SystemColors.Window;
                 return;
             }
 
@@ -571,6 +572,16 @@ namespace BuildingBlocksManager
             
             txtTemplatePath.Text = fileName;
             lblTemplatePathDisplay.Text = string.IsNullOrEmpty(directoryPath) ? "" : directoryPath + Path.DirectorySeparatorChar;
+            
+            // Set background color based on file existence
+            if (File.Exists(fullPath))
+            {
+                txtTemplatePath.BackColor = System.Drawing.SystemColors.Window;
+            }
+            else
+            {
+                txtTemplatePath.BackColor = System.Drawing.Color.Yellow;
+            }
         }
 
         private void UpdateSourceDirectoryDisplay(string fullPath)
@@ -581,6 +592,7 @@ namespace BuildingBlocksManager
             {
                 txtSourceDirectory.Text = "";
                 lblSourceDirectoryPathDisplay.Text = "";
+                txtSourceDirectory.BackColor = System.Drawing.SystemColors.Window;
                 return;
             }
 
@@ -590,6 +602,16 @@ namespace BuildingBlocksManager
             
             txtSourceDirectory.Text = "..." + Path.DirectorySeparatorChar + lowestLevelDirectory;
             lblSourceDirectoryPathDisplay.Text = string.IsNullOrEmpty(parentPath) ? "" : parentPath + Path.DirectorySeparatorChar;
+            
+            // Set background color based on directory existence
+            if (Directory.Exists(fullPath))
+            {
+                txtSourceDirectory.BackColor = System.Drawing.SystemColors.Window;
+            }
+            else
+            {
+                txtSourceDirectory.BackColor = System.Drawing.Color.Yellow;
+            }
             
             // Reinitialize logger with new source directory
             InitializeLogger();
@@ -603,6 +625,7 @@ namespace BuildingBlocksManager
             {
                 txtExportDirectory.Text = "";
                 lblExportDirectoryPathDisplay.Text = "";
+                txtExportDirectory.BackColor = System.Drawing.SystemColors.Window;
                 return;
             }
 
@@ -612,6 +635,16 @@ namespace BuildingBlocksManager
             
             txtExportDirectory.Text = "..." + Path.DirectorySeparatorChar + lowestLevelDirectory;
             lblExportDirectoryPathDisplay.Text = string.IsNullOrEmpty(parentPath) ? "" : parentPath + Path.DirectorySeparatorChar;
+            
+            // Set background color based on directory existence
+            if (Directory.Exists(fullPath))
+            {
+                txtExportDirectory.BackColor = System.Drawing.SystemColors.Window;
+            }
+            else
+            {
+                txtExportDirectory.BackColor = System.Drawing.Color.Yellow;
+            }
         }
 
         private bool EnsureTemplateQueried()
@@ -1801,10 +1834,62 @@ namespace BuildingBlocksManager
 
         private void MainForm_Load(object sender, EventArgs e)
         {
+            // Show startup path validation results
+            ShowStartupPathValidation();
+            
             // Check if we have valid paths from settings to auto-run queries
             if (ShouldRunStartupQueries())
             {
                 RunStartupQueries();
+            }
+        }
+
+        private void ShowStartupPathValidation()
+        {
+            var issues = new List<string>();
+            
+            // Check template path
+            if (!string.IsNullOrEmpty(fullTemplatePath))
+            {
+                if (!File.Exists(fullTemplatePath))
+                {
+                    issues.Add($"Template file not found: {fullTemplatePath}");
+                }
+            }
+            
+            // Check source directory path
+            if (!string.IsNullOrEmpty(fullSourceDirectoryPath))
+            {
+                if (!Directory.Exists(fullSourceDirectoryPath))
+                {
+                    issues.Add($"Source directory not found: {fullSourceDirectoryPath}");
+                }
+            }
+            
+            // Check export directory path
+            if (!string.IsNullOrEmpty(fullExportDirectoryPath))
+            {
+                if (!Directory.Exists(fullExportDirectoryPath))
+                {
+                    issues.Add($"Export directory not found: {fullExportDirectoryPath}");
+                }
+            }
+            
+            if (issues.Count > 0)
+            {
+                AppendResults("=== STARTUP PATH VALIDATION ===");
+                AppendResults("The following issues were detected with saved paths:");
+                AppendResults("(Yellow highlighted textboxes require attention)");
+                AppendResults("");
+                foreach (var issue in issues)
+                {
+                    AppendResults($"⚠ {issue}");
+                }
+                AppendResults("");
+                AppendResults("Please use the Browse buttons to select valid paths.");
+                AppendResults("==================================");
+                AppendResults("");
+                UpdateStatus($"{issues.Count} path issue(s) found - see results");
             }
         }
 
