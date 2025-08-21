@@ -60,7 +60,7 @@ namespace BuildingBlocksManager
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "Building Blocks Manager - Version 248";
+            this.Text = "Building Blocks Manager - Version 249";
             this.Size = new System.Drawing.Size(600, 680);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = new System.Drawing.Size(450, 500);
@@ -1286,45 +1286,49 @@ namespace BuildingBlocksManager
                 }
                 else
                 {
-                    // For multiple files, show analysis dialog to let user choose
-                    progressBar.Style = ProgressBarStyle.Continuous;
-                    progressBar.Value = 0;
+                    // For multiple files, show simple confirmation like single file
+                    var newCount = analysis.NewFiles.Count;
+                    var modifiedCount = analysis.ModifiedFiles.Count;
+                    var unchangedCount = analysis.UnchangedFiles.Count;
                     
-                    using (var analysisDialog = new ImportAnalysisDialog(analysis, "Import Selected Files"))
-                    {
-                        var dialogResult = analysisDialog.ShowDialog();
+                    var statusSummary = "";
+                    if (newCount > 0) statusSummary += $"{newCount} new, ";
+                    if (modifiedCount > 0) statusSummary += $"{modifiedCount} modified, ";
+                    if (unchangedCount > 0) statusSummary += $"{unchangedCount} unchanged";
+                    statusSummary = statusSummary.TrimEnd(' ', ',');
+                    
+                    AppendResults($"Multiple files selected: {checkedFiles.Count} files");
+                    AppendResults($"Status breakdown: {statusSummary}");
+                    
+                    // Simple confirmation dialog for multiple files
+                    var confirmResult = MessageBox.Show(
+                        $"Import {checkedFiles.Count} selected files?\n\nStatus: {statusSummary}\n\nThis will import all selected files regardless of their current status.",
+                        "Import Multiple Files",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Question,
+                        MessageBoxDefaultButton.Button1); // Default to "Yes"
                         
-                        if (dialogResult != DialogResult.OK || analysisDialog.Choice == ImportAnalysisDialog.UserChoice.Cancel)
-                        {
-                            AppendResults("Import operation cancelled by user.");
-                            UpdateStatus("Import cancelled");
-                            progressBar.Style = ProgressBarStyle.Continuous;
-                            progressBar.Value = 0;
-                            return;
-                        }
+                    if (confirmResult != DialogResult.Yes)
+                    {
+                        AppendResults("Import cancelled by user.");
+                        UpdateStatus("Import cancelled");
+                        progressBar.Style = ProgressBarStyle.Continuous;
+                        progressBar.Value = 0;
+                        HideStopButton();
+                        return;
+                    }
+                    
+                    filesToImport = checkedFiles;
+                    operationDescription = "Import All Selected Files";
+                    AppendResults($"User confirmed import of all {filesToImport.Count} selected files");
 
-                        // Determine which files to import based on user choice
-                        if (analysisDialog.Choice == ImportAnalysisDialog.UserChoice.ImportOnlyChanged)
-                        {
-                            filesToImport = analysis.NewFiles.Concat(analysis.ModifiedFiles).ToList();
-                            operationDescription = "Import Only Changed Selected Files";
-                            AppendResults($"User chose to import only changed files ({filesToImport.Count} of {checkedFiles.Count} selected files)");
-                        }
-                        else // ImportAllAsRequested
-                        {
-                            filesToImport = checkedFiles;
-                            operationDescription = "Import All Selected Files As Requested";
-                            AppendResults($"User chose to import all selected files as requested ({filesToImport.Count} files)");
-                        }
-
-                        if (filesToImport.Count == 0)
-                        {
-                            AppendResults("No files to import based on selection.");
-                            UpdateStatus("No files to import");
-                            progressBar.Style = ProgressBarStyle.Continuous;
-                            progressBar.Value = 0;
-                            return;
-                        }
+                    if (filesToImport.Count == 0)
+                    {
+                        AppendResults("No files to import based on selection.");
+                        UpdateStatus("No files to import");
+                        progressBar.Style = ProgressBarStyle.Continuous;
+                        progressBar.Value = 0;
+                        return;
                     }
                 }
 
