@@ -56,18 +56,11 @@ namespace BuildingBlocksManager
         private SortOrder sortOrder = SortOrder.None;
         private System.Collections.Generic.List<string> conflictedFiles = new System.Collections.Generic.List<string>();
 
-        // Win32 API for sending messages to ListView
-        [DllImport("user32.dll")]
-        private static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
-        
-        private const uint LVM_SETCOLUMNWIDTH = 0x1000 + 30;
-        private const int LVSCW_AUTOSIZE = -1;
-        private const int LVSCW_AUTOSIZE_USEHEADER = -2;
 
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "Building Blocks Manager - Version 234";
+            this.Text = "Building Blocks Manager - Version 235";
             this.Size = new System.Drawing.Size(600, 680);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = new System.Drawing.Size(450, 500);
@@ -3077,7 +3070,9 @@ BACKUP PROCESS:
             }
 
             UpdateTemplateCount(filteredBlocks.Count);
-            AutoResizeTemplateColumns();
+            
+            // Defer auto-resize until after ListView finishes rendering
+            this.BeginInvoke(new MethodInvoker(AutoResizeTemplateColumns));
         }
 
         private void UpdateFilterButtonText()
@@ -3110,11 +3105,8 @@ BACKUP PROCESS:
             if (listViewTemplate.Items.Count == 0)
                 return;
 
-            // Use Win32 API to exactly replicate double-click column resize behavior
-            for (int i = 0; i < listViewTemplate.Columns.Count; i++)
-            {
-                SendMessage(listViewTemplate.Handle, LVM_SETCOLUMNWIDTH, new IntPtr(i), new IntPtr(LVSCW_AUTOSIZE_USEHEADER));
-            }
+            // Use clean .NET approach - HeaderSize considers both content and headers
+            listViewTemplate.AutoResizeColumns(ColumnHeaderAutoResizeStyle.HeaderSize);
             
             // Set reasonable minimum widths to prevent columns from being too narrow
             int minNameWidth = 100;
