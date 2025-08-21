@@ -60,7 +60,7 @@ namespace BuildingBlocksManager
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "Building Blocks Manager - Version 244";
+            this.Text = "Building Blocks Manager - Version 245";
             this.Size = new System.Drawing.Size(600, 680);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = new System.Drawing.Size(450, 500);
@@ -2465,6 +2465,8 @@ BACKUP PROCESS:
 
         private void BtnQueryTemplate_Click(object sender, EventArgs e)
         {
+            MessageBox.Show("BtnQueryTemplate_Click called", "Debug", MessageBoxButtons.OK);
+            
             if (string.IsNullOrWhiteSpace(fullTemplatePath))
             {
                 MessageBox.Show("Please select a template file first.", "Validation Error", 
