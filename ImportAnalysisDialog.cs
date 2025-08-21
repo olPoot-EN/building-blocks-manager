@@ -20,8 +20,6 @@ namespace BuildingBlocksManager
         private Button btnImportChanged;
         private Button btnImportAll;
         private Button btnCancel;
-        private Label lblTitle;
-        private Label lblSummary;
         private TextBox txtDetails;
 
         public ImportAnalysisDialog(BuildingBlockLedger.ChangeAnalysis analysis, string originalRequestType)
@@ -40,24 +38,6 @@ namespace BuildingBlocksManager
             this.MaximizeBox = false;
             this.MinimizeBox = false;
 
-            // Title
-            lblTitle = new Label
-            {
-                Text = "",
-                Location = new Point(20, 20),
-                Size = new Size(450, 25),
-                Font = new Font(Font.FontFamily, 12, FontStyle.Bold),
-                ForeColor = Color.DarkBlue
-            };
-
-            // Summary
-            lblSummary = new Label
-            {
-                Location = new Point(20, 55),
-                Size = new Size(450, 60),
-                Font = new Font(Font.FontFamily, 9),
-                ForeColor = Color.Black
-            };
 
             // Details text box
             txtDetails = new TextBox
@@ -107,7 +87,7 @@ namespace BuildingBlocksManager
             // Add controls to form
             this.Controls.AddRange(new Control[]
             {
-                lblTitle, lblSummary, txtDetails,
+                txtDetails,
                 btnImportChanged, btnImportAll, btnCancel
             });
 
@@ -118,8 +98,6 @@ namespace BuildingBlocksManager
 
         private void PopulateContent(BuildingBlockLedger.ChangeAnalysis analysis, string originalRequestType)
         {
-            // Clear the summary label - we'll put everything in the text box
-            lblSummary.Text = "";
 
             // Build all content in the text box with proper Windows line breaks
             var details = "SUMMARY\r\n";
