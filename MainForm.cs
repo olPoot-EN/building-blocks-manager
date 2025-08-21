@@ -59,7 +59,7 @@ namespace BuildingBlocksManager
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "Building Blocks Manager - Version 232";
+            this.Text = "Building Blocks Manager - Version 233";
             this.Size = new System.Drawing.Size(600, 680);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = new System.Drawing.Size(450, 500);
@@ -3102,8 +3102,11 @@ BACKUP PROCESS:
             if (listViewTemplate.Items.Count == 0)
                 return;
 
-            // Use HeaderSize which automatically considers both content and header width (same as double-click)
-            listViewTemplate.AutoResizeColumns(ColumnHeaderAutoResizeStyle.HeaderSize);
+            // Manually resize each column (same as double-clicking each column divider)
+            for (int i = 0; i < listViewTemplate.Columns.Count; i++)
+            {
+                listViewTemplate.AutoResizeColumn(i, ColumnHeaderAutoResizeStyle.HeaderSize);
+            }
             
             // Set reasonable minimum widths to prevent columns from being too narrow
             int minNameWidth = 100;
