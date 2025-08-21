@@ -55,12 +55,13 @@ namespace BuildingBlocksManager
         private int sortColumn = -1;
         private SortOrder sortOrder = SortOrder.None;
         private System.Collections.Generic.List<string> conflictedFiles = new System.Collections.Generic.List<string>();
+        private bool formFullyShown = false;
 
 
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "Building Blocks Manager - Version 242";
+            this.Text = "Building Blocks Manager - Version 243";
             this.Size = new System.Drawing.Size(600, 680);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = new System.Drawing.Size(450, 500);
@@ -524,6 +525,9 @@ namespace BuildingBlocksManager
             
             // Add event handler for automatic querying when tabs are first accessed
             tabControl.SelectedIndexChanged += TabControl_SelectedIndexChanged;
+            
+            // Track when form is fully shown
+            this.Shown += MainForm_Shown;
 
             // Progress and status section
             progressBar = new ProgressBar
@@ -674,6 +678,11 @@ namespace BuildingBlocksManager
             }
             
             return false; // User cancelled or query failed
+        }
+
+        private void MainForm_Shown(object sender, EventArgs e)
+        {
+            formFullyShown = true;
         }
 
         private void TabControl_SelectedIndexChanged(object sender, EventArgs e)
@@ -3085,6 +3094,13 @@ BACKUP PROCESS:
 
         private void AutoResizeTemplateColumnsAfterPopulation()
         {
+            // Only auto-resize if form is fully displayed
+            if (!formFullyShown)
+            {
+                MessageBox.Show("Skipping auto-resize - form not fully shown yet", "Auto-Resize Skipped", MessageBoxButtons.OK);
+                return;
+            }
+            
             MessageBox.Show($"About to auto-resize columns. Items count: {listViewTemplate.Items.Count}, Visible: {listViewTemplate.Visible}, Handle created: {listViewTemplate.IsHandleCreated}", 
                            "Before Auto-Resize", MessageBoxButtons.OK);
             
