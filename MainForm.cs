@@ -1866,8 +1866,6 @@ namespace BuildingBlocksManager
                 var fileManager = new FileManager(fullSourceDirectoryPath);
                 var files = fileManager.ScanDirectory();
                 
-                AppendResults("");
-                AppendResults("=== DIRECTORY TREE ===");
                 AppendResults($"Found {files.Count} files.");
                 
                 // Populate Directory tab tree view first
@@ -1901,7 +1899,8 @@ namespace BuildingBlocksManager
         {
             try
             {
-                AppendResults("=== TEMPLATE QUERY (STARTUP) ===");
+                AppendResults("");
+                AppendResults("=== TEMPLATE QUERY ===");
                 AppendResults("Loading Building Blocks...");
                 
                 // Check if template file is locked and handle it
