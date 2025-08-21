@@ -121,19 +121,19 @@ namespace BuildingBlocksManager
             // Clear the summary label - we'll put everything in the text box
             lblSummary.Text = "";
 
-            // Build all content in the text box with proper formatting
-            var details = "SUMMARY\n";
+            // Build all content in the text box with proper Windows line breaks
+            var details = "SUMMARY\r\n";
             if (analysis.NewFiles.Count > 0)
-                details += $"+{analysis.NewFiles.Count} new file(s)\n";
+                details += $"+{analysis.NewFiles.Count} new file(s)\r\n";
             if (analysis.ModifiedFiles.Count > 0)
-                details += $"+{analysis.ModifiedFiles.Count} file(s) modified\n";
-            details += $"{analysis.UnchangedFiles.Count} files unchanged\n";
+                details += $"+{analysis.ModifiedFiles.Count} file(s) modified\r\n";
+            details += $"{analysis.UnchangedFiles.Count} files unchanged\r\n";
             details += $"{analysis.TotalFiles} total files";
 
             if (analysis.TotalChangedFiles == 0)
             {
-                details += "\n\nAll files are up-to-date.\n";
-                details += "• No changes detected since last import\n";
+                details += "\r\n\r\nAll files are up-to-date.\r\n";
+                details += "• No changes detected since last import\r\n";
                 details += "• Consider canceling unless you need to reimport everything";
                 
                 btnImportChanged.Text = "No Import Needed";
@@ -141,16 +141,16 @@ namespace BuildingBlocksManager
             }
             else
             {
-                details += "\n\nRECOMMENDATION:\n";
+                details += "\r\n\r\nRECOMMENDATION:\r\n";
                 details += $"Import only the {analysis.TotalChangedFiles} changed files to save time.";
             }
             
             if (analysis.RemovedEntries.Count > 0)
             {
-                details += $"\n\nNOTE: {analysis.RemovedEntries.Count} Building Blocks in template are no longer found in source files:\n";
+                details += $"\r\n\r\nNOTE: {analysis.RemovedEntries.Count} Building Blocks in template are no longer found in source files:\r\n";
                 foreach (var entry in analysis.RemovedEntries)
                 {
-                    details += $"• {entry.Name} ({entry.Category})\n";
+                    details += $"• {entry.Name} ({entry.Category})\r\n";
                 }
             }
 
