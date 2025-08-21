@@ -33,14 +33,14 @@ namespace BuildingBlocksManager
             {
                 if (TotalChangedFiles == 0)
                 {
-                    return $"All {TotalFiles} files are up-to-date";
+                    return $"All {TotalFiles} files are up-to-date - no import needed";
                 }
                 
-                var summary = $"{TotalChangedFiles} of {TotalFiles} files need importing";
-                if (NewFiles.Count > 0) summary += $" • {NewFiles.Count} new";
-                if (ModifiedFiles.Count > 0) summary += $" • {ModifiedFiles.Count} modified";
+                var summary = $"Import Required: {TotalChangedFiles} of {TotalFiles} files need importing\n";
+                if (NewFiles.Count > 0) summary += $"  • {NewFiles.Count} new files\n";
+                if (ModifiedFiles.Count > 0) summary += $"  • {ModifiedFiles.Count} modified files";
                 
-                return summary;
+                return summary.TrimEnd();
             }
         }
 

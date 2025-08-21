@@ -229,18 +229,22 @@ namespace BuildingBlocksManager
             try
             {
                 var allFiles = ScanDirectory();
-                var newFiles = allFiles.Where(f => f.IsNew).Count();
-                var modifiedFiles = allFiles.Where(f => f.IsModified && !f.IsNew).Count();
-                var upToDateFiles = allFiles.Where(f => !f.IsNew && !f.IsModified).Count();
+                
+                // Use ledger analysis with tolerance for accurate counts
+                var analysis = ledger.AnalyzeChanges(allFiles);
                 var invalidFiles = allFiles.Where(f => !f.IsValid).Count();
                 var ignoredFiles = GetIgnoredFileCount();
+                
+                var readyForImport = analysis.NewFiles.Count + analysis.ModifiedFiles.Count;
 
-                return $"Files Ready for Import: {newFiles + modifiedFiles}\n" +
-                       $"- New Files: {newFiles}\n" +
-                       $"- Modified Files: {modifiedFiles}\n" +
-                       $"- Up-to-date Files: {upToDateFiles}\n" +
-                       $"- Invalid Files: {invalidFiles}\n" +
-                       $"- Ignored Files: {ignoredFiles}";
+                return $"Files Ready for Import: {readyForImport}\n" +
+                       $"  • New Files: {analysis.NewFiles.Count}\n" +
+                       $"  • Modified Files: {analysis.ModifiedFiles.Count}\n" +
+                       $"\n" +
+                       $"Other Files:\n" +
+                       $"  • Up-to-date Files: {analysis.UnchangedFiles.Count}\n" +
+                       $"  • Invalid Files: {invalidFiles}\n" +
+                       $"  • Ignored Files: {ignoredFiles}";
             }
             catch (Exception ex)
             {
