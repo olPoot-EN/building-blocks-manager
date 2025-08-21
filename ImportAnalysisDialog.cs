@@ -79,7 +79,7 @@ namespace BuildingBlocksManager
                 Size = new Size(160, 40),
                 BackColor = Color.LightGreen,
                 UseVisualStyleBackColor = false,
-                Font = new Font(Font.FontFamily, 8, FontStyle.Bold)
+                Font = new Font(Font.FontFamily, 8)
             };
             btnImportChanged.Click += BtnImportChanged_Click;
 
