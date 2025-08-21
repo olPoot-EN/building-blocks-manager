@@ -237,13 +237,13 @@ namespace BuildingBlocksManager
                 
                 var readyForImport = analysis.NewFiles.Count + analysis.ModifiedFiles.Count;
 
-                return $"Files Ready for Import: {readyForImport}\n" +
-                       $"  • New Files: {analysis.NewFiles.Count}\n" +
-                       $"  • Modified Files: {analysis.ModifiedFiles.Count}\n" +
-                       $"\n" +
-                       $"Other Files:\n" +
-                       $"  • Up-to-date Files: {analysis.UnchangedFiles.Count}\n" +
-                       $"  • Invalid Files: {invalidFiles}\n" +
+                return $"Files Ready for Import: {readyForImport}|" +
+                       $"  • New Files: {analysis.NewFiles.Count}|" +
+                       $"  • Modified Files: {analysis.ModifiedFiles.Count}|" +
+                       $"|" +
+                       $"Other Files:|" +
+                       $"  • Up-to-date Files: {analysis.UnchangedFiles.Count}|" +
+                       $"  • Invalid Files: {invalidFiles}|" +
                        $"  • Ignored Files: {ignoredFiles}";
             }
             catch (Exception ex)

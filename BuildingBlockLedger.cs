@@ -36,11 +36,11 @@ namespace BuildingBlocksManager
                     return $"All {TotalFiles} files are up-to-date - no import needed";
                 }
                 
-                var summary = $"Import Required: {TotalChangedFiles} of {TotalFiles} files need importing\n";
-                if (NewFiles.Count > 0) summary += $"  • {NewFiles.Count} new files\n";
-                if (ModifiedFiles.Count > 0) summary += $"  • {ModifiedFiles.Count} modified files";
+                var summary = $"Import Required: {TotalChangedFiles} of {TotalFiles} files need importing";
+                if (NewFiles.Count > 0) summary += $"|  • {NewFiles.Count} new files";
+                if (ModifiedFiles.Count > 0) summary += $"|  • {ModifiedFiles.Count} modified files";
                 
-                return summary.TrimEnd();
+                return summary;
             }
         }
 

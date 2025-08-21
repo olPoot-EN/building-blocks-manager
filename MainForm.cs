@@ -852,7 +852,10 @@ namespace BuildingBlocksManager
                 
                 AppendResults("");
                 AppendResults("=== CHANGE ANALYSIS ===");
-                AppendResults(analysis.GetSummary());
+                foreach (var line in analysis.GetSummary().Split('|'))
+                {
+                    AppendResults(line);
+                }
                 
                 // Populate Directory tab tree view using analysis results
                 PopulateDirectoryTree(files, analysis);
@@ -1858,29 +1861,35 @@ namespace BuildingBlocksManager
             try
             {
                 AppendResults("=== DIRECTORY QUERY (STARTUP) ===");
-                AppendResults($"Scanning directory: {fullSourceDirectoryPath}");
+                AppendResults("Scanning directory...");
                 
                 var fileManager = new FileManager(fullSourceDirectoryPath);
-                var summary = fileManager.GetSummary();
-                
-                AppendResults("");
-                AppendResults(summary);
-                
                 var files = fileManager.ScanDirectory();
                 
-                // Analyze changes using ledger comparison with tolerance
+                AppendResults("");
+                AppendResults("=== DIRECTORY TREE ===");
+                AppendResults($"Found {files.Count} files.");
+                
+                // Populate Directory tab tree view first
                 var ledger = new BuildingBlockLedger();
                 var analysis = ledger.AnalyzeChanges(files);
+                PopulateDirectoryTree(files, analysis);
+                AppendResults("Directory tree populated.");
+                
+                AppendResults("");
+                AppendResults("=== FILE SUMMARY ===");
+                var summary = fileManager.GetSummary();
+                foreach (var line in summary.Split('|'))
+                {
+                    AppendResults(line);
+                }
                 
                 AppendResults("");
                 AppendResults("=== CHANGE ANALYSIS ===");
-                AppendResults(analysis.GetSummary());
-                
-                // Populate Directory tab tree view using analysis results
-                PopulateDirectoryTree(files, analysis);
-                
-                AppendResults("");
-                AppendResults($"Directory tree populated with {files.Count} files.");
+                foreach (var line in analysis.GetSummary().Split('|'))
+                {
+                    AppendResults(line);
+                }
             }
             catch (Exception ex)
             {
@@ -1893,7 +1902,7 @@ namespace BuildingBlocksManager
             try
             {
                 AppendResults("=== TEMPLATE QUERY (STARTUP) ===");
-                AppendResults($"Loading Building Blocks from: {fullTemplatePath}");
+                AppendResults("Loading Building Blocks...");
                 
                 // Check if template file is locked and handle it
                 if (!HandleTemplateFileLock(fullTemplatePath, "Startup Template Query"))
@@ -1942,8 +1951,9 @@ namespace BuildingBlocksManager
                     UpdateFilterButtonText();
                     ApplyTemplateFilter();
                     
+                    var filteredBlocks = GetFilteredBuildingBlocks();
                     AppendResults("");
-                    AppendResults($"Template loaded with {buildingBlocks.Count} Building Blocks.");
+                    AppendResults($"Template loaded with {buildingBlocks.Count} Building Blocks ({filteredBlocks.Count} after filtering).");
                 }
             }
             catch (Exception ex)
