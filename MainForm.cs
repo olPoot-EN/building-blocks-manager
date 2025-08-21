@@ -60,7 +60,7 @@ namespace BuildingBlocksManager
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "Building Blocks Manager - Version 245";
+            this.Text = "Building Blocks Manager - Version 246";
             this.Size = new System.Drawing.Size(600, 680);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = new System.Drawing.Size(450, 500);
@@ -693,6 +693,11 @@ namespace BuildingBlocksManager
                 if (listViewTemplate.Items.Count == 0 && !string.IsNullOrWhiteSpace(fullTemplatePath) && File.Exists(fullTemplatePath))
                 {
                     BtnQueryTemplate_Click(sender, e);
+                }
+                else if (listViewTemplate.Items.Count > 0)
+                {
+                    // Template data already loaded - just do auto-resize
+                    AutoResizeTemplateColumnsAfterPopulation();
                 }
             }
         }
