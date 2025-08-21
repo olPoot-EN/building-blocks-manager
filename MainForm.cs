@@ -55,15 +55,21 @@ namespace BuildingBlocksManager
         private int sortColumn = -1;
         private SortOrder sortOrder = SortOrder.None;
         private System.Collections.Generic.List<string> conflictedFiles = new System.Collections.Generic.List<string>();
+        private System.Windows.Forms.Timer columnResizeTimer;
 
 
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "Building Blocks Manager - Version 236";
+            this.Text = "Building Blocks Manager - Version 237";
             this.Size = new System.Drawing.Size(600, 680);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = new System.Drawing.Size(450, 500);
+            
+            // Initialize timer for delayed column resizing
+            columnResizeTimer = new System.Windows.Forms.Timer();
+            columnResizeTimer.Interval = 50; // 50ms delay
+            columnResizeTimer.Tick += ColumnResizeTimer_Tick;
             
             // Wire up event handlers
             btnBrowseTemplate.Click += BtnBrowseTemplate_Click;
@@ -3072,7 +3078,12 @@ BACKUP PROCESS:
                 listViewTemplate.Items.Add(item);
             }
 
-            // Auto-resize columns using proven -2 width technique (handles both content and headers)
+            listViewTemplate.EndUpdate();
+            
+            // Force UI to complete processing before auto-resize
+            Application.DoEvents();
+            
+            // Auto-resize columns after UI is fully updated
             if (filteredBlocks.Count > 0)
             {
                 for (int i = 0; i < listViewTemplate.Columns.Count; i++)
@@ -3089,9 +3100,33 @@ BACKUP PROCESS:
                 }
             }
             
-            listViewTemplate.EndUpdate();
-            
             UpdateTemplateCount(filteredBlocks.Count);
+            
+            // Fallback: Start timer for delayed resize in case DoEvents didn't work
+            columnResizeTimer.Stop();
+            columnResizeTimer.Start();
+        }
+
+        private void ColumnResizeTimer_Tick(object sender, EventArgs e)
+        {
+            columnResizeTimer.Stop();
+            
+            // Final attempt at column auto-resize with timer delay
+            if (listViewTemplate.Items.Count > 0)
+            {
+                for (int i = 0; i < listViewTemplate.Columns.Count; i++)
+                {
+                    listViewTemplate.Columns[i].Width = -2;
+                }
+                
+                // Enforce minimum widths
+                int[] minWidths = { 100, 80, 120, 100 };
+                for (int i = 0; i < listViewTemplate.Columns.Count && i < minWidths.Length; i++)
+                {
+                    if (listViewTemplate.Columns[i].Width < minWidths[i])
+                        listViewTemplate.Columns[i].Width = minWidths[i];
+                }
+            }
         }
 
         private void UpdateFilterButtonText()
