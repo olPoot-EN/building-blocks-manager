@@ -453,8 +453,12 @@ namespace BuildingBlocksManager
                     
                     foreach (var bb in userBlocks)
                     {
+                        // Normalize Building Block name to match file system naming (spaces to underscores)
+                        // This ensures consistency with FileManager.ExtractName() which converts spaces to underscores
+                        var normalizedName = bb.Name.Replace(' ', '_');
+                        
                         // Use template modification time as baseline
-                        UpdateEntry(bb.Name, bb.Category, templateModTime);
+                        UpdateEntry(normalizedName, bb.Category, templateModTime);
                     }
                 }
                 
