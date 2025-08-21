@@ -60,7 +60,7 @@ namespace BuildingBlocksManager
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "Building Blocks Manager - Version 251";
+            this.Text = "Building Blocks Manager - Version 252";
             this.Size = new System.Drawing.Size(600, 680);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = new System.Drawing.Size(450, 500);
@@ -883,7 +883,10 @@ namespace BuildingBlocksManager
                 var summary = fileManager.GetSummary();
                 
                 AppendResults("");
-                AppendResults(summary);
+                foreach (var line in summary.Split('|'))
+                {
+                    AppendResults(line);
+                }
                 
                 var files = fileManager.ScanDirectory();
                 
