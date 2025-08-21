@@ -61,7 +61,7 @@ namespace BuildingBlocksManager
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "Building Blocks Manager - Version 266";
+            this.Text = "Building Blocks Manager - Version 267";
             this.Size = new System.Drawing.Size(600, 680);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = new System.Drawing.Size(450, 500);
@@ -242,17 +242,15 @@ namespace BuildingBlocksManager
                 Size = new System.Drawing.Size(60, 25)
             };
 
-            // Template comments display (green box area)
+            // Template comments display
             lblTemplateComments = new Label
             {
                 Text = "",
-                Location = new System.Drawing.Point(350, 45),
+                Location = new System.Drawing.Point(344, 45),
                 Size = new System.Drawing.Size(230, 40),
-                Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, 9, System.Drawing.FontStyle.Regular),
+                Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, 8, System.Drawing.FontStyle.Regular),
                 ForeColor = System.Drawing.Color.Aqua,
-                BorderStyle = BorderStyle.FixedSingle,
                 TextAlign = System.Drawing.ContentAlignment.MiddleLeft,
-                Padding = new Padding(5),
                 AutoEllipsis = true
             };
 
