@@ -62,8 +62,8 @@ namespace BuildingBlocksManager
             // Details text box
             txtDetails = new TextBox
             {
-                Location = new Point(20, 55),
-                Size = new Size(450, 250),
+                Location = new Point(20, 20),
+                Size = new Size(450, 285),
                 Multiline = true,
                 ReadOnly = true,
                 ScrollBars = ScrollBars.Vertical,
@@ -128,7 +128,7 @@ namespace BuildingBlocksManager
             if (analysis.ModifiedFiles.Count > 0)
                 details += $"• {analysis.ModifiedFiles.Count} file(s) modified\r\n";
             details += $"• {analysis.UnchangedFiles.Count} files unchanged\r\n";
-            details += $"• {analysis.TotalFiles} total files";
+            details += $"{analysis.TotalFiles} total files";
 
             if (analysis.TotalChangedFiles == 0)
             {
