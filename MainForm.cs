@@ -243,7 +243,7 @@ namespace BuildingBlocksManager
             // Source directory section
             var lblDirectory = new Label
             {
-                Text = "Source:",
+                Text = "Import:",
                 Location = new System.Drawing.Point(15, 95),
                 Size = new System.Drawing.Size(45, 23),
              };
@@ -729,7 +729,7 @@ namespace BuildingBlocksManager
         {
             using (var dialog = new OpenFileDialog())
             {
-                dialog.Title = "Select Source Directory";
+                dialog.Title = "Select Import Directory";
                 dialog.CheckFileExists = false;
                 dialog.CheckPathExists = true;
                 dialog.ValidateNames = false;
@@ -808,14 +808,14 @@ namespace BuildingBlocksManager
 
             if (string.IsNullOrWhiteSpace(fullSourceDirectoryPath))
             {
-                MessageBox.Show("Please select a source directory.", "Validation Error", 
+                MessageBox.Show("Please select an import directory.", "Validation Error", 
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return false;
             }
 
             if (!Directory.Exists(fullSourceDirectoryPath))
             {
-                MessageBox.Show("The selected source directory does not exist.", "Validation Error", 
+                MessageBox.Show("The selected import directory does not exist.", "Validation Error", 
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return false;
             }
@@ -1877,7 +1877,7 @@ namespace BuildingBlocksManager
                 AppendResults("Directory tree populated.");
                 
                 AppendResults("");
-                AppendResults("=== FILE SUMMARY ===");
+                AppendResults("=== IMPORT FILES ANALYSIS ===");
                 var summary = fileManager.GetSummary();
                 foreach (var line in summary.Split('|'))
                 {
