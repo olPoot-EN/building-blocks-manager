@@ -59,7 +59,7 @@ namespace BuildingBlocksManager
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "Building Blocks Manager - Version 229";
+            this.Text = "Building Blocks Manager - Version 230";
             this.Size = new System.Drawing.Size(600, 680);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = new System.Drawing.Size(450, 500);
@@ -2607,22 +2607,32 @@ BACKUP PROCESS:
             string nodeText = directory.Name;
             if (folderStatus.TotalCount > 0)
             {
-                nodeText += $" ({folderStatus.TotalCount}";
+                bool hasStatusIndicators = folderStatus.NewCount > 0 || folderStatus.ModifiedCount > 0;
                 
-                if (folderStatus.NewCount > 0 && folderStatus.ModifiedCount > 0)
+                if (hasStatusIndicators)
                 {
-                    nodeText += $", {folderStatus.NewCount} new, {folderStatus.ModifiedCount} modified";
+                    nodeText += $" ({folderStatus.TotalCount} total";
+                    
+                    if (folderStatus.NewCount > 0 && folderStatus.ModifiedCount > 0)
+                    {
+                        nodeText += $", {folderStatus.NewCount} new, {folderStatus.ModifiedCount} modified";
+                    }
+                    else if (folderStatus.NewCount > 0)
+                    {
+                        nodeText += $", {folderStatus.NewCount} new";
+                    }
+                    else if (folderStatus.ModifiedCount > 0)
+                    {
+                        nodeText += $", {folderStatus.ModifiedCount} modified";
+                    }
+                    
+                    nodeText += ")";
                 }
-                else if (folderStatus.NewCount > 0)
+                else
                 {
-                    nodeText += $", {folderStatus.NewCount} new";
+                    // No status indicators, just show simple count
+                    nodeText += $" ({folderStatus.TotalCount})";
                 }
-                else if (folderStatus.ModifiedCount > 0)
-                {
-                    nodeText += $", {folderStatus.ModifiedCount} modified";
-                }
-                
-                nodeText += ")";
             }
             
             var node = new TreeNode(nodeText)
