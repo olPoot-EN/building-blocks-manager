@@ -61,7 +61,7 @@ namespace BuildingBlocksManager
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "Building Blocks Manager - Version 264";
+            this.Text = "Building Blocks Manager - Version 265";
             this.Size = new System.Drawing.Size(600, 680);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = new System.Drawing.Size(450, 500);
@@ -260,7 +260,7 @@ namespace BuildingBlocksManager
             var lblDirectory = new Label
             {
                 Text = "Import:",
-                Location = new System.Drawing.Point(15, 95),
+                Location = new System.Drawing.Point(18, 95),
                 Size = new System.Drawing.Size(45, 23),
              };
 
@@ -291,7 +291,7 @@ namespace BuildingBlocksManager
             var lblExportDirectory = new Label
             {
                 Text = "Export:",
-                Location = new System.Drawing.Point(15, 145),
+                Location = new System.Drawing.Point(18, 145),
                 Size = new System.Drawing.Size(45, 23),
             };
 
