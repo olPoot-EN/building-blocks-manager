@@ -43,7 +43,7 @@ namespace BuildingBlocksManager
             // Title
             lblTitle = new Label
             {
-                Text = "Ledger Analysis Complete",
+                Text = "",
                 Location = new Point(20, 20),
                 Size = new Size(450, 25),
                 Font = new Font(Font.FontFamily, 12, FontStyle.Bold),
@@ -118,40 +118,31 @@ namespace BuildingBlocksManager
 
         private void PopulateContent(BuildingBlockLedger.ChangeAnalysis analysis, string originalRequestType)
         {
-            // Set summary text with proper line breaks
-            lblSummary.Text = analysis.GetSummary().Replace("|", "\n");
+            // Set summary text with proper formatting
+            var summary = "SUMMARY\n";
+            if (analysis.NewFiles.Count > 0)
+                summary += $"+{analysis.NewFiles.Count} new file(s)\n";
+            if (analysis.ModifiedFiles.Count > 0)
+                summary += $"+{analysis.ModifiedFiles.Count} file(s) modified\n";
+            summary += $"{analysis.UnchangedFiles.Count} files unchanged\n";
+            summary += $"{analysis.TotalFiles} total files";
+            
+            lblSummary.Text = summary;
 
-            // Build concise details
+            // Build details with proper formatting
             var details = "";
 
             if (analysis.TotalChangedFiles == 0)
             {
-                details = "All files are up-to-date.\n\n";
+                details = "All files are up-to-date.\n";
                 details += "• No changes detected since last import\n";
-                details += "• Consider canceling unless you need to reimport everything\n";
+                details += "• Consider canceling unless you need to reimport everything";
                 
                 btnImportChanged.Text = "No Import Needed";
                 btnImportChanged.BackColor = Color.LightGray;
             }
             else
             {
-                details = "CHANGES DETECTED:\n\n";
-                
-                if (analysis.NewFiles.Count > 0)
-                {
-                    details += $"• {analysis.NewFiles.Count} new files ready to import\n";
-                }
-                
-                if (analysis.ModifiedFiles.Count > 0)
-                {
-                    details += $"• {analysis.ModifiedFiles.Count} files updated since last import\n";
-                }
-                
-                if (analysis.UnchangedFiles.Count > 0)
-                {
-                    details += $"• {analysis.UnchangedFiles.Count} files unchanged\n";
-                }
-                
                 details += "\nRECOMMENDATION:\n";
                 details += $"Import only the {analysis.TotalChangedFiles} changed files to save time.";
             }
