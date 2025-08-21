@@ -60,7 +60,7 @@ namespace BuildingBlocksManager
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "Building Blocks Manager - Version 241";
+            this.Text = "Building Blocks Manager - Version 242";
             this.Size = new System.Drawing.Size(600, 680);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = new System.Drawing.Size(450, 500);
@@ -3085,6 +3085,9 @@ BACKUP PROCESS:
 
         private void AutoResizeTemplateColumnsAfterPopulation()
         {
+            MessageBox.Show($"About to auto-resize columns. Items count: {listViewTemplate.Items.Count}, Visible: {listViewTemplate.Visible}, Handle created: {listViewTemplate.IsHandleCreated}", 
+                           "Before Auto-Resize", MessageBoxButtons.OK);
+            
             // Simple, clean column auto-resize using the proven Width = -2 method
             for (int i = 0; i < listViewTemplate.Columns.Count; i++)
             {
@@ -3098,6 +3101,9 @@ BACKUP PROCESS:
                 if (listViewTemplate.Columns[i].Width < minWidths[i])
                     listViewTemplate.Columns[i].Width = minWidths[i];
             }
+            
+            MessageBox.Show($"Auto-resize completed. Column widths: [{listViewTemplate.Columns[0].Width}, {listViewTemplate.Columns[1].Width}, {listViewTemplate.Columns[2].Width}, {listViewTemplate.Columns[3].Width}]", 
+                           "After Auto-Resize", MessageBoxButtons.OK);
         }
 
 
