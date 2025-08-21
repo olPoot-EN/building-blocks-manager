@@ -237,7 +237,7 @@ namespace BuildingBlocksManager
             {
                 Text = "Browse",
                 Location = new System.Drawing.Point(260, 44),
-                Size = new System.Drawing.Size(70, 25)
+                Size = new System.Drawing.Size(60, 25)
             };
 
             // Source directory section
@@ -402,7 +402,7 @@ namespace BuildingBlocksManager
                 Text = "Stop",
                 Location = new System.Drawing.Point(410, 290),
                 Size = new System.Drawing.Size(80, 35),
-                Visible = true,
+                Visible = false,
                 BackColor = System.Drawing.Color.LightCoral
             };
             btnStop.Click += BtnStop_Click;
@@ -2503,7 +2503,11 @@ BACKUP PROCESS:
         
         private TreeNode CreateDirectoryNode(DirectoryInfo directory, System.Collections.Generic.List<FileManager.FileInfo> scannedFiles, BuildingBlockLedger.ChangeAnalysis analysis = null)
         {
-            var node = new TreeNode(directory.Name)
+            // Count total files in this directory and all subdirectories
+            var totalFileCount = CountFilesInDirectory(directory.FullName, scannedFiles);
+            var nodeText = totalFileCount > 0 ? $"{directory.Name} ({totalFileCount})" : directory.Name;
+            
+            var node = new TreeNode(nodeText)
             {
                 Tag = directory.FullName
             };
@@ -2588,6 +2592,11 @@ BACKUP PROCESS:
             }
             
             return node;
+        }
+
+        private int CountFilesInDirectory(string directoryPath, System.Collections.Generic.List<FileManager.FileInfo> scannedFiles)
+        {
+            return scannedFiles.Count(f => f.FilePath.StartsWith(directoryPath, StringComparison.OrdinalIgnoreCase));
         }
 
         private void BtnFilterTemplate_Click(object sender, EventArgs e)
