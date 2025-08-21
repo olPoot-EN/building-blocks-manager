@@ -60,7 +60,7 @@ namespace BuildingBlocksManager
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "Building Blocks Manager - Version 235";
+            this.Text = "Building Blocks Manager - Version 236";
             this.Size = new System.Drawing.Size(600, 680);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = new System.Drawing.Size(450, 500);
@@ -3054,6 +3054,9 @@ BACKUP PROCESS:
 
         private void ApplyTemplateFilter()
         {
+            // Use BeginUpdate/EndUpdate to prevent race conditions
+            listViewTemplate.BeginUpdate();
+            
             listViewTemplate.Items.Clear();
             
             var filteredBlocks = GetFilteredBuildingBlocks();
@@ -3069,10 +3072,26 @@ BACKUP PROCESS:
                 listViewTemplate.Items.Add(item);
             }
 
-            UpdateTemplateCount(filteredBlocks.Count);
+            // Auto-resize columns using proven -2 width technique (handles both content and headers)
+            if (filteredBlocks.Count > 0)
+            {
+                for (int i = 0; i < listViewTemplate.Columns.Count; i++)
+                {
+                    listViewTemplate.Columns[i].Width = -2; // -2 = size to both header and content
+                }
+                
+                // Enforce reasonable minimum widths
+                int[] minWidths = { 100, 80, 120, 100 }; // Name, Gallery, Category, Template
+                for (int i = 0; i < listViewTemplate.Columns.Count && i < minWidths.Length; i++)
+                {
+                    if (listViewTemplate.Columns[i].Width < minWidths[i])
+                        listViewTemplate.Columns[i].Width = minWidths[i];
+                }
+            }
             
-            // Defer auto-resize until after ListView finishes rendering
-            this.BeginInvoke(new MethodInvoker(AutoResizeTemplateColumns));
+            listViewTemplate.EndUpdate();
+            
+            UpdateTemplateCount(filteredBlocks.Count);
         }
 
         private void UpdateFilterButtonText()
@@ -3100,29 +3119,6 @@ BACKUP PROCESS:
             }
         }
 
-        private void AutoResizeTemplateColumns()
-        {
-            if (listViewTemplate.Items.Count == 0)
-                return;
-
-            // Use clean .NET approach - HeaderSize considers both content and headers
-            listViewTemplate.AutoResizeColumns(ColumnHeaderAutoResizeStyle.HeaderSize);
-            
-            // Set reasonable minimum widths to prevent columns from being too narrow
-            int minNameWidth = 100;
-            int minGalleryWidth = 80;
-            int minCategoryWidth = 120;
-            int minTemplateWidth = 100;
-            
-            if (listViewTemplate.Columns[0].Width < minNameWidth)
-                listViewTemplate.Columns[0].Width = minNameWidth;
-            if (listViewTemplate.Columns[1].Width < minGalleryWidth)
-                listViewTemplate.Columns[1].Width = minGalleryWidth;
-            if (listViewTemplate.Columns[2].Width < minCategoryWidth)
-                listViewTemplate.Columns[2].Width = minCategoryWidth;
-            if (listViewTemplate.Columns[3].Width < minTemplateWidth)
-                listViewTemplate.Columns[3].Width = minTemplateWidth;
-        }
 
         private void ListViewTemplate_ColumnClick(object sender, ColumnClickEventArgs e)
         {
