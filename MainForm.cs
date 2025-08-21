@@ -59,7 +59,7 @@ namespace BuildingBlocksManager
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "Building Blocks Manager - Version 15";
+            this.Text = "Building Blocks Manager - Version 227";
             this.Size = new System.Drawing.Size(600, 680);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = new System.Drawing.Size(450, 500);
@@ -944,6 +944,8 @@ namespace BuildingBlocksManager
                 {
                     AppendResults("No valid AT_ files found in directory.");
                     UpdateStatus("No files to import");
+                    progressBar.Style = ProgressBarStyle.Continuous;
+                    progressBar.Value = 0;
                     return;
                 }
 
@@ -991,6 +993,8 @@ namespace BuildingBlocksManager
                     {
                         AppendResults("No files to import based on selection.");
                         UpdateStatus("No files to import");
+                        progressBar.Style = ProgressBarStyle.Continuous;
+                        progressBar.Value = 0;
                         return;
                     }
 
@@ -1193,6 +1197,9 @@ namespace BuildingBlocksManager
                 if (string.IsNullOrWhiteSpace(flatCategory))
                 {
                     AppendResults("Import cancelled - no category specified.");
+                    progressBar.Style = ProgressBarStyle.Continuous;
+                    progressBar.Value = 0;
+                    UpdateStatus("Import cancelled");
                     return;
                 }
             }
@@ -1283,6 +1290,8 @@ namespace BuildingBlocksManager
                         {
                             AppendResults("Import operation cancelled by user.");
                             UpdateStatus("Import cancelled");
+                            progressBar.Style = ProgressBarStyle.Continuous;
+                            progressBar.Value = 0;
                             return;
                         }
 
@@ -1304,6 +1313,8 @@ namespace BuildingBlocksManager
                         {
                             AppendResults("No files to import based on selection.");
                             UpdateStatus("No files to import");
+                            progressBar.Style = ProgressBarStyle.Continuous;
+                            progressBar.Value = 0;
                             return;
                         }
                     }
