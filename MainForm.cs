@@ -56,12 +56,15 @@ namespace BuildingBlocksManager
         private int sortColumn = -1;
         private SortOrder sortOrder = SortOrder.None;
         private System.Collections.Generic.List<string> conflictedFiles = new System.Collections.Generic.List<string>();
+        
+        // Flag to prevent recursive checkbox updates
+        private bool isUpdatingCheckStates = false;
 
 
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "Building Blocks Manager - Version 269";
+            this.Text = "Building Blocks Manager - Version 270";
             this.Size = new System.Drawing.Size(600, 680);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = new System.Drawing.Size(450, 500);
@@ -458,6 +461,10 @@ namespace BuildingBlocksManager
                 ShowRootLines = true,
                 CheckBoxes = true // Enable checkboxes for multiselect
             };
+            
+            // Add checkbox synchronization behavior
+            treeDirectory.AfterCheck += TreeDirectory_AfterCheck;
+            
             tabDirectory.Controls.Add(treeDirectory);
 
             // Template tab
@@ -3113,6 +3120,88 @@ BACKUP PROCESS:
                     CollectMissingFileNodes(node.Nodes, missingNodes);
                 }
             }
+        }
+
+        private void TreeDirectory_AfterCheck(object sender, TreeViewEventArgs e)
+        {
+            // Prevent recursive event triggering during programmatic check changes
+            if (isUpdatingCheckStates)
+                return;
+
+            isUpdatingCheckStates = true;
+            
+            try
+            {
+                if (e.Node.Checked)
+                {
+                    // If parent is checked, check all children
+                    CheckAllChildren(e.Node, true);
+                }
+                else
+                {
+                    // If parent is unchecked, uncheck all children
+                    CheckAllChildren(e.Node, false);
+                }
+                
+                // Update parent state based on children
+                UpdateParentCheckState(e.Node.Parent);
+            }
+            finally
+            {
+                isUpdatingCheckStates = false;
+            }
+        }
+
+        private void CheckAllChildren(TreeNode parentNode, bool isChecked)
+        {
+            foreach (TreeNode childNode in parentNode.Nodes)
+            {
+                childNode.Checked = isChecked;
+                
+                // Recursively check/uncheck grandchildren
+                if (childNode.Nodes.Count > 0)
+                {
+                    CheckAllChildren(childNode, isChecked);
+                }
+            }
+        }
+
+        private void UpdateParentCheckState(TreeNode parentNode)
+        {
+            if (parentNode == null)
+                return;
+
+            // Count checked children
+            int checkedCount = 0;
+            int totalCount = parentNode.Nodes.Count;
+
+            foreach (TreeNode childNode in parentNode.Nodes)
+            {
+                if (childNode.Checked)
+                    checkedCount++;
+            }
+
+            // Update parent state:
+            // - All children checked = parent checked
+            // - No children checked = parent unchecked  
+            // - Some children checked = parent unchecked (could implement tri-state here)
+            if (checkedCount == totalCount && totalCount > 0)
+            {
+                parentNode.Checked = true;
+            }
+            else if (checkedCount == 0)
+            {
+                parentNode.Checked = false;
+            }
+            else
+            {
+                // Partial selection - for now we'll leave parent unchecked
+                // Could implement tri-state/indeterminate state here if needed
+                parentNode.Checked = false;
+            }
+
+            // Recursively update grandparent
+            UpdateParentCheckState(parentNode.Parent);
         }
 
         private void BtnFilterTemplate_Click(object sender, EventArgs e)
