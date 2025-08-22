@@ -61,7 +61,7 @@ namespace BuildingBlocksManager
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "Building Blocks Manager - Version 268";
+            this.Text = "Building Blocks Manager - Version 269";
             this.Size = new System.Drawing.Size(600, 680);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = new System.Drawing.Size(450, 500);
@@ -2974,9 +2974,16 @@ BACKUP PROCESS:
         private void InitializeTreeContextMenu()
         {
             var contextMenu = new ContextMenuStrip();
-            var removeMenuItem = new ToolStripMenuItem("Remove from Ledger");
-            removeMenuItem.Click += RemoveFromLedger_Click;
-            contextMenu.Items.Add(removeMenuItem);
+            
+            var removeSingleMenuItem = new ToolStripMenuItem("Remove this item from Ledger");
+            removeSingleMenuItem.Click += RemoveSingleFromLedger_Click;
+            contextMenu.Items.Add(removeSingleMenuItem);
+            
+            contextMenu.Items.Add(new ToolStripSeparator());
+            
+            var removeAllMenuItem = new ToolStripMenuItem("Remove ALL missing files from Ledger");
+            removeAllMenuItem.Click += RemoveAllMissingFromLedger_Click;
+            contextMenu.Items.Add(removeAllMenuItem);
             
             // Set the context menu for the tree view
             treeDirectory.ContextMenuStrip = contextMenu;
@@ -3005,7 +3012,7 @@ BACKUP PROCESS:
             }
         }
 
-        private void RemoveFromLedger_Click(object sender, EventArgs e)
+        private void RemoveSingleFromLedger_Click(object sender, EventArgs e)
         {
             var selectedNode = treeDirectory.SelectedNode;
             if (selectedNode?.Tag is BuildingBlockLedger.LedgerEntry ledgerEntry)
@@ -3029,6 +3036,81 @@ BACKUP PROCESS:
                     logger?.Info($"Removed missing building block from ledger: {ledgerEntry.Name} ({ledgerEntry.Category})");
                     
                     MessageBox.Show($"'{ledgerEntry.Name}' has been removed from the ledger.", "Removed", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+        }
+
+        private void RemoveAllMissingFromLedger_Click(object sender, EventArgs e)
+        {
+            // Collect all missing file nodes from the entire tree
+            var missingNodes = new List<TreeNode>();
+            CollectMissingFileNodes(treeDirectory.Nodes, missingNodes);
+            
+            if (missingNodes.Count == 0)
+            {
+                MessageBox.Show("No missing files found in the directory tree.", "No Missing Files", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            
+            var result = MessageBox.Show(
+                $"Remove ALL {missingNodes.Count} missing files from the ledger?\n\n" +
+                "This will permanently remove the tracking records for all missing building blocks.",
+                "Confirm Bulk Removal",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+
+            if (result == DialogResult.Yes)
+            {
+                var ledger = new BuildingBlockLedger();
+                int successCount = 0;
+                var removedEntries = new List<string>();
+                
+                foreach (var node in missingNodes)
+                {
+                    if (node.Tag is BuildingBlockLedger.LedgerEntry ledgerEntry)
+                    {
+                        try
+                        {
+                            ledger.PermanentlyRemoveEntry(ledgerEntry.Name, ledgerEntry.Category);
+                            removedEntries.Add(ledgerEntry.Name);
+                            successCount++;
+                        }
+                        catch (Exception ex)
+                        {
+                            logger?.Error($"Failed to remove {ledgerEntry.Name} from ledger: {ex.Message}");
+                        }
+                    }
+                }
+                
+                // Remove all missing nodes from tree
+                foreach (var node in missingNodes)
+                {
+                    node.Remove();
+                }
+                
+                // Log the bulk action
+                logger?.Info($"Bulk removed {successCount} missing building blocks from ledger: {string.Join(", ", removedEntries)}");
+                
+                MessageBox.Show($"Successfully removed {successCount} missing files from the ledger.", 
+                    "Bulk Removal Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+
+        private void CollectMissingFileNodes(TreeNodeCollection nodes, List<TreeNode> missingNodes)
+        {
+            foreach (TreeNode node in nodes)
+            {
+                // Check if this node is a missing file (has LedgerEntry tag)
+                if (node.Tag is BuildingBlockLedger.LedgerEntry)
+                {
+                    missingNodes.Add(node);
+                }
+                
+                // Recursively check child nodes
+                if (node.Nodes.Count > 0)
+                {
+                    CollectMissingFileNodes(node.Nodes, missingNodes);
                 }
             }
         }
