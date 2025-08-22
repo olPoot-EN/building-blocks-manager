@@ -476,5 +476,28 @@ namespace BuildingBlocksManager
                    bb.Name.StartsWith("_") ||
                    (bb.Category != null && bb.Category.Contains("System"));
         }
+
+        /// <summary>
+        /// Remove a building block entry from the ledger
+        /// </summary>
+        /// <param name="name">Building block name</param>
+        /// <param name="category">Building block category</param>
+        public void RemoveEntry(string name, string category)
+        {
+            var key = GetLedgerKey(name, category);
+            
+            if (ledgerEntries.ContainsKey(key))
+            {
+                ledgerEntries.Remove(key);
+                Save();
+            }
+            
+            // Also remove from removed entries if it exists there
+            if (removedEntries.ContainsKey(key))
+            {
+                removedEntries.Remove(key);
+                Save();
+            }
+        }
     }
 }

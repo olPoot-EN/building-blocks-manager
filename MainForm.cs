@@ -61,7 +61,7 @@ namespace BuildingBlocksManager
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "Building Blocks Manager - Version 267";
+            this.Text = "Building Blocks Manager - Version 268";
             this.Size = new System.Drawing.Size(600, 680);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = new System.Drawing.Size(450, 500);
@@ -75,6 +75,9 @@ namespace BuildingBlocksManager
             btnImportSelected.Click += BtnImportSelected_Click;
             btnExportAll.Click += BtnExportAll_Click;
             btnExportSelected.Click += BtnExportSelected_Click;
+            
+            // Initialize context menu for directory tree
+            InitializeTreeContextMenu();
             
             // Load and apply settings
             LoadSettings();
@@ -2684,6 +2687,13 @@ BACKUP PROCESS:
             var rootNode = CreateDirectoryNode(rootDir, files, analysis);
             
             treeDirectory.Nodes.Add(rootNode);
+            
+            // Add missing files from ledger analysis
+            if (analysis != null && analysis.RemovedEntries.Count > 0)
+            {
+                AddMissingFilesToTree(rootNode, analysis.RemovedEntries);
+            }
+            
             rootNode.Expand();
         }
         
@@ -2696,23 +2706,24 @@ BACKUP PROCESS:
             string nodeText = directory.Name;
             if (folderStatus.TotalCount > 0)
             {
-                bool hasStatusIndicators = folderStatus.NewCount > 0 || folderStatus.ModifiedCount > 0;
+                bool hasStatusIndicators = folderStatus.NewCount > 0 || folderStatus.ModifiedCount > 0 || folderStatus.MissingCount > 0;
                 
                 if (hasStatusIndicators)
                 {
                     nodeText += $" ({folderStatus.TotalCount} total";
                     
-                    if (folderStatus.NewCount > 0 && folderStatus.ModifiedCount > 0)
+                    // Build status indicators list
+                    var statusParts = new List<string>();
+                    if (folderStatus.NewCount > 0)
+                        statusParts.Add($"{folderStatus.NewCount} new");
+                    if (folderStatus.ModifiedCount > 0)
+                        statusParts.Add($"{folderStatus.ModifiedCount} modified");
+                    if (folderStatus.MissingCount > 0)
+                        statusParts.Add($"{folderStatus.MissingCount} missing");
+                    
+                    if (statusParts.Count > 0)
                     {
-                        nodeText += $", {folderStatus.NewCount} new, {folderStatus.ModifiedCount} modified";
-                    }
-                    else if (folderStatus.NewCount > 0)
-                    {
-                        nodeText += $", {folderStatus.NewCount} new";
-                    }
-                    else if (folderStatus.ModifiedCount > 0)
-                    {
-                        nodeText += $", {folderStatus.ModifiedCount} modified";
+                        nodeText += ", " + string.Join(", ", statusParts);
                     }
                     
                     nodeText += ")";
@@ -2838,6 +2849,7 @@ BACKUP PROCESS:
         {
             public int NewCount { get; set; }
             public int ModifiedCount { get; set; }
+            public int MissingCount { get; set; }
             public int TotalCount { get; set; }
         }
 
@@ -2862,7 +2874,163 @@ BACKUP PROCESS:
             status.ModifiedCount = analysis.ModifiedFiles.Count(f => 
                 f.FilePath.StartsWith(directoryPath, StringComparison.OrdinalIgnoreCase));
             
+            // Count missing files (from removed entries that belong to this directory)
+            status.MissingCount = analysis.RemovedEntries.Count(entry =>
+            {
+                var categoryPath = entry.Category;
+                if (categoryPath.StartsWith("InternalAutotext\\", StringComparison.OrdinalIgnoreCase))
+                {
+                    categoryPath = categoryPath.Substring("InternalAutotext\\".Length);
+                }
+                
+                var expectedPath = Path.Combine(fullSourceDirectoryPath, categoryPath);
+                return expectedPath.StartsWith(directoryPath, StringComparison.OrdinalIgnoreCase);
+            });
+            
+            // Update total count to include missing files
+            status.TotalCount += status.MissingCount;
+            
             return status;
+        }
+
+        private void AddMissingFilesToTree(TreeNode rootNode, System.Collections.Generic.List<BuildingBlockLedger.LedgerEntry> removedEntries)
+        {
+            foreach (var missingEntry in removedEntries)
+            {
+                // Parse category to get directory path (remove InternalAutotext\ prefix)
+                var categoryPath = missingEntry.Category;
+                if (categoryPath.StartsWith("InternalAutotext\\", StringComparison.OrdinalIgnoreCase))
+                {
+                    categoryPath = categoryPath.Substring("InternalAutotext\\".Length);
+                }
+                
+                // Find or create the directory path in the tree
+                var targetNode = FindOrCreateDirectoryPath(rootNode, categoryPath);
+                
+                // Create missing file node
+                var missingFileNode = CreateMissingFileNode(missingEntry);
+                targetNode.Nodes.Add(missingFileNode);
+            }
+        }
+
+        private TreeNode FindOrCreateDirectoryPath(TreeNode rootNode, string categoryPath)
+        {
+            if (string.IsNullOrEmpty(categoryPath))
+                return rootNode;
+                
+            var pathParts = categoryPath.Split(new char[] { '\\', '/' }, StringSplitOptions.RemoveEmptyEntries);
+            var currentNode = rootNode;
+            
+            foreach (var pathPart in pathParts)
+            {
+                // Look for existing child node with this name
+                TreeNode childNode = null;
+                foreach (TreeNode node in currentNode.Nodes)
+                {
+                    // Extract the directory name from node text (remove count suffixes)
+                    var nodeName = node.Text;
+                    var parenIndex = nodeName.IndexOf(" (");
+                    if (parenIndex > 0)
+                        nodeName = nodeName.Substring(0, parenIndex);
+                        
+                    if (nodeName.Equals(pathPart, StringComparison.OrdinalIgnoreCase))
+                    {
+                        childNode = node;
+                        break;
+                    }
+                }
+                
+                // Create directory node if it doesn't exist
+                if (childNode == null)
+                {
+                    childNode = new TreeNode(pathPart)
+                    {
+                        ForeColor = System.Drawing.Color.Gray,
+                        Tag = "phantom_directory"
+                    };
+                    currentNode.Nodes.Add(childNode);
+                }
+                
+                currentNode = childNode;
+            }
+            
+            return currentNode;
+        }
+
+        private TreeNode CreateMissingFileNode(BuildingBlockLedger.LedgerEntry missingEntry)
+        {
+            var fileName = $"AT_{missingEntry.Name}.docx";
+            var nodeText = fileName + " (Missing)";
+            
+            var missingNode = new TreeNode(nodeText)
+            {
+                ForeColor = System.Drawing.Color.Red,
+                Tag = missingEntry // Store the ledger entry for context menu operations
+            };
+            
+            return missingNode;
+        }
+
+        private void InitializeTreeContextMenu()
+        {
+            var contextMenu = new ContextMenuStrip();
+            var removeMenuItem = new ToolStripMenuItem("Remove from Ledger");
+            removeMenuItem.Click += RemoveFromLedger_Click;
+            contextMenu.Items.Add(removeMenuItem);
+            
+            // Set the context menu for the tree view
+            treeDirectory.ContextMenuStrip = contextMenu;
+            
+            // Handle right-click to show context menu only for missing files
+            treeDirectory.MouseDown += TreeDirectory_MouseDown;
+        }
+
+        private void TreeDirectory_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right)
+            {
+                var hitTest = treeDirectory.HitTest(e.Location);
+                if (hitTest.Node != null)
+                {
+                    // Select the right-clicked node
+                    treeDirectory.SelectedNode = hitTest.Node;
+                    
+                    // Show context menu only for missing files (nodes with LedgerEntry tag)
+                    var contextMenu = treeDirectory.ContextMenuStrip;
+                    if (hitTest.Node.Tag is BuildingBlockLedger.LedgerEntry)
+                    {
+                        contextMenu.Show(treeDirectory, e.Location);
+                    }
+                }
+            }
+        }
+
+        private void RemoveFromLedger_Click(object sender, EventArgs e)
+        {
+            var selectedNode = treeDirectory.SelectedNode;
+            if (selectedNode?.Tag is BuildingBlockLedger.LedgerEntry ledgerEntry)
+            {
+                var result = MessageBox.Show(
+                    $"Remove '{ledgerEntry.Name}' from the ledger?\n\nThis will permanently remove the tracking record for this building block.",
+                    "Confirm Removal",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question);
+
+                if (result == DialogResult.Yes)
+                {
+                    // Remove from ledger
+                    var ledger = new BuildingBlockLedger();
+                    ledger.RemoveEntry(ledgerEntry.Name, ledgerEntry.Category);
+                    
+                    // Remove node from tree
+                    selectedNode.Remove();
+                    
+                    // Log the action
+                    logger?.Info($"Removed missing building block from ledger: {ledgerEntry.Name} ({ledgerEntry.Category})");
+                    
+                    MessageBox.Show($"'{ledgerEntry.Name}' has been removed from the ledger.", "Removed", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
         }
 
         private void BtnFilterTemplate_Click(object sender, EventArgs e)
