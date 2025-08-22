@@ -478,26 +478,28 @@ namespace BuildingBlocksManager
         }
 
         /// <summary>
-        /// Remove a building block entry from the ledger
+        /// Permanently remove a building block entry from ledger tracking (used for cleanup of missing files)
         /// </summary>
         /// <param name="name">Building block name</param>
         /// <param name="category">Building block category</param>
-        public void RemoveEntry(string name, string category)
+        public void PermanentlyRemoveEntry(string name, string category)
         {
             var key = GetLedgerKey(name, category);
             
+            // Remove from active ledger if present
             if (ledgerEntries.ContainsKey(key))
             {
                 ledgerEntries.Remove(key);
-                Save();
             }
             
-            // Also remove from removed entries if it exists there
+            // Remove from removed entries if present  
             if (removedEntries.ContainsKey(key))
             {
                 removedEntries.Remove(key);
-                Save();
             }
+            
+            Save();
         }
+
     }
 }

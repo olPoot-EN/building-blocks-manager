@@ -3018,9 +3018,9 @@ BACKUP PROCESS:
 
                 if (result == DialogResult.Yes)
                 {
-                    // Remove from ledger
+                    // Permanently remove from ledger (since file is already missing)
                     var ledger = new BuildingBlockLedger();
-                    ledger.RemoveEntry(ledgerEntry.Name, ledgerEntry.Category);
+                    ledger.PermanentlyRemoveEntry(ledgerEntry.Name, ledgerEntry.Category);
                     
                     // Remove node from tree
                     selectedNode.Remove();
