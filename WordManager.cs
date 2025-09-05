@@ -475,6 +475,34 @@ namespace BuildingBlocksManager
                 var range = newDoc.Range();
                 targetBB.Insert(range);
 
+                // Remove the trailing paragraph mark that Word adds automatically
+                // Check if the last paragraph is empty and remove it
+                if (newDoc.Paragraphs.Count > 1)
+                {
+                    Word.Paragraph lastPara = newDoc.Paragraphs[newDoc.Paragraphs.Count];
+                    // Check if the last paragraph is just a single paragraph mark
+                    if (lastPara.Range.Text == "\r" || string.IsNullOrWhiteSpace(lastPara.Range.Text))
+                    {
+                        lastPara.Range.Delete();
+                    }
+                }
+                else if (newDoc.Paragraphs.Count == 1)
+                {
+                    // For single paragraph content, remove trailing paragraph mark if present
+                    Word.Paragraph para = newDoc.Paragraphs[1];
+                    string text = para.Range.Text;
+                    if (text.EndsWith("\r"))
+                    {
+                        // Select the final paragraph mark and delete it
+                        Word.Range endRange = newDoc.Range();
+                        endRange.SetRange(newDoc.Content.End - 1, newDoc.Content.End);
+                        if (endRange.Text == "\r")
+                        {
+                            endRange.Delete();
+                        }
+                    }
+                }
+
                 // Save the new document
                 newDoc.SaveAs2(outputPath);
             }
