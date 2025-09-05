@@ -64,7 +64,7 @@ namespace BuildingBlocksManager
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "Building Blocks Manager - Version 271";
+            this.Text = "Building Blocks Manager - Version 272";
             this.Size = new System.Drawing.Size(600, 680);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = new System.Drawing.Size(450, 500);
@@ -2982,7 +2982,15 @@ BACKUP PROCESS:
         {
             var contextMenu = new ContextMenuStrip();
             
-            var removeSingleMenuItem = new ToolStripMenuItem("Remove this item from Ledger");
+            // Delete file and remove from ledger option
+            var deleteAndRemoveMenuItem = new ToolStripMenuItem("Delete File(s) and Remove from Ledger");
+            deleteAndRemoveMenuItem.Click += DeleteAndRemoveFromLedger_Click;
+            contextMenu.Items.Add(deleteAndRemoveMenuItem);
+            
+            contextMenu.Items.Add(new ToolStripSeparator());
+            
+            // Remove from ledger only option
+            var removeSingleMenuItem = new ToolStripMenuItem("Remove from Ledger Only");
             removeSingleMenuItem.Click += RemoveSingleFromLedger_Click;
             contextMenu.Items.Add(removeSingleMenuItem);
             
@@ -2995,7 +3003,7 @@ BACKUP PROCESS:
             // Set the context menu for the tree view
             treeDirectory.ContextMenuStrip = contextMenu;
             
-            // Handle right-click to show context menu only for missing files
+            // Handle right-click to show context menu
             treeDirectory.MouseDown += TreeDirectory_MouseDown;
         }
 
@@ -3009,10 +3017,39 @@ BACKUP PROCESS:
                     // Select the right-clicked node
                     treeDirectory.SelectedNode = hitTest.Node;
                     
-                    // Show context menu only for missing files (nodes with LedgerEntry tag)
+                    // Show context menu for file nodes and missing file nodes
                     var contextMenu = treeDirectory.ContextMenuStrip;
-                    if (hitTest.Node.Tag is BuildingBlockLedger.LedgerEntry)
+                    bool shouldShowMenu = false;
+                    
+                    // Check if it's a file node or missing file node
+                    if (hitTest.Node.Tag is FileManager.FileInfo || 
+                        hitTest.Node.Tag is BuildingBlockLedger.LedgerEntry)
                     {
+                        shouldShowMenu = true;
+                    }
+                    
+                    if (shouldShowMenu)
+                    {
+                        // Update menu items visibility based on node type
+                        var deleteMenuItem = contextMenu.Items[0]; // Delete File(s) and Remove from Ledger
+                        var removeOnlyMenuItem = contextMenu.Items[2]; // Remove from Ledger Only
+                        var removeAllMissingMenuItem = contextMenu.Items[4]; // Remove ALL missing files
+                        
+                        if (hitTest.Node.Tag is FileManager.FileInfo)
+                        {
+                            // For actual files, show delete option
+                            deleteMenuItem.Visible = true;
+                            removeOnlyMenuItem.Visible = false; // Hide remove only for actual files
+                            removeAllMissingMenuItem.Visible = false;
+                        }
+                        else if (hitTest.Node.Tag is BuildingBlockLedger.LedgerEntry)
+                        {
+                            // For missing files, hide delete option, show remove only
+                            deleteMenuItem.Visible = false;
+                            removeOnlyMenuItem.Visible = true;
+                            removeAllMissingMenuItem.Visible = true;
+                        }
+                        
                         contextMenu.Show(treeDirectory, e.Location);
                     }
                 }
@@ -3104,6 +3141,129 @@ BACKUP PROCESS:
             }
         }
 
+        private void DeleteAndRemoveFromLedger_Click(object sender, EventArgs e)
+        {
+            // Collect all checked file nodes
+            var checkedFileNodes = new List<TreeNode>();
+            var filesToDelete = new List<(string path, FileManager.FileInfo fileInfo)>();
+            CollectCheckedFileNodes(treeDirectory.Nodes, checkedFileNodes);
+            
+            // If no checked nodes, try to use the selected node
+            if (checkedFileNodes.Count == 0 && treeDirectory.SelectedNode?.Tag is FileManager.FileInfo)
+            {
+                checkedFileNodes.Add(treeDirectory.SelectedNode);
+            }
+            
+            if (checkedFileNodes.Count == 0)
+            {
+                MessageBox.Show("Please select or check files to delete.", "No Files Selected", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            
+            // Build list of files to delete
+            foreach (var node in checkedFileNodes)
+            {
+                if (node.Tag is FileManager.FileInfo fileInfo && !string.IsNullOrEmpty(fileInfo.FilePath))
+                {
+                    filesToDelete.Add((fileInfo.FilePath, fileInfo));
+                }
+            }
+            
+            if (filesToDelete.Count == 0)
+            {
+                MessageBox.Show("No valid files found to delete.", "No Files", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            
+            // Confirm deletion
+            string message = filesToDelete.Count == 1 
+                ? $"Delete '{Path.GetFileName(filesToDelete[0].path)}' and remove from ledger?\n\nThis will permanently delete the file from disk."
+                : $"Delete {filesToDelete.Count} files and remove from ledger?\n\nThis will permanently delete the files from disk.";
+                
+            var result = MessageBox.Show(message, "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+            
+            if (result == DialogResult.Yes)
+            {
+                var ledger = new BuildingBlockLedger();
+                int deletedCount = 0;
+                int removedFromLedgerCount = 0;
+                var errors = new List<string>();
+                
+                foreach (var (filePath, fileInfo) in filesToDelete)
+                {
+                    try
+                    {
+                        // Delete the physical file
+                        if (File.Exists(filePath))
+                        {
+                            File.Delete(filePath);
+                            deletedCount++;
+                            logger?.Info($"Deleted file: {filePath}");
+                        }
+                        
+                        // Remove from ledger
+                        try
+                        {
+                            ledger.RemoveEntry(fileInfo.Name, fileInfo.Category);
+                            removedFromLedgerCount++;
+                            logger?.Info($"Removed from ledger: {fileInfo.Name} ({fileInfo.Category})");
+                        }
+                        catch (Exception ex)
+                        {
+                            logger?.Error($"Failed to remove {fileInfo.Name} from ledger: {ex.Message}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        errors.Add($"{Path.GetFileName(filePath)}: {ex.Message}");
+                        logger?.Error($"Failed to delete {filePath}: {ex.Message}");
+                    }
+                }
+                
+                // Remove nodes from tree
+                foreach (var node in checkedFileNodes)
+                {
+                    node.Remove();
+                }
+                
+                // Show results
+                if (errors.Count > 0)
+                {
+                    string errorMessage = $"Deleted {deletedCount} file(s), removed {removedFromLedgerCount} from ledger.\n\nErrors:\n" + 
+                        string.Join("\n", errors.Take(5));
+                    if (errors.Count > 5)
+                        errorMessage += $"\n... and {errors.Count - 5} more errors";
+                    
+                    MessageBox.Show(errorMessage, "Partial Success", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                else
+                {
+                    MessageBox.Show($"Successfully deleted {deletedCount} file(s) and removed from ledger.", 
+                        "Delete Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+        }
+        
+        private void CollectCheckedFileNodes(TreeNodeCollection nodes, List<TreeNode> checkedNodes)
+        {
+            foreach (TreeNode node in nodes)
+            {
+                // Check if this node is checked and is a file (not a directory)
+                if (node.Checked && node.Tag is FileManager.FileInfo)
+                {
+                    checkedNodes.Add(node);
+                }
+                
+                // Recursively check child nodes
+                if (node.Nodes.Count > 0)
+                {
+                    CollectCheckedFileNodes(node.Nodes, checkedNodes);
+                }
+            }
+        }
+        
         private void CollectMissingFileNodes(TreeNodeCollection nodes, List<TreeNode> missingNodes)
         {
             foreach (TreeNode node in nodes)
