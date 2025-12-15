@@ -13,9 +13,9 @@ namespace BuildingBlocksManager
         public string LastSourceDirectory { get; set; } = "";
         public string LastExportDirectory { get; set; } = "";
         public string LedgerDirectory { get; set; } = "";
+        public string LogDirectory { get; set; } = "";
         public bool FlatImport { get; set; } = false;
         public bool FlatExport { get; set; } = false;
-        public bool LogToTemplateDirectory { get; set; } = true;
         public bool EnableDetailedLogging { get; set; } = true;
 
         public static Settings Load()
@@ -49,6 +49,9 @@ namespace BuildingBlocksManager
                                 case "LedgerDirectory":
                                     settings.LedgerDirectory = value;
                                     break;
+                                case "LogDirectory":
+                                    settings.LogDirectory = value;
+                                    break;
                                 case "FlatImport":
                                     if (bool.TryParse(value, out bool flatImport))
                                         settings.FlatImport = flatImport;
@@ -56,10 +59,6 @@ namespace BuildingBlocksManager
                                 case "FlatExport":
                                     if (bool.TryParse(value, out bool flatExport))
                                         settings.FlatExport = flatExport;
-                                    break;
-                                case "LogToTemplateDirectory":
-                                    if (bool.TryParse(value, out bool logToTemplate))
-                                        settings.LogToTemplateDirectory = logToTemplate;
                                     break;
                                 case "EnableDetailedLogging":
                                     if (bool.TryParse(value, out bool enableDetailed))
@@ -90,9 +89,9 @@ namespace BuildingBlocksManager
                     $"LastSourceDirectory={LastSourceDirectory}",
                     $"LastExportDirectory={LastExportDirectory}",
                     $"LedgerDirectory={LedgerDirectory}",
+                    $"LogDirectory={LogDirectory}",
                     $"FlatImport={FlatImport}",
                     $"FlatExport={FlatExport}",
-                    $"LogToTemplateDirectory={LogToTemplateDirectory}",
                     $"EnableDetailedLogging={EnableDetailedLogging}"
                 };
                 

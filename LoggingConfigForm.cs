@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Windows.Forms;
 
 namespace BuildingBlocksManager
@@ -6,11 +7,13 @@ namespace BuildingBlocksManager
     public partial class LoggingConfigForm : Form
     {
         private Settings settings;
-        private CheckBox chkLogToTemplateDirectory;
+        private TextBox txtLogDirectory;
+        private Button btnBrowseLogDirectory;
         private CheckBox chkEnableDetailedLogging;
         private Button btnOK;
         private Button btnCancel;
         private Label lblLogLocation;
+        private Label lblCurrentPath;
 
         public LoggingConfigForm(Settings settings)
         {
@@ -21,7 +24,7 @@ namespace BuildingBlocksManager
         private void InitializeComponent()
         {
             this.Text = "Logging Configuration";
-            this.Size = new System.Drawing.Size(450, 220);
+            this.Size = new System.Drawing.Size(550, 220);
             this.StartPosition = FormStartPosition.CenterParent;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
@@ -30,33 +33,43 @@ namespace BuildingBlocksManager
             // Log location label
             lblLogLocation = new Label
             {
-                Text = "Log Files Location:",
+                Text = "Log Directory:",
                 Location = new System.Drawing.Point(12, 15),
-                Size = new System.Drawing.Size(120, 23),
+                Size = new System.Drawing.Size(100, 23),
                 TextAlign = System.Drawing.ContentAlignment.MiddleLeft
             };
             this.Controls.Add(lblLogLocation);
 
-            // Log to template directory checkbox
-            chkLogToTemplateDirectory = new CheckBox
+            // Log directory text box
+            txtLogDirectory = new TextBox
             {
-                Text = "Store logs in template directory (BBM_Logs folder)",
-                Location = new System.Drawing.Point(12, 45),
-                Size = new System.Drawing.Size(400, 23),
-                Checked = settings.LogToTemplateDirectory
+                Location = new System.Drawing.Point(12, 40),
+                Size = new System.Drawing.Size(440, 23),
+                Text = settings.LogDirectory
             };
-            chkLogToTemplateDirectory.CheckedChanged += ChkLogToTemplateDirectory_CheckedChanged;
-            this.Controls.Add(chkLogToTemplateDirectory);
+            txtLogDirectory.TextChanged += TxtLogDirectory_TextChanged;
+            this.Controls.Add(txtLogDirectory);
 
-            var lblNote = new Label
+            // Browse button
+            btnBrowseLogDirectory = new Button
             {
-                Text = "Note: If unchecked, logs will be stored in the source directory or user profile.",
-                Location = new System.Drawing.Point(30, 68),
-                Size = new System.Drawing.Size(380, 23),
+                Text = "Browse...",
+                Location = new System.Drawing.Point(458, 39),
+                Size = new System.Drawing.Size(75, 25)
+            };
+            btnBrowseLogDirectory.Click += BtnBrowseLogDirectory_Click;
+            this.Controls.Add(btnBrowseLogDirectory);
+
+            // Current path display
+            lblCurrentPath = new Label
+            {
+                Text = GetCurrentPathDisplay(),
+                Location = new System.Drawing.Point(12, 68),
+                Size = new System.Drawing.Size(520, 23),
                 ForeColor = System.Drawing.SystemColors.GrayText,
                 Font = new System.Drawing.Font("Segoe UI", 8F)
             };
-            this.Controls.Add(lblNote);
+            this.Controls.Add(lblCurrentPath);
 
             // Enable detailed logging checkbox
             chkEnableDetailedLogging = new CheckBox
@@ -72,7 +85,7 @@ namespace BuildingBlocksManager
             {
                 Text = "Note: When disabled, only WARNING, ERROR, and SUCCESS messages are logged.",
                 Location = new System.Drawing.Point(30, 128),
-                Size = new System.Drawing.Size(380, 23),
+                Size = new System.Drawing.Size(500, 23),
                 ForeColor = System.Drawing.SystemColors.GrayText,
                 Font = new System.Drawing.Font("Segoe UI", 8F)
             };
@@ -82,7 +95,7 @@ namespace BuildingBlocksManager
             btnOK = new Button
             {
                 Text = "OK",
-                Location = new System.Drawing.Point(270, 160),
+                Location = new System.Drawing.Point(370, 160),
                 Size = new System.Drawing.Size(75, 23),
                 DialogResult = DialogResult.OK
             };
@@ -93,7 +106,7 @@ namespace BuildingBlocksManager
             btnCancel = new Button
             {
                 Text = "Cancel",
-                Location = new System.Drawing.Point(355, 160),
+                Location = new System.Drawing.Point(455, 160),
                 Size = new System.Drawing.Size(75, 23),
                 DialogResult = DialogResult.Cancel
             };
@@ -103,14 +116,45 @@ namespace BuildingBlocksManager
             this.CancelButton = btnCancel;
         }
 
-        private void ChkLogToTemplateDirectory_CheckedChanged(object sender, EventArgs e)
+        private void BtnBrowseLogDirectory_Click(object sender, EventArgs e)
         {
-            // Could add preview of where logs would be stored here
+            using (var dialog = new FolderBrowserDialog())
+            {
+                dialog.Description = "Select Log Directory";
+                dialog.ShowNewFolderButton = true;
+
+                if (!string.IsNullOrEmpty(txtLogDirectory.Text) && Directory.Exists(txtLogDirectory.Text))
+                {
+                    dialog.SelectedPath = txtLogDirectory.Text;
+                }
+
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    txtLogDirectory.Text = dialog.SelectedPath;
+                }
+            }
+        }
+
+        private void TxtLogDirectory_TextChanged(object sender, EventArgs e)
+        {
+            lblCurrentPath.Text = GetCurrentPathDisplay();
+        }
+
+        private string GetCurrentPathDisplay()
+        {
+            if (string.IsNullOrWhiteSpace(txtLogDirectory.Text))
+            {
+                return "Logs will be stored in: %LocalAppData%\\BuildingBlocksManager\\BBM_Logs";
+            }
+            else
+            {
+                return $"Logs will be stored in: {txtLogDirectory.Text}\\BBM_Logs";
+            }
         }
 
         private void BtnOK_Click(object sender, EventArgs e)
         {
-            settings.LogToTemplateDirectory = chkLogToTemplateDirectory.Checked;
+            settings.LogDirectory = txtLogDirectory.Text.Trim();
             settings.EnableDetailedLogging = chkEnableDetailedLogging.Checked;
             settings.Save();
         }

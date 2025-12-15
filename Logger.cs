@@ -20,30 +20,24 @@ namespace BuildingBlocksManager
 
         public string GetLogDirectory() => logDirectory;
 
-        public Logger(string templatePath = null, string sourceDirectoryPath = null, bool logToTemplateDirectory = true, bool enableDetailedLogging = true)
+        public Logger(string templatePath = null, string sourceDirectoryPath = null, string customLogDirectory = null, bool enableDetailedLogging = true)
         {
             this.enableDetailedLogging = enableDetailedLogging;
             this.sessionId = DateTime.Now.ToString("yyyy-MM-dd_HHmm");
             this.templatePath = templatePath;
             this.sourceDirectoryPath = sourceDirectoryPath;
-            
+
             // Determine log directory based on settings with proper fallback handling
             string primaryLogDirectory = null;
-            
-            if (logToTemplateDirectory && !string.IsNullOrEmpty(templatePath) && File.Exists(templatePath))
+
+            // Priority 1: User-defined custom log directory
+            if (!string.IsNullOrEmpty(customLogDirectory))
             {
-                // Use template directory for logs
-                var templateDir = Path.GetDirectoryName(templatePath);
-                primaryLogDirectory = Path.Combine(templateDir, "BBM_Logs");
+                primaryLogDirectory = Path.Combine(customLogDirectory, "BBM_Logs");
             }
-            else if (!string.IsNullOrEmpty(sourceDirectoryPath) && Directory.Exists(sourceDirectoryPath))
-            {
-                // Fall back to source directory
-                primaryLogDirectory = Path.Combine(sourceDirectoryPath, "BBM_Logs");
-            }
-            
+
             // Try to create primary log directory, fall back to local app data if fails
-            logDirectory = TryCreateLogDirectory(primaryLogDirectory) ?? 
+            logDirectory = TryCreateLogDirectory(primaryLogDirectory) ??
                           TryCreateLogDirectory(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BuildingBlocksManager", "BBM_Logs")) ??
                           Path.GetTempPath(); // Final fallback to temp directory
             

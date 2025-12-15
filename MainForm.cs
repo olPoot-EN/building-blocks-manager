@@ -64,7 +64,7 @@ namespace BuildingBlocksManager
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "Building Blocks Manager - Version 272";
+            this.Text = "Building Blocks Manager - Version 273";
             this.Size = new System.Drawing.Size(600, 680);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = new System.Drawing.Size(450, 500);
@@ -99,7 +99,7 @@ namespace BuildingBlocksManager
         {
             try
             {
-                logger = new Logger(fullTemplatePath, fullSourceDirectoryPath, settings.LogToTemplateDirectory, settings.EnableDetailedLogging);
+                logger = new Logger(fullTemplatePath, fullSourceDirectoryPath, settings.LogDirectory, settings.EnableDetailedLogging);
                 logger.CleanupOldLogs();
                 logger.Info("Building Blocks Manager started");
             }
@@ -108,7 +108,7 @@ namespace BuildingBlocksManager
                 // If logger initialization fails completely, create a minimal fallback logger
                 try
                 {
-                    logger = new Logger(null, null, false, settings.EnableDetailedLogging);
+                    logger = new Logger(null, null, null, settings.EnableDetailedLogging);
                     logger.Warning($"Logger initialization failed, using fallback location. Error: {ex.Message}");
                 }
                 catch
