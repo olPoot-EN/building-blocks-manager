@@ -45,7 +45,7 @@ namespace BuildingBlocksManager
             {
                 Location = new System.Drawing.Point(12, 40),
                 Size = new System.Drawing.Size(440, 23),
-                Text = settings.LogDirectory
+                Text = settings.CurrentPaths.LogDirectory
             };
             txtLogDirectory.TextChanged += TxtLogDirectory_TextChanged;
             this.Controls.Add(txtLogDirectory);
@@ -144,7 +144,7 @@ namespace BuildingBlocksManager
         {
             if (string.IsNullOrWhiteSpace(txtLogDirectory.Text))
             {
-                return "Logs will be stored in: %LocalAppData%\\BuildingBlocksManager\\BBM_Logs";
+                return "Logging disabled - please set a log directory";
             }
             else
             {
@@ -154,7 +154,7 @@ namespace BuildingBlocksManager
 
         private void BtnOK_Click(object sender, EventArgs e)
         {
-            settings.LogDirectory = txtLogDirectory.Text.Trim();
+            settings.CurrentPaths.LogDirectory = txtLogDirectory.Text.Trim();
             settings.EnableDetailedLogging = chkEnableDetailedLogging.Checked;
             settings.Save();
         }
