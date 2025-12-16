@@ -10,7 +10,7 @@ namespace BuildingBlocksManager
     {
         public class FileInfo
         {
-            public const int MaxNameLength = 64;
+            public const int MaxNameLength = 32;
 
             public string FilePath { get; set; }
             public DateTime LastModified { get; set; }

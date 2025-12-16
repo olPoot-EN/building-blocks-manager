@@ -341,8 +341,8 @@ namespace BuildingBlocksManager
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("Building Block name cannot be empty");
             
-            if (name.Length > 64) // Word has a limit around 64 characters
-                throw new ArgumentException($"Building Block name too long (max 64 chars): '{name}' ({name.Length} chars)");
+            if (name.Length > 32) // Word AutoText name limit is 32 characters
+                throw new ArgumentException($"Building Block name too long (max 32 chars): '{name}' ({name.Length} chars)");
             
             // Check for invalid characters in name
             char[] invalidNameChars = { '/', '\\', ':', '*', '?', '"', '<', '>', '|', '\t', '\n', '\r' };
@@ -378,12 +378,12 @@ namespace BuildingBlocksManager
             
             // Trim and limit length
             sanitized = sanitized.Trim();
-            if (sanitized.Length > 64)
-                sanitized = sanitized.Substring(0, 64).Trim();
-            
+            if (sanitized.Length > 32)
+                sanitized = sanitized.Substring(0, 32).Trim();
+
             return sanitized;
         }
-        
+
         private string SanitizeBuildingBlockCategory(string category)
         {
             if (string.IsNullOrWhiteSpace(category))
