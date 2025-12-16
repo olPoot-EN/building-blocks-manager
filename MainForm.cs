@@ -916,8 +916,9 @@ namespace BuildingBlocksManager
                 dialog.Title = "Select Word Template File";
                 dialog.Filter = "Word Template Files (*.dotm)|*.dotm|All Files (*.*)|*.*";
                 dialog.CheckFileExists = true;
-                
-                var startDir = GetValidStartDirectory(Path.GetDirectoryName(fullTemplatePath));
+
+                var templateDir = string.IsNullOrEmpty(fullTemplatePath) ? null : Path.GetDirectoryName(fullTemplatePath);
+                var startDir = GetValidStartDirectory(templateDir);
                 dialog.InitialDirectory = startDir;
                 
                 if (dialog.ShowDialog() == DialogResult.OK)
