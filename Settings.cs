@@ -3,25 +3,46 @@ using System.IO;
 
 namespace BuildingBlocksManager
 {
+    public class ProfilePaths
+    {
+        public string TemplatePath { get; set; } = "";
+        public string SourceDirectory { get; set; } = "";
+        public string ExportDirectory { get; set; } = "";
+        public string LogDirectory { get; set; } = "";
+    }
+
+    public enum ProfileType
+    {
+        Kestrel,
+        Compliance
+    }
+
     public class Settings
     {
-        private static readonly string SettingsDirectory = 
+        private static readonly string SettingsDirectory =
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BuildingBlocksManager");
         private static readonly string SettingsFile = Path.Combine(SettingsDirectory, "settings.txt");
 
-        public string LastTemplatePath { get; set; } = "";
-        public string LastSourceDirectory { get; set; } = "";
-        public string LastExportDirectory { get; set; } = "";
+        // Current active profile
+        public ProfileType ActiveProfile { get; set; } = ProfileType.Kestrel;
+
+        // Profile-specific paths
+        public ProfilePaths KestrelPaths { get; set; } = new ProfilePaths();
+        public ProfilePaths CompliancePaths { get; set; } = new ProfilePaths();
+
+        // Shared settings (not profile-specific)
         public string LedgerDirectory { get; set; } = "";
-        public string LogDirectory { get; set; } = "";
         public bool FlatImport { get; set; } = false;
         public bool FlatExport { get; set; } = false;
         public bool EnableDetailedLogging { get; set; } = true;
 
+        // Helper to get current profile's paths
+        public ProfilePaths CurrentPaths => ActiveProfile == ProfileType.Kestrel ? KestrelPaths : CompliancePaths;
+
         public static Settings Load()
         {
             var settings = new Settings();
-            
+
             try
             {
                 if (File.Exists(SettingsFile))
@@ -29,28 +50,51 @@ namespace BuildingBlocksManager
                     var lines = File.ReadAllLines(SettingsFile);
                     foreach (var line in lines)
                     {
-                        var parts = line.Split('=');
-                        if (parts.Length == 2)
+                        var separatorIndex = line.IndexOf('=');
+                        if (separatorIndex > 0)
                         {
-                            var key = parts[0].Trim();
-                            var value = parts[1].Trim();
-                            
+                            var key = line.Substring(0, separatorIndex).Trim();
+                            var value = separatorIndex < line.Length - 1 ? line.Substring(separatorIndex + 1).Trim() : "";
+
                             switch (key)
                             {
-                                case "LastTemplatePath":
-                                    settings.LastTemplatePath = value;
+                                // Active profile
+                                case "ActiveProfile":
+                                    if (Enum.TryParse<ProfileType>(value, out var profile))
+                                        settings.ActiveProfile = profile;
                                     break;
-                                case "LastSourceDirectory":
-                                    settings.LastSourceDirectory = value;
+
+                                // Kestrel profile paths
+                                case "Kestrel_TemplatePath":
+                                    settings.KestrelPaths.TemplatePath = value;
                                     break;
-                                case "LastExportDirectory":
-                                    settings.LastExportDirectory = value;
+                                case "Kestrel_SourceDirectory":
+                                    settings.KestrelPaths.SourceDirectory = value;
                                     break;
+                                case "Kestrel_ExportDirectory":
+                                    settings.KestrelPaths.ExportDirectory = value;
+                                    break;
+                                case "Kestrel_LogDirectory":
+                                    settings.KestrelPaths.LogDirectory = value;
+                                    break;
+
+                                // Compliance profile paths
+                                case "Compliance_TemplatePath":
+                                    settings.CompliancePaths.TemplatePath = value;
+                                    break;
+                                case "Compliance_SourceDirectory":
+                                    settings.CompliancePaths.SourceDirectory = value;
+                                    break;
+                                case "Compliance_ExportDirectory":
+                                    settings.CompliancePaths.ExportDirectory = value;
+                                    break;
+                                case "Compliance_LogDirectory":
+                                    settings.CompliancePaths.LogDirectory = value;
+                                    break;
+
+                                // Shared settings
                                 case "LedgerDirectory":
                                     settings.LedgerDirectory = value;
-                                    break;
-                                case "LogDirectory":
-                                    settings.LogDirectory = value;
                                     break;
                                 case "FlatImport":
                                     if (bool.TryParse(value, out bool flatImport))
@@ -64,6 +108,24 @@ namespace BuildingBlocksManager
                                     if (bool.TryParse(value, out bool enableDetailed))
                                         settings.EnableDetailedLogging = enableDetailed;
                                     break;
+
+                                // Legacy migration - map old settings to Kestrel profile
+                                case "LastTemplatePath":
+                                    if (string.IsNullOrEmpty(settings.KestrelPaths.TemplatePath))
+                                        settings.KestrelPaths.TemplatePath = value;
+                                    break;
+                                case "LastSourceDirectory":
+                                    if (string.IsNullOrEmpty(settings.KestrelPaths.SourceDirectory))
+                                        settings.KestrelPaths.SourceDirectory = value;
+                                    break;
+                                case "LastExportDirectory":
+                                    if (string.IsNullOrEmpty(settings.KestrelPaths.ExportDirectory))
+                                        settings.KestrelPaths.ExportDirectory = value;
+                                    break;
+                                case "LogDirectory":
+                                    if (string.IsNullOrEmpty(settings.KestrelPaths.LogDirectory))
+                                        settings.KestrelPaths.LogDirectory = value;
+                                    break;
                             }
                         }
                     }
@@ -73,7 +135,7 @@ namespace BuildingBlocksManager
             {
                 // If settings can't be loaded, return defaults
             }
-            
+
             return settings;
         }
 
@@ -82,19 +144,30 @@ namespace BuildingBlocksManager
             try
             {
                 Directory.CreateDirectory(SettingsDirectory);
-                
+
                 var lines = new[]
                 {
-                    $"LastTemplatePath={LastTemplatePath}",
-                    $"LastSourceDirectory={LastSourceDirectory}",
-                    $"LastExportDirectory={LastExportDirectory}",
+                    $"ActiveProfile={ActiveProfile}",
+
+                    // Kestrel profile
+                    $"Kestrel_TemplatePath={KestrelPaths.TemplatePath}",
+                    $"Kestrel_SourceDirectory={KestrelPaths.SourceDirectory}",
+                    $"Kestrel_ExportDirectory={KestrelPaths.ExportDirectory}",
+                    $"Kestrel_LogDirectory={KestrelPaths.LogDirectory}",
+
+                    // Compliance profile
+                    $"Compliance_TemplatePath={CompliancePaths.TemplatePath}",
+                    $"Compliance_SourceDirectory={CompliancePaths.SourceDirectory}",
+                    $"Compliance_ExportDirectory={CompliancePaths.ExportDirectory}",
+                    $"Compliance_LogDirectory={CompliancePaths.LogDirectory}",
+
+                    // Shared settings
                     $"LedgerDirectory={LedgerDirectory}",
-                    $"LogDirectory={LogDirectory}",
                     $"FlatImport={FlatImport}",
                     $"FlatExport={FlatExport}",
                     $"EnableDetailedLogging={EnableDetailedLogging}"
                 };
-                
+
                 File.WriteAllLines(SettingsFile, lines);
             }
             catch

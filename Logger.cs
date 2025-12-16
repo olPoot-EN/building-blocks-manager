@@ -17,8 +17,10 @@ namespace BuildingBlocksManager
         private readonly string sessionId;
         private readonly string templatePath;
         private readonly string sourceDirectoryPath;
+        private readonly bool isDisabled;
 
         public string GetLogDirectory() => logDirectory;
+        public bool IsDisabled => isDisabled;
 
         public Logger(string templatePath = null, string sourceDirectoryPath = null, string customLogDirectory = null, bool enableDetailedLogging = true)
         {
@@ -27,20 +29,39 @@ namespace BuildingBlocksManager
             this.templatePath = templatePath;
             this.sourceDirectoryPath = sourceDirectoryPath;
 
-            // Determine log directory based on settings with proper fallback handling
-            string primaryLogDirectory = null;
-
-            // Priority 1: User-defined custom log directory
-            if (!string.IsNullOrEmpty(customLogDirectory))
+            // Log directory is required - no default fallback
+            if (string.IsNullOrEmpty(customLogDirectory))
             {
-                primaryLogDirectory = Path.Combine(customLogDirectory, "BBM_Logs");
+                isDisabled = true;
+                logDirectory = null;
+                sessionDirectory = null;
+                generalLogFile = null;
+                importLogFile = null;
+                exportLogFile = null;
+                errorLogFile = null;
+                deleteLogFile = null;
+                return;
             }
 
-            // Try to create primary log directory, fall back to local app data if fails
-            logDirectory = TryCreateLogDirectory(primaryLogDirectory) ??
-                          TryCreateLogDirectory(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BuildingBlocksManager", "BBM_Logs")) ??
-                          Path.GetTempPath(); // Final fallback to temp directory
-            
+            isDisabled = false;
+            string primaryLogDirectory = Path.Combine(customLogDirectory, "BBM_Logs");
+
+            // Try to create log directory
+            logDirectory = TryCreateLogDirectory(primaryLogDirectory);
+
+            if (logDirectory == null)
+            {
+                // Could not create directory - disable logging
+                isDisabled = true;
+                sessionDirectory = null;
+                generalLogFile = null;
+                importLogFile = null;
+                exportLogFile = null;
+                errorLogFile = null;
+                deleteLogFile = null;
+                return;
+            }
+
             // Create session-specific subdirectory with error handling
             sessionDirectory = Path.Combine(logDirectory, sessionId);
             try
@@ -52,41 +73,46 @@ namespace BuildingBlocksManager
                 // If session directory creation fails, use the log directory itself
                 sessionDirectory = logDirectory;
             }
-            
+
             // Define session-specific log files
             generalLogFile = Path.Combine(sessionDirectory, "general.log");
             importLogFile = Path.Combine(sessionDirectory, "import.log");
             exportLogFile = Path.Combine(sessionDirectory, "export.log");
             errorLogFile = Path.Combine(sessionDirectory, "error.log");
             deleteLogFile = Path.Combine(sessionDirectory, "delete.log");
-            
+
             // Write session start marker to general log
             WriteSessionMarker(generalLogFile, "SESSION START");
         }
 
         public void Info(string message)
         {
+            if (isDisabled) return;
             if (enableDetailedLogging)
                 WriteToFile(generalLogFile, "INFO", message);
         }
 
         public void Warning(string message)
         {
+            if (isDisabled) return;
             WriteToFile(generalLogFile, "WARNING", message);
         }
 
         public void Error(string message)
         {
+            if (isDisabled) return;
             WriteToFile(errorLogFile, "ERROR", message);
         }
 
         public void Success(string message)
         {
+            if (isDisabled) return;
             WriteToFile(generalLogFile, "SUCCESS", message);
         }
 
         public void StartImportSession()
         {
+            if (isDisabled) return;
             WriteSessionHeader(importLogFile, "IMPORT SESSION START");
             WriteSessionInfo(importLogFile, "Source", sourceDirectoryPath);
             WriteSessionInfo(importLogFile, "Template", GetTemplateFileName());
@@ -94,17 +120,20 @@ namespace BuildingBlocksManager
 
         public void EndImportSession(int itemCount)
         {
+            if (isDisabled) return;
             WriteSessionFooter(importLogFile, "IMPORT SESSION END", $"{itemCount} items imported");
         }
 
         public void LogImport(string buildingBlockName, string category)
         {
+            if (isDisabled) return;
             var message = $"    {buildingBlockName} ({category})"; // Indented for visual hierarchy
             WriteToFile(importLogFile, "", message); // No level prefix for session items
         }
 
         public void StartExportSession(string exportPath)
         {
+            if (isDisabled) return;
             WriteSessionHeader(exportLogFile, "EXPORT SESSION START");
             WriteSessionInfo(exportLogFile, "Template", GetTemplateFileName());
             WriteSessionInfo(exportLogFile, "Destination", exportPath);
@@ -112,23 +141,27 @@ namespace BuildingBlocksManager
 
         public void EndExportSession(int itemCount)
         {
+            if (isDisabled) return;
             WriteSessionFooter(exportLogFile, "EXPORT SESSION END", $"{itemCount} items exported");
         }
 
         public void LogExport(string buildingBlockName, string category)
         {
+            if (isDisabled) return;
             var message = $"    {buildingBlockName} ({category})"; // Indented for visual hierarchy
             WriteToFile(exportLogFile, "", message); // No level prefix for session items
         }
 
         public void LogError(string operation, string buildingBlockName, string category, string errorMessage)
         {
+            if (isDisabled) return;
             var message = $"{operation} FAILED: {buildingBlockName} (Category: {category}) - {errorMessage}";
             WriteToFile(errorLogFile, "ERROR", message);
         }
 
         public void LogDeletion(string buildingBlockName, string category)
         {
+            if (isDisabled) return;
             var templateName = GetTemplateFileName();
             
             // Create columnated delete log entry similar to ledger format
@@ -231,6 +264,7 @@ namespace BuildingBlocksManager
 
         public void EndSession()
         {
+            if (isDisabled) return;
             WriteSessionMarker(generalLogFile, "SESSION END");
         }
 
@@ -268,6 +302,8 @@ namespace BuildingBlocksManager
 
         public void CleanupOldLogs()
         {
+            if (isDisabled) return;
+
             // Keep only the 10 most recent session folders
             try
             {
