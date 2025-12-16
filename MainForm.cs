@@ -75,7 +75,7 @@ namespace BuildingBlocksManager
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "Building Blocks Manager - Version 277";
+            this.Text = "Building Blocks Manager - Version 278";
             this.Size = new System.Drawing.Size(850, 680);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = new System.Drawing.Size(850, 500);
@@ -449,25 +449,25 @@ namespace BuildingBlocksManager
                 Size = new System.Drawing.Size(60, 25)
             };
 
-            // Structure options section - positioned to the right
+            // Structure options section - positioned next to Export buttons
             var lblStructure = new Label
             {
                 Text = "Ignore structure.\n Flat Import or Export:",
-                Location = new System.Drawing.Point(650, 205),
-                Size = new System.Drawing.Size(200, 30)
+                Location = new System.Drawing.Point(380, 195),
+                Size = new System.Drawing.Size(130, 35)
             };
 
             chkFlatImport = new CheckBox
             {
                 Text = "Import",
-                Location = new System.Drawing.Point(665, 235),
+                Location = new System.Drawing.Point(395, 235),
                 Size = new System.Drawing.Size(70, 23)
             };
 
             chkFlatExport = new CheckBox
             {
                 Text = "Export",
-                Location = new System.Drawing.Point(665, 255),
+                Location = new System.Drawing.Point(395, 255),
                 Size = new System.Drawing.Size(70, 23)
             };
 
@@ -547,8 +547,8 @@ namespace BuildingBlocksManager
             btnStop = new Button
             {
                 Text = "Stop",
-                Location = new System.Drawing.Point(660, 290),
-                Size = new System.Drawing.Size(80, 35),
+                Location = new System.Drawing.Point(395, 280),
+                Size = new System.Drawing.Size(80, 25),
                 Visible = false,
                 BackColor = System.Drawing.Color.LightCoral
             };
