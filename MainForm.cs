@@ -137,21 +137,32 @@ namespace BuildingBlocksManager
             }
         }
 
+        private string GetCurrentProfileName()
+        {
+            return settings?.ActiveProfile.ToString();
+        }
+
+        private BuildingBlockLedger CreateLedger()
+        {
+            return new BuildingBlockLedger(GetCurrentProfileName());
+        }
+
         private void InitializeLedger()
         {
             try
             {
-                ledger = new BuildingBlockLedger();
-                
+                ledger = CreateLedger();
+
                 // Check if ledger file exists and warn if not
                 if (!ledger.LedgerFileExists())
                 {
                     SafeLog(log => log.Warning("Ledger file not found - change detection may not work properly until first import"));
-                    
+
                     // Show a non-blocking notification in the results area when form loads
+                    var profileName = GetCurrentProfileName();
                     this.Shown += (s, e) => {
                         AppendResults("NOTICE: Ledger file not found. All files will appear as 'New' until first import.");
-                        AppendResults($"Expected location: {ledger.GetLedgerDirectory()}\\building_blocks_ledger.txt");
+                        AppendResults($"Expected location: {ledger.GetLedgerDirectory()}\\building_blocks_ledger_{profileName}.txt");
                         AppendResults("Use File → Ledger Status to see more details.");
                     };
                 }
@@ -1104,7 +1115,7 @@ namespace BuildingBlocksManager
             
             try
             {
-                var fileManager = new FileManager(fullSourceDirectoryPath);
+                var fileManager = new FileManager(fullSourceDirectoryPath, GetCurrentProfileName());
                 var summary = fileManager.GetSummary();
                 
                 AppendResults("");
@@ -1116,7 +1127,7 @@ namespace BuildingBlocksManager
                 var files = fileManager.ScanDirectory();
                 
                 // Analyze changes using ledger comparison with tolerance
-                var ledger = new BuildingBlockLedger();
+                var ledger = CreateLedger();
                 var analysis = ledger.AnalyzeChanges(files);
                 
                 AppendResults("");
@@ -1173,7 +1184,7 @@ namespace BuildingBlocksManager
             try
             {
                 // Initialize file manager and scan directory
-                var fileManager = new FileManager(fullSourceDirectoryPath);
+                var fileManager = new FileManager(fullSourceDirectoryPath, GetCurrentProfileName());
                 var scannedFiles = fileManager.ScanDirectory();
 
                 // Check for files with names that are too long
@@ -1218,7 +1229,7 @@ namespace BuildingBlocksManager
                 }
 
                 // Analyze with ledger (use same directory as logger)
-                var ledger = new BuildingBlockLedger();
+                var ledger = CreateLedger();
                 var analysis = ledger.AnalyzeChanges(allFiles);
                 
                 AppendResults("Ledger analysis complete:");
@@ -1521,7 +1532,7 @@ namespace BuildingBlocksManager
             try
             {
                 // Analyze selected files with ledger (use same directory as logger)
-                var ledger = new BuildingBlockLedger();
+                var ledger = CreateLedger();
                 var analysis = ledger.AnalyzeChanges(checkedFiles);
                 
                 AppendResults("Ledger analysis complete for selected files:");
@@ -1726,7 +1737,7 @@ namespace BuildingBlocksManager
                 wordManager = new WordManager(fullTemplatePath);
                 
                 // Initialize ledger for tracking exports
-                ledger = new BuildingBlockLedger();
+                ledger = CreateLedger();
                 
                 // Check if building blocks have been loaded (user must run Query Template first)
                 if (!EnsureTemplateQueried())
@@ -1982,7 +1993,7 @@ namespace BuildingBlocksManager
                 wordManager = new WordManager(fullTemplatePath);
                 
                 // Initialize ledger for tracking exports
-                ledger = new BuildingBlockLedger();
+                ledger = CreateLedger();
 
                 // Start export session logging
                 logger.StartExportSession(exportPath);
@@ -2349,13 +2360,13 @@ namespace BuildingBlocksManager
                 AppendResults("=== DIRECTORY QUERY (STARTUP) ===");
                 AppendResults("Scanning directory...");
                 
-                var fileManager = new FileManager(fullSourceDirectoryPath);
+                var fileManager = new FileManager(fullSourceDirectoryPath, GetCurrentProfileName());
                 var files = fileManager.ScanDirectory();
                 
                 AppendResults($"Found {files.Count} files.");
                 
                 // Populate Directory tab tree view first
-                var ledger = new BuildingBlockLedger();
+                var ledger = CreateLedger();
                 var analysis = ledger.AnalyzeChanges(files);
                 PopulateDirectoryTree(files, analysis);
                 AppendResults("Directory tree populated.");
@@ -3382,7 +3393,7 @@ BACKUP PROCESS:
                 if (result == DialogResult.Yes)
                 {
                     // Permanently remove from ledger (since file is already missing)
-                    var ledger = new BuildingBlockLedger();
+                    var ledger = CreateLedger();
                     ledger.PermanentlyRemoveEntry(ledgerEntry.Name, ledgerEntry.Category);
                     
                     // Remove node from tree
@@ -3418,7 +3429,7 @@ BACKUP PROCESS:
 
             if (result == DialogResult.Yes)
             {
-                var ledger = new BuildingBlockLedger();
+                var ledger = CreateLedger();
                 int successCount = 0;
                 var removedEntries = new List<string>();
                 
@@ -3498,7 +3509,7 @@ BACKUP PROCESS:
             
             if (result == DialogResult.Yes)
             {
-                var ledger = new BuildingBlockLedger();
+                var ledger = CreateLedger();
                 int deletedCount = 0;
                 int removedFromLedgerCount = 0;
                 var errors = new List<string>();
@@ -4115,7 +4126,7 @@ BACKUP PROCESS:
                 progressBar.Value = 0;
                 
                 // Initialize ledger for tracking deletions
-                var ledger = new BuildingBlockLedger();
+                var ledger = CreateLedger();
                 
                 using (var wordManager = new WordManager(fullTemplatePath))
                 {

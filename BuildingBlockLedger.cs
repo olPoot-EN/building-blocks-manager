@@ -46,16 +46,28 @@ namespace BuildingBlocksManager
 
         private string ledgerDirectory;
         private string ledgerFile;
+        private string profileName;
 
         private Dictionary<string, LedgerEntry> ledgerEntries;
         private Dictionary<string, LedgerEntry> removedEntries;
 
-        public BuildingBlockLedger()
+        public BuildingBlockLedger() : this(null)
         {
+        }
+
+        public BuildingBlockLedger(string profileName)
+        {
+            this.profileName = profileName;
+
             // Use configured ledger directory or default
             ledgerDirectory = GetConfiguredLedgerDirectory();
-            ledgerFile = Path.Combine(ledgerDirectory, "building_blocks_ledger.txt");
-            
+
+            // Include profile name in ledger filename to keep Kestrel and Compliance separate
+            string ledgerFileName = string.IsNullOrEmpty(profileName)
+                ? "building_blocks_ledger.txt"
+                : $"building_blocks_ledger_{profileName}.txt";
+            ledgerFile = Path.Combine(ledgerDirectory, ledgerFileName);
+
             ledgerEntries = new Dictionary<string, LedgerEntry>();
             removedEntries = new Dictionary<string, LedgerEntry>();
             Load();

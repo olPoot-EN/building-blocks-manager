@@ -45,16 +45,13 @@ namespace BuildingBlocksManager
 
             isDisabled = false;
 
-            // Include profile name in log path to keep Kestrel and Compliance logs separate
-            string primaryLogDirectory;
+            // Include profile name in session ID to keep Kestrel and Compliance logs separate
             if (!string.IsNullOrEmpty(profileName))
             {
-                primaryLogDirectory = Path.Combine(customLogDirectory, "BBM_Logs", profileName);
+                this.sessionId = $"{DateTime.Now.ToString("yyyy-MM-dd_HHmm")}_{profileName}";
             }
-            else
-            {
-                primaryLogDirectory = Path.Combine(customLogDirectory, "BBM_Logs");
-            }
+
+            string primaryLogDirectory = Path.Combine(customLogDirectory, "BBM_Logs");
 
             // Try to create log directory
             logDirectory = TryCreateLogDirectory(primaryLogDirectory);
