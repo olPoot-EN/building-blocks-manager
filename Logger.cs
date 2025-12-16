@@ -22,7 +22,7 @@ namespace BuildingBlocksManager
         public string GetLogDirectory() => logDirectory;
         public bool IsDisabled => isDisabled;
 
-        public Logger(string templatePath = null, string sourceDirectoryPath = null, string customLogDirectory = null, bool enableDetailedLogging = true)
+        public Logger(string templatePath = null, string sourceDirectoryPath = null, string customLogDirectory = null, bool enableDetailedLogging = true, string profileName = null)
         {
             this.enableDetailedLogging = enableDetailedLogging;
             this.sessionId = DateTime.Now.ToString("yyyy-MM-dd_HHmm");
@@ -44,7 +44,17 @@ namespace BuildingBlocksManager
             }
 
             isDisabled = false;
-            string primaryLogDirectory = Path.Combine(customLogDirectory, "BBM_Logs");
+
+            // Include profile name in log path to keep Kestrel and Compliance logs separate
+            string primaryLogDirectory;
+            if (!string.IsNullOrEmpty(profileName))
+            {
+                primaryLogDirectory = Path.Combine(customLogDirectory, "BBM_Logs", profileName);
+            }
+            else
+            {
+                primaryLogDirectory = Path.Combine(customLogDirectory, "BBM_Logs");
+            }
 
             // Try to create log directory
             logDirectory = TryCreateLogDirectory(primaryLogDirectory);

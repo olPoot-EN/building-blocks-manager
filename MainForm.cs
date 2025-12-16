@@ -108,7 +108,8 @@ namespace BuildingBlocksManager
             try
             {
                 var logDir = settings?.CurrentPaths?.LogDirectory;
-                logger = new Logger(fullTemplatePath, fullSourceDirectoryPath, logDir, settings?.EnableDetailedLogging ?? true);
+                var profileName = settings?.ActiveProfile.ToString();
+                logger = new Logger(fullTemplatePath, fullSourceDirectoryPath, logDir, settings?.EnableDetailedLogging ?? true, profileName);
 
                 if (logger.IsDisabled)
                 {
@@ -118,7 +119,7 @@ namespace BuildingBlocksManager
                 else
                 {
                     logger.CleanupOldLogs();
-                    logger.Info("Building Blocks Manager started");
+                    logger.Info($"Building Blocks Manager started - {profileName} profile");
                 }
             }
             catch (Exception ex)
@@ -126,7 +127,7 @@ namespace BuildingBlocksManager
                 // If logger initialization fails completely, create a disabled logger
                 try
                 {
-                    logger = new Logger(null, null, null, settings?.EnableDetailedLogging ?? true);
+                    logger = new Logger(null, null, null, settings?.EnableDetailedLogging ?? true, null);
                 }
                 catch
                 {
