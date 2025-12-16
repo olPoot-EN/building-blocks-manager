@@ -234,20 +234,20 @@ namespace BuildingBlocksManager
             this.MainMenuStrip = menuStrip;
             this.Controls.Add(menuStrip);
 
-            // Profile selection radio buttons
+            // Directory toggle radio buttons
             var lblProfile = new Label
             {
-                Text = "Profile:",
+                Text = "Directory toggle:",
                 Location = new System.Drawing.Point(5, 30),
-                Size = new System.Drawing.Size(50, 23),
+                Size = new System.Drawing.Size(100, 23),
                 Font = new System.Drawing.Font(Label.DefaultFont, System.Drawing.FontStyle.Bold)
             };
 
             rbKestrel = new RadioButton
             {
                 Text = "Kestrel",
-                Location = new System.Drawing.Point(60, 28),
-                Size = new System.Drawing.Size(80, 23),
+                Location = new System.Drawing.Point(110, 28),
+                Size = new System.Drawing.Size(70, 23),
                 Checked = true
             };
             rbKestrel.CheckedChanged += ProfileRadioButton_CheckedChanged;
@@ -255,7 +255,7 @@ namespace BuildingBlocksManager
             rbCompliance = new RadioButton
             {
                 Text = "Compliance",
-                Location = new System.Drawing.Point(145, 28),
+                Location = new System.Drawing.Point(185, 28),
                 Size = new System.Drawing.Size(100, 23)
             };
             rbCompliance.CheckedChanged += ProfileRadioButton_CheckedChanged;
