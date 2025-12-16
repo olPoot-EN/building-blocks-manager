@@ -239,14 +239,14 @@ namespace BuildingBlocksManager
             {
                 Text = "Directory toggle:",
                 Location = new System.Drawing.Point(5, 30),
-                Size = new System.Drawing.Size(100, 23),
+                Size = new System.Drawing.Size(115, 23),
                 Font = new System.Drawing.Font(Label.DefaultFont, System.Drawing.FontStyle.Bold)
             };
 
             rbKestrel = new RadioButton
             {
                 Text = "Kestrel",
-                Location = new System.Drawing.Point(110, 28),
+                Location = new System.Drawing.Point(125, 28),
                 Size = new System.Drawing.Size(70, 23),
                 Checked = true
             };
@@ -255,7 +255,7 @@ namespace BuildingBlocksManager
             rbCompliance = new RadioButton
             {
                 Text = "Compliance",
-                Location = new System.Drawing.Point(185, 28),
+                Location = new System.Drawing.Point(200, 28),
                 Size = new System.Drawing.Size(100, 23)
             };
             rbCompliance.CheckedChanged += ProfileRadioButton_CheckedChanged;
