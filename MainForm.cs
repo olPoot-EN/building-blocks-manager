@@ -876,26 +876,36 @@ namespace BuildingBlocksManager
 
         private string GetValidStartDirectory(string preferredPath)
         {
-            if (!string.IsNullOrEmpty(preferredPath))
+            try
             {
-                if (Directory.Exists(preferredPath))
+                if (!string.IsNullOrEmpty(preferredPath))
                 {
-                    return preferredPath;
-                }
-                
-                var parentDir = Path.GetDirectoryName(preferredPath);
-                if (!string.IsNullOrEmpty(parentDir) && Directory.Exists(parentDir))
-                {
-                    return parentDir;
-                }
-                
-                var grandParentDir = Path.GetDirectoryName(parentDir);
-                if (!string.IsNullOrEmpty(grandParentDir) && Directory.Exists(grandParentDir))
-                {
-                    return grandParentDir;
+                    if (Directory.Exists(preferredPath))
+                    {
+                        return preferredPath;
+                    }
+
+                    var parentDir = Path.GetDirectoryName(preferredPath);
+                    if (!string.IsNullOrEmpty(parentDir) && Directory.Exists(parentDir))
+                    {
+                        return parentDir;
+                    }
+
+                    if (!string.IsNullOrEmpty(parentDir))
+                    {
+                        var grandParentDir = Path.GetDirectoryName(parentDir);
+                        if (!string.IsNullOrEmpty(grandParentDir) && Directory.Exists(grandParentDir))
+                        {
+                            return grandParentDir;
+                        }
+                    }
                 }
             }
-            
+            catch
+            {
+                // If any path operation fails, fall back to default
+            }
+
             return Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
         }
 
