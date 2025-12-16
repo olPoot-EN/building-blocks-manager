@@ -13,6 +13,7 @@ namespace BuildingBlocksManager
         private TextBox txtSourceDirectory;
         private TextBox txtExportDirectory;
         private TextBox txtLogDirectory;
+        private TextBox txtLedgerDirectory;
         private RadioButton rbKestrel;
         private RadioButton rbCompliance;
         private CheckBox chkFlatImport;
@@ -21,10 +22,12 @@ namespace BuildingBlocksManager
         private Button btnBrowseDirectory;
         private Button btnBrowseExportDirectory;
         private Button btnBrowseLogDirectory;
+        private Button btnBrowseLedgerDirectory;
         private Label lblTemplatePathDisplay;
         private Label lblSourceDirectoryPathDisplay;
         private Label lblExportDirectoryPathDisplay;
         private Label lblLogDirectoryPathDisplay;
+        private Label lblLedgerDirectoryPathDisplay;
         private Label lblTemplateComments;
         private Button btnQueryDirectory;
         private Button btnImportAll;
@@ -72,10 +75,10 @@ namespace BuildingBlocksManager
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "Building Blocks Manager - Version 276";
-            this.Size = new System.Drawing.Size(600, 680);
+            this.Text = "Building Blocks Manager - Version 277";
+            this.Size = new System.Drawing.Size(850, 680);
             this.StartPosition = FormStartPosition.CenterScreen;
-            this.MinimumSize = new System.Drawing.Size(450, 500);
+            this.MinimumSize = new System.Drawing.Size(850, 500);
             
             // Wire up event handlers
             btnBrowseTemplate.Click += BtnBrowseTemplate_Click;
@@ -272,17 +275,19 @@ namespace BuildingBlocksManager
             };
             rbCompliance.CheckedChanged += ProfileRadioButton_CheckedChanged;
 
-            // Template file section (adjusted for profile selection)
+            // === LEFT COLUMN: Template, Logs, Ledger ===
+
+            // Template file section (Row 1, Left)
             var lblTemplate = new Label
             {
                 Text = "Template:",
                 Location = new System.Drawing.Point(5, 60),
-                Size = new System.Drawing.Size(55, 23),
+                Size = new System.Drawing.Size(60, 23),
             };
 
             txtTemplatePath = new TextBox
             {
-                Location = new System.Drawing.Point(60, 60),
+                Location = new System.Drawing.Point(65, 60),
                 Size = new System.Drawing.Size(200, 23),
                 ReadOnly = true
             };
@@ -290,8 +295,8 @@ namespace BuildingBlocksManager
             lblTemplatePathDisplay = new Label
             {
                 Text = "",
-                Location = new System.Drawing.Point(30, 85),
-                Size = new System.Drawing.Size(500, 15),
+                Location = new System.Drawing.Point(35, 85),
+                Size = new System.Drawing.Size(300, 15),
                 Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, Label.DefaultFont.Size - 1, System.Drawing.FontStyle.Regular),
                 ForeColor = System.Drawing.Color.Gray
             };
@@ -299,95 +304,33 @@ namespace BuildingBlocksManager
             btnBrowseTemplate = new Button
             {
                 Text = "Browse",
-                Location = new System.Drawing.Point(260, 59),
+                Location = new System.Drawing.Point(265, 59),
                 Size = new System.Drawing.Size(60, 25)
             };
 
-            // Template comments display
+            // Template comments display (next to template on right)
             lblTemplateComments = new Label
             {
                 Text = "",
-                Location = new System.Drawing.Point(344, 60),
-                Size = new System.Drawing.Size(230, 40),
+                Location = new System.Drawing.Point(335, 60),
+                Size = new System.Drawing.Size(90, 40),
                 Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, 8, System.Drawing.FontStyle.Regular),
                 ForeColor = System.Drawing.Color.Aqua,
                 TextAlign = System.Drawing.ContentAlignment.MiddleLeft,
                 AutoEllipsis = true
             };
 
-            // Source directory section
-            var lblDirectory = new Label
-            {
-                Text = "Import:",
-                Location = new System.Drawing.Point(18, 110),
-                Size = new System.Drawing.Size(45, 23),
-             };
-
-            txtSourceDirectory = new TextBox
-            {
-                Location = new System.Drawing.Point(60, 110),
-                Size = new System.Drawing.Size(200, 23),
-                ReadOnly = true
-            };
-
-            lblSourceDirectoryPathDisplay = new Label
-            {
-                Text = "",
-                Location = new System.Drawing.Point(30, 135),
-                Size = new System.Drawing.Size(500, 15),
-                Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, Label.DefaultFont.Size - 1, System.Drawing.FontStyle.Regular),
-                ForeColor = System.Drawing.Color.Gray
-            };
-
-            btnBrowseDirectory = new Button
-            {
-                Text = "Browse",
-                Location = new System.Drawing.Point(260, 109),
-                Size = new System.Drawing.Size(60, 25)
-            };
-
-            // Export directory section
-            var lblExportDirectory = new Label
-            {
-                Text = "Export:",
-                Location = new System.Drawing.Point(18, 160),
-                Size = new System.Drawing.Size(45, 23),
-            };
-
-            txtExportDirectory = new TextBox
-            {
-                Location = new System.Drawing.Point(60, 160),
-                Size = new System.Drawing.Size(200, 23),
-                ReadOnly = true
-            };
-
-            lblExportDirectoryPathDisplay = new Label
-            {
-                Text = "",
-                Location = new System.Drawing.Point(30, 185),
-                Size = new System.Drawing.Size(500, 15),
-                Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, Label.DefaultFont.Size - 1, System.Drawing.FontStyle.Regular),
-                ForeColor = System.Drawing.Color.Gray
-            };
-
-            btnBrowseExportDirectory = new Button
-            {
-                Text = "Browse",
-                Location = new System.Drawing.Point(260, 159),
-                Size = new System.Drawing.Size(60, 25)
-            };
-
-            // Log directory section
+            // Log directory section (Row 2, Left)
             var lblLogDirectory = new Label
             {
                 Text = "Logs:",
-                Location = new System.Drawing.Point(25, 210),
+                Location = new System.Drawing.Point(30, 110),
                 Size = new System.Drawing.Size(35, 23),
             };
 
             txtLogDirectory = new TextBox
             {
-                Location = new System.Drawing.Point(60, 210),
+                Location = new System.Drawing.Point(65, 110),
                 Size = new System.Drawing.Size(200, 23),
                 ReadOnly = true
             };
@@ -395,8 +338,8 @@ namespace BuildingBlocksManager
             lblLogDirectoryPathDisplay = new Label
             {
                 Text = "",
-                Location = new System.Drawing.Point(30, 235),
-                Size = new System.Drawing.Size(500, 15),
+                Location = new System.Drawing.Point(35, 135),
+                Size = new System.Drawing.Size(300, 15),
                 Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, Label.DefaultFont.Size - 1, System.Drawing.FontStyle.Regular),
                 ForeColor = System.Drawing.Color.Gray
             };
@@ -404,30 +347,127 @@ namespace BuildingBlocksManager
             btnBrowseLogDirectory = new Button
             {
                 Text = "Browse",
-                Location = new System.Drawing.Point(260, 209),
+                Location = new System.Drawing.Point(265, 109),
                 Size = new System.Drawing.Size(60, 25)
             };
             btnBrowseLogDirectory.Click += BtnBrowseLogDirectory_Click;
 
-            // Structure options section - positioned above Import/Export buttons
+            // Ledger directory section (Row 3, Left)
+            var lblLedgerDirectory = new Label
+            {
+                Text = "Ledger:",
+                Location = new System.Drawing.Point(18, 160),
+                Size = new System.Drawing.Size(47, 23),
+            };
+
+            txtLedgerDirectory = new TextBox
+            {
+                Location = new System.Drawing.Point(65, 160),
+                Size = new System.Drawing.Size(200, 23),
+                ReadOnly = true
+            };
+
+            lblLedgerDirectoryPathDisplay = new Label
+            {
+                Text = "",
+                Location = new System.Drawing.Point(35, 185),
+                Size = new System.Drawing.Size(300, 15),
+                Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, Label.DefaultFont.Size - 1, System.Drawing.FontStyle.Regular),
+                ForeColor = System.Drawing.Color.Gray
+            };
+
+            btnBrowseLedgerDirectory = new Button
+            {
+                Text = "Browse",
+                Location = new System.Drawing.Point(265, 159),
+                Size = new System.Drawing.Size(60, 25)
+            };
+            btnBrowseLedgerDirectory.Click += BtnBrowseLedgerDirectory_Click;
+
+            // === RIGHT COLUMN: Import, Export ===
+            int rightColumnX = 435;
+
+            // Import directory section (Row 1, Right)
+            var lblDirectory = new Label
+            {
+                Text = "Import:",
+                Location = new System.Drawing.Point(rightColumnX, 60),
+                Size = new System.Drawing.Size(45, 23),
+             };
+
+            txtSourceDirectory = new TextBox
+            {
+                Location = new System.Drawing.Point(rightColumnX + 45, 60),
+                Size = new System.Drawing.Size(200, 23),
+                ReadOnly = true
+            };
+
+            lblSourceDirectoryPathDisplay = new Label
+            {
+                Text = "",
+                Location = new System.Drawing.Point(rightColumnX + 15, 85),
+                Size = new System.Drawing.Size(300, 15),
+                Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, Label.DefaultFont.Size - 1, System.Drawing.FontStyle.Regular),
+                ForeColor = System.Drawing.Color.Gray
+            };
+
+            btnBrowseDirectory = new Button
+            {
+                Text = "Browse",
+                Location = new System.Drawing.Point(rightColumnX + 245, 59),
+                Size = new System.Drawing.Size(60, 25)
+            };
+
+            // Export directory section (Row 2, Right)
+            var lblExportDirectory = new Label
+            {
+                Text = "Export:",
+                Location = new System.Drawing.Point(rightColumnX, 110),
+                Size = new System.Drawing.Size(45, 23),
+            };
+
+            txtExportDirectory = new TextBox
+            {
+                Location = new System.Drawing.Point(rightColumnX + 45, 110),
+                Size = new System.Drawing.Size(200, 23),
+                ReadOnly = true
+            };
+
+            lblExportDirectoryPathDisplay = new Label
+            {
+                Text = "",
+                Location = new System.Drawing.Point(rightColumnX + 15, 135),
+                Size = new System.Drawing.Size(300, 15),
+                Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, Label.DefaultFont.Size - 1, System.Drawing.FontStyle.Regular),
+                ForeColor = System.Drawing.Color.Gray
+            };
+
+            btnBrowseExportDirectory = new Button
+            {
+                Text = "Browse",
+                Location = new System.Drawing.Point(rightColumnX + 245, 109),
+                Size = new System.Drawing.Size(60, 25)
+            };
+
+            // Structure options section - positioned to the right
             var lblStructure = new Label
             {
                 Text = "Ignore structure.\n Flat Import or Export:",
-                Location = new System.Drawing.Point(400, 265),
+                Location = new System.Drawing.Point(650, 205),
                 Size = new System.Drawing.Size(200, 30)
             };
 
             chkFlatImport = new CheckBox
             {
                 Text = "Import",
-                Location = new System.Drawing.Point(415, 295),
+                Location = new System.Drawing.Point(665, 235),
                 Size = new System.Drawing.Size(70, 23)
             };
 
             chkFlatExport = new CheckBox
             {
                 Text = "Export",
-                Location = new System.Drawing.Point(415, 315),
+                Location = new System.Drawing.Point(665, 255),
                 Size = new System.Drawing.Size(70, 23)
             };
 
@@ -435,7 +475,7 @@ namespace BuildingBlocksManager
             var lblQuery = new Label
             {
                 Text = "Query",
-                Location = new System.Drawing.Point(40, 270),
+                Location = new System.Drawing.Point(40, 210),
                 Size = new System.Drawing.Size(50, 20),
                 Font = new System.Drawing.Font(Label.DefaultFont, System.Drawing.FontStyle.Bold)
             };
@@ -443,14 +483,14 @@ namespace BuildingBlocksManager
             btnQueryDirectory = new Button
             {
                 Text = "Directory",
-                Location = new System.Drawing.Point(20, 295),
+                Location = new System.Drawing.Point(20, 235),
                 Size = new System.Drawing.Size(80, 30)
             };
 
             var btnQueryTemplate = new Button
             {
                 Text = "Template",
-                Location = new System.Drawing.Point(20, 325),
+                Location = new System.Drawing.Point(20, 265),
                 Size = new System.Drawing.Size(80, 30)
             };
             btnQueryTemplate.Click += BtnQueryTemplate_Click;
@@ -459,7 +499,7 @@ namespace BuildingBlocksManager
             var lblImport = new Label
             {
                 Text = "Import\n(Folder -> Template)",
-                Location = new System.Drawing.Point(110, 255),
+                Location = new System.Drawing.Point(110, 195),
                 Size = new System.Drawing.Size(140, 35),
                 Font = new System.Drawing.Font(Label.DefaultFont, System.Drawing.FontStyle.Bold),
                 TextAlign = System.Drawing.ContentAlignment.MiddleCenter
@@ -468,14 +508,14 @@ namespace BuildingBlocksManager
             btnImportAll = new Button
             {
                 Text = "All",
-                Location = new System.Drawing.Point(140, 295),
+                Location = new System.Drawing.Point(140, 235),
                 Size = new System.Drawing.Size(80, 30)
             };
 
             btnImportSelected = new Button
             {
                 Text = "Selected",
-                Location = new System.Drawing.Point(140, 325),
+                Location = new System.Drawing.Point(140, 265),
                 Size = new System.Drawing.Size(80, 30)
             };
 
@@ -483,7 +523,7 @@ namespace BuildingBlocksManager
             var lblExport = new Label
             {
                 Text = "Export\n(Template -> Folder)",
-                Location = new System.Drawing.Point(250, 255),
+                Location = new System.Drawing.Point(250, 195),
                 Size = new System.Drawing.Size(140, 35),
                 Font = new System.Drawing.Font(Label.DefaultFont, System.Drawing.FontStyle.Bold),
                 TextAlign = System.Drawing.ContentAlignment.MiddleCenter
@@ -492,14 +532,14 @@ namespace BuildingBlocksManager
             btnExportAll = new Button
             {
                 Text = "All",
-                Location = new System.Drawing.Point(280, 295),
+                Location = new System.Drawing.Point(280, 235),
                 Size = new System.Drawing.Size(80, 30)
             };
 
             btnExportSelected = new Button
             {
                 Text = "Selected",
-                Location = new System.Drawing.Point(280, 325),
+                Location = new System.Drawing.Point(280, 265),
                 Size = new System.Drawing.Size(80, 30)
             };
 
@@ -507,18 +547,18 @@ namespace BuildingBlocksManager
             btnStop = new Button
             {
                 Text = "Stop",
-                Location = new System.Drawing.Point(410, 355),
+                Location = new System.Drawing.Point(660, 290),
                 Size = new System.Drawing.Size(80, 35),
                 Visible = false,
                 BackColor = System.Drawing.Color.LightCoral
             };
             btnStop.Click += BtnStop_Click;
 
-            // Tab control section - Form width 600px - 40px margins = 560px max (25% reduction from 740)
+            // Tab control section - Form width 850px - 40px margins = 810px max
             tabControl = new TabControl
             {
-                Location = new System.Drawing.Point(20, 370),
-                Size = new System.Drawing.Size(555, 230)
+                Location = new System.Drawing.Point(20, 310),
+                Size = new System.Drawing.Size(805, 290)
             };
 
             // Results tab
@@ -526,7 +566,7 @@ namespace BuildingBlocksManager
             txtResults = new TextBox
             {
                 Location = new System.Drawing.Point(3, 3),
-                Size = new System.Drawing.Size(540, 195),
+                Size = new System.Drawing.Size(790, 255),
                 Multiline = true,
                 ScrollBars = ScrollBars.Both, // Enable both horizontal and vertical scrollbars
                 ReadOnly = true,
@@ -540,7 +580,7 @@ namespace BuildingBlocksManager
             treeDirectory = new TreeView
             {
                 Location = new System.Drawing.Point(3, 3),
-                Size = new System.Drawing.Size(540, 195),
+                Size = new System.Drawing.Size(790, 255),
                 Scrollable = true,
                 HotTracking = true,
                 ShowLines = true,
@@ -548,15 +588,15 @@ namespace BuildingBlocksManager
                 ShowRootLines = true,
                 CheckBoxes = true // Enable checkboxes for multiselect
             };
-            
+
             // Add checkbox synchronization behavior
             treeDirectory.AfterCheck += TreeDirectory_AfterCheck;
-            
+
             tabDirectory.Controls.Add(treeDirectory);
 
             // Template tab
             tabTemplate = new TabPage("Template");
-            
+
             // Filter button
             btnFilterTemplate = new Button
             {
@@ -565,7 +605,7 @@ namespace BuildingBlocksManager
                 Size = new System.Drawing.Size(80, 25)
             };
             btnFilterTemplate.Click += BtnFilterTemplate_Click;
-            
+
             // Item count label
             lblTemplateCount = new Label
             {
@@ -574,32 +614,32 @@ namespace BuildingBlocksManager
                 Size = new System.Drawing.Size(200, 17),
                 TextAlign = System.Drawing.ContentAlignment.MiddleLeft
             };
-            
+
             // Select All button
             var btnSelectAll = new Button
             {
                 Text = "Select All",
-                Location = new System.Drawing.Point(305, 5),
+                Location = new System.Drawing.Point(550, 5),
                 Size = new System.Drawing.Size(70, 25)
             };
             btnSelectAll.Click += BtnSelectAll_Click;
-            
+
             // Delete tip label
             var lblDeleteTip = new Label
             {
                 Text = "Right-click to delete autotext",
-                Location = new System.Drawing.Point(385, 9),
-                Size = new System.Drawing.Size(140, 17),
+                Location = new System.Drawing.Point(630, 9),
+                Size = new System.Drawing.Size(160, 17),
                 Font = new System.Drawing.Font(Label.DefaultFont.FontFamily, Label.DefaultFont.Size, System.Drawing.FontStyle.Italic),
                 ForeColor = System.Drawing.Color.Gray
             };
-            
-            
+
+
             // ListView (moved down to accommodate filter controls)
             listViewTemplate = new ListView
             {
                 Location = new System.Drawing.Point(3, 35),
-                Size = new System.Drawing.Size(540, 160),
+                Size = new System.Drawing.Size(790, 220),
                 View = View.Details,
                 FullRowSelect = true,
                 GridLines = true,
@@ -608,12 +648,12 @@ namespace BuildingBlocksManager
                 MultiSelect = true // Enable multi-selection
             };
 
-            // Add columns with intelligent initial widths (540px total width)
-            listViewTemplate.Columns.Add("Name", 160);      // Wider for building block names
-            listViewTemplate.Columns.Add("Gallery", 90);    // Narrower for gallery types 
-            listViewTemplate.Columns.Add("Category", 180);  // Wider for category paths
-            listViewTemplate.Columns.Add("Template", 100);  // Moderate width for template names
-            // Total: 530px, leaving 10px buffer for scrollbars
+            // Add columns with intelligent initial widths (790px total width)
+            listViewTemplate.Columns.Add("Name", 220);      // Wider for building block names
+            listViewTemplate.Columns.Add("Gallery", 120);   // Narrower for gallery types 
+            listViewTemplate.Columns.Add("Category", 280);  // Wider for category paths
+            listViewTemplate.Columns.Add("Template", 150);  // Moderate width for template names
+            // Total: 770px, leaving 20px buffer for scrollbars
             
             // Enable column sorting and resizing
             listViewTemplate.ColumnClick += ListViewTemplate_ColumnClick;
@@ -639,14 +679,14 @@ namespace BuildingBlocksManager
             progressBar = new ProgressBar
             {
                 Location = new System.Drawing.Point(20, 610),
-                Size = new System.Drawing.Size(390, 23),
+                Size = new System.Drawing.Size(640, 23),
                 Style = ProgressBarStyle.Continuous
             };
 
             lblStatus = new Label
             {
                 Text = "Ready",
-                Location = new System.Drawing.Point(420, 610),
+                Location = new System.Drawing.Point(670, 610),
                 Size = new System.Drawing.Size(160, 23),
                 TextAlign = System.Drawing.ContentAlignment.MiddleLeft
             };
@@ -659,6 +699,7 @@ namespace BuildingBlocksManager
                 lblDirectory, txtSourceDirectory, lblSourceDirectoryPathDisplay, btnBrowseDirectory,
                 lblExportDirectory, txtExportDirectory, lblExportDirectoryPathDisplay, btnBrowseExportDirectory,
                 lblLogDirectory, txtLogDirectory, lblLogDirectoryPathDisplay, btnBrowseLogDirectory,
+                lblLedgerDirectory, txtLedgerDirectory, lblLedgerDirectoryPathDisplay, btnBrowseLedgerDirectory,
                 lblStructure, chkFlatImport, chkFlatExport,
                 lblQuery, btnQueryDirectory, btnQueryTemplate,
                 lblImport, btnImportAll, btnImportSelected,
@@ -1051,6 +1092,65 @@ namespace BuildingBlocksManager
             else
             {
                 txtLogDirectory.BackColor = System.Drawing.Color.Yellow;
+            }
+        }
+
+        private void BtnBrowseLedgerDirectory_Click(object sender, EventArgs e)
+        {
+            using (var dialog = new OpenFileDialog())
+            {
+                dialog.Title = "Select Ledger Directory";
+                dialog.CheckFileExists = false;
+                dialog.CheckPathExists = true;
+                dialog.ValidateNames = false;
+                dialog.FileName = "Select Folder";
+                dialog.Filter = "Folders|\n";
+                dialog.FilterIndex = 1;
+                dialog.RestoreDirectory = true;
+
+                var startDir = GetValidStartDirectory(settings.LedgerDirectory);
+                dialog.InitialDirectory = startDir;
+
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    string selectedPath = Path.GetDirectoryName(dialog.FileName);
+                    settings.LedgerDirectory = selectedPath;
+                    UpdateLedgerDirectoryDisplay(selectedPath);
+                    UpdateStatus("Ledger directory selected: " + selectedPath);
+                    settings.Save();
+
+                    // Reinitialize ledger with new directory
+                    InitializeLedger();
+                    AppendResults($"Ledger directory set to: {selectedPath}");
+                }
+            }
+        }
+
+        private void UpdateLedgerDirectoryDisplay(string fullPath)
+        {
+            if (string.IsNullOrEmpty(fullPath))
+            {
+                txtLedgerDirectory.Text = "(Not Set)";
+                lblLedgerDirectoryPathDisplay.Text = "Using default location";
+                txtLedgerDirectory.BackColor = System.Drawing.SystemColors.Window;
+                return;
+            }
+
+            var directoryInfo = new DirectoryInfo(fullPath);
+            var lowestLevelDirectory = directoryInfo.Name;
+            var parentPath = directoryInfo.Parent?.FullName;
+
+            txtLedgerDirectory.Text = "..." + Path.DirectorySeparatorChar + lowestLevelDirectory;
+            lblLedgerDirectoryPathDisplay.Text = string.IsNullOrEmpty(parentPath) ? "" : parentPath + Path.DirectorySeparatorChar;
+
+            // Set background color based on directory existence
+            if (Directory.Exists(fullPath))
+            {
+                txtLedgerDirectory.BackColor = System.Drawing.SystemColors.Window;
+            }
+            else
+            {
+                txtLedgerDirectory.BackColor = System.Drawing.Color.Yellow;
             }
         }
 
@@ -2171,6 +2271,9 @@ namespace BuildingBlocksManager
 
             // Load paths for the active profile
             LoadProfilePaths();
+
+            // Load shared settings (not profile-specific)
+            UpdateLedgerDirectoryDisplay(settings.LedgerDirectory);
 
             chkFlatImport.Checked = settings.FlatImport;
             chkFlatExport.Checked = settings.FlatExport;
