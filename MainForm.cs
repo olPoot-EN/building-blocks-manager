@@ -3067,6 +3067,18 @@ BACKUP PROCESS:
                 var subdirs = directory.GetDirectories().OrderBy(d => d.Name);
                 foreach (var subdir in subdirs)
                 {
+                    // Check if folder is excluded (starts with "x_")
+                    if (subdir.Name.StartsWith("x_", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Show excluded folder grayed out
+                        var excludedNode = new TreeNode($"{subdir.Name} (Excluded)")
+                        {
+                            ForeColor = System.Drawing.Color.Gray
+                        };
+                        node.Nodes.Add(excludedNode);
+                        continue;
+                    }
+
                     var childNode = CreateDirectoryNode(subdir, scannedFiles, analysis);
                     node.Nodes.Add(childNode);
                 }

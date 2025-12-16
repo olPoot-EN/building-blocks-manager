@@ -101,6 +101,11 @@ namespace BuildingBlocksManager
                 {
                     foreach (var subDir in Directory.GetDirectories(directory))
                     {
+                        // Skip folders that start with "x_" (excluded from import)
+                        var folderName = Path.GetFileName(subDir);
+                        if (folderName.StartsWith("x_", StringComparison.OrdinalIgnoreCase))
+                            continue;
+
                         files.AddRange(GetDocxFiles(subDir, currentDepth + 1, maxDepth));
                     }
                 }
