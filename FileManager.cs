@@ -10,6 +10,8 @@ namespace BuildingBlocksManager
     {
         public class FileInfo
         {
+            public const int MaxNameLength = 64;
+
             public string FilePath { get; set; }
             public DateTime LastModified { get; set; }
             public DateTime LastImported { get; set; }
@@ -18,7 +20,9 @@ namespace BuildingBlocksManager
             public string Category { get; set; }
             public string Name { get; set; }
             public List<string> InvalidCharacters { get; set; } = new List<string>();
-            public bool IsValid => InvalidCharacters.Count == 0;
+            public bool HasInvalidCharacters => InvalidCharacters.Count > 0;
+            public bool NameTooLong => Name != null && Name.Length > MaxNameLength;
+            public bool IsValid => !HasInvalidCharacters && !NameTooLong;
         }
 
         private string sourceDirectory;

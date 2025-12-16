@@ -72,7 +72,7 @@ namespace BuildingBlocksManager
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "Building Blocks Manager - Version 275";
+            this.Text = "Building Blocks Manager - Version 276";
             this.Size = new System.Drawing.Size(600, 680);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = new System.Drawing.Size(450, 500);
@@ -1162,7 +1162,39 @@ namespace BuildingBlocksManager
             {
                 // Initialize file manager and scan directory
                 var fileManager = new FileManager(fullSourceDirectoryPath);
-                var allFiles = fileManager.ScanDirectory().Where(f => f.IsValid).ToList();
+                var scannedFiles = fileManager.ScanDirectory();
+
+                // Check for files with names that are too long
+                var nameTooLongFiles = scannedFiles.Where(f => f.NameTooLong).ToList();
+                if (nameTooLongFiles.Count > 0)
+                {
+                    AppendResults($"WARNING: {nameTooLongFiles.Count} file(s) have names exceeding {FileManager.FileInfo.MaxNameLength} characters:");
+                    foreach (var file in nameTooLongFiles)
+                    {
+                        AppendResults($"  • {file.Name} ({file.Name.Length} chars)");
+                    }
+                    AppendResults("These files will be skipped during import.");
+                    AppendResults("");
+
+                    var result = MessageBox.Show(
+                        $"{nameTooLongFiles.Count} file(s) have names exceeding the {FileManager.FileInfo.MaxNameLength} character limit for Building Block names.\n\n" +
+                        "These files will be skipped during import.\n\n" +
+                        "Do you want to continue with the remaining files?",
+                        "Name Length Warning",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Warning);
+
+                    if (result == DialogResult.No)
+                    {
+                        AppendResults("Import cancelled by user due to name length issues.");
+                        UpdateStatus("Import cancelled");
+                        progressBar.Style = ProgressBarStyle.Continuous;
+                        progressBar.Value = 0;
+                        return;
+                    }
+                }
+
+                var allFiles = scannedFiles.Where(f => f.IsValid).ToList();
 
                 if (allFiles.Count == 0)
                 {
@@ -1399,17 +1431,60 @@ namespace BuildingBlocksManager
 
             // Get checked file nodes from TreeView
             var checkedFiles = GetCheckedFiles(treeDirectory.Nodes);
-            
+
             if (checkedFiles.Count == 0)
             {
-                MessageBox.Show("Please check one or more AT_ files in the Directory tab to import.", 
+                MessageBox.Show("Please check one or more AT_ files in the Directory tab to import.",
                     "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
+            // Check for files with names that are too long
+            var nameTooLongFiles = checkedFiles.Where(f => f.NameTooLong).ToList();
+            if (nameTooLongFiles.Count > 0)
+            {
+                AppendResults($"WARNING: {nameTooLongFiles.Count} selected file(s) have names exceeding {FileManager.FileInfo.MaxNameLength} characters:");
+                foreach (var file in nameTooLongFiles)
+                {
+                    AppendResults($"  • {file.Name} ({file.Name.Length} chars)");
+                }
+                AppendResults("These files cannot be imported.");
+                AppendResults("");
+
+                var validCount = checkedFiles.Count - nameTooLongFiles.Count;
+                if (validCount == 0)
+                {
+                    MessageBox.Show(
+                        $"All {nameTooLongFiles.Count} selected file(s) have names exceeding the {FileManager.FileInfo.MaxNameLength} character limit.\n\n" +
+                        "No files can be imported. Please rename the files to shorter names.",
+                        "Name Length Error",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
+                    return;
+                }
+
+                var result = MessageBox.Show(
+                    $"{nameTooLongFiles.Count} selected file(s) have names exceeding the {FileManager.FileInfo.MaxNameLength} character limit.\n\n" +
+                    "These files will be skipped during import.\n\n" +
+                    $"Do you want to continue with the remaining {validCount} file(s)?",
+                    "Name Length Warning",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning);
+
+                if (result == DialogResult.No)
+                {
+                    AppendResults("Import cancelled by user due to name length issues.");
+                    UpdateStatus("Import cancelled");
+                    return;
+                }
+
+                // Filter out the invalid files
+                checkedFiles = checkedFiles.Where(f => !f.NameTooLong).ToList();
+            }
+
             UpdateStatus("Analyzing selected files with ledger...");
             progressBar.Style = ProgressBarStyle.Marquee;
-            
+
             AppendResults("=== IMPORT SELECTED FILES ===");
             AppendResults($"Selected Files: {checkedFiles.Count}");
             AppendResults($"Template: {Path.GetFileName(fullTemplatePath)}");
@@ -2993,12 +3068,23 @@ BACKUP PROCESS:
                 foreach (var file in relevantFiles)
                 {
                     var fileName = Path.GetFileName(file.FilePath);
-                    
+
                     // Use analysis results if available (with tolerance), otherwise fall back to file properties
                     string status;
                     System.Drawing.Color nodeColor = System.Drawing.Color.Black;
-                    
-                    if (analysis != null)
+
+                    // Check for name too long first - this takes priority
+                    if (file.NameTooLong)
+                    {
+                        status = $" (Name too long: {file.Name.Length} chars)";
+                        nodeColor = System.Drawing.Color.Orange;
+                    }
+                    else if (file.HasInvalidCharacters)
+                    {
+                        status = " (Invalid chars)";
+                        nodeColor = System.Drawing.Color.Red;
+                    }
+                    else if (analysis != null)
                     {
                         // Use analysis results with tolerance
                         if (analysis.NewFiles.Any(f => f.FilePath.Equals(file.FilePath, StringComparison.OrdinalIgnoreCase)))
@@ -3011,39 +3097,31 @@ BACKUP PROCESS:
                             status = " (Modified)";
                             nodeColor = System.Drawing.Color.Blue;
                         }
-                        else if (file.IsValid)
+                        else
                         {
                             status = " (Up-to-date)";
                             nodeColor = System.Drawing.Color.Black;
-                        }
-                        else
-                        {
-                            status = " (Invalid)";
-                            nodeColor = System.Drawing.Color.Red;
                         }
                     }
                     else
                     {
                         // Fall back to old logic
                         status = file.IsNew ? " (New)" :
-                                file.IsModified ? " (Modified)" :
-                                file.IsValid ? " (Up-to-date)" : " (Invalid)";
-                        
-                        if (!file.IsValid)
-                            nodeColor = System.Drawing.Color.Red;
-                        else if (file.IsNew)
+                                file.IsModified ? " (Modified)" : " (Up-to-date)";
+
+                        if (file.IsNew)
                             nodeColor = System.Drawing.Color.Green;
                         else if (file.IsModified)
                             nodeColor = System.Drawing.Color.Blue;
                     }
-                    
+
                     var fileNode = new TreeNode($"{fileName}{status}")
                     {
                         Tag = file
                     };
-                    
+
                     fileNode.ForeColor = nodeColor;
-                    
+
                     node.Nodes.Add(fileNode);
                 }
             }
