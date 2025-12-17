@@ -29,19 +29,26 @@ namespace BuildingBlocksManager
         {
             if (wordApp == null)
             {
+                System.Diagnostics.Debug.WriteLine("[DIAG] Creating Word.Application...");
                 wordApp = new Word.Application();
+                System.Diagnostics.Debug.WriteLine("[DIAG] Word.Application created");
 
                 // Set security/alert settings BEFORE doing anything else
                 // Value 1 = msoAutomationSecurityLow (run all macros without prompts)
+                System.Diagnostics.Debug.WriteLine("[DIAG] Setting AutomationSecurity...");
                 ((dynamic)wordApp).AutomationSecurity = 1;
+                System.Diagnostics.Debug.WriteLine("[DIAG] Setting DisplayAlerts...");
                 wordApp.DisplayAlerts = Word.WdAlertLevel.wdAlertsNone;
 
                 // Additional settings to suppress security dialogs
+                System.Diagnostics.Debug.WriteLine("[DIAG] Setting Options...");
                 wordApp.Options.ConfirmConversions = false;
                 wordApp.Options.DoNotPromptForConvert = true;
 
+                System.Diagnostics.Debug.WriteLine("[DIAG] Setting Visible/ScreenUpdating...");
                 wordApp.Visible = false;
                 wordApp.ScreenUpdating = false;
+                System.Diagnostics.Debug.WriteLine("[DIAG] InitializeWord complete");
             }
         }
 
@@ -50,7 +57,9 @@ namespace BuildingBlocksManager
             if (templateDoc == null)
             {
                 InitializeWord();
+                System.Diagnostics.Debug.WriteLine($"[DIAG] Opening template: {templatePath}");
                 templateDoc = wordApp.Documents.Open(templatePath);
+                System.Diagnostics.Debug.WriteLine("[DIAG] Template opened successfully");
             }
         }
 
@@ -259,29 +268,41 @@ namespace BuildingBlocksManager
         {
             Word.Document sourceDoc = null;
             var result = new ImportResult { Success = false };
-            
+
             try
             {
+                System.Diagnostics.Debug.WriteLine($"[DIAG] ImportBuildingBlock started: {name}");
+
                 // Validate parameters before starting Word operations
                 ValidateBuildingBlockParameters(name, category);
-                
+                System.Diagnostics.Debug.WriteLine("[DIAG] Parameters validated");
+
                 OpenTemplate();
+                System.Diagnostics.Debug.WriteLine("[DIAG] Template open, now opening source file...");
+                System.Diagnostics.Debug.WriteLine($"[DIAG] Source file: {sourceFile}");
                 sourceDoc = wordApp.Documents.Open(
                     sourceFile,
                     ReadOnly: true,
                     AddToRecentFiles: false);
+                System.Diagnostics.Debug.WriteLine("[DIAG] Source file opened");
 
                 // Remove existing Building Block with same name if it exists
+                System.Diagnostics.Debug.WriteLine("[DIAG] Removing existing building block if exists...");
                 RemoveBuildingBlock(name, category);
+                System.Diagnostics.Debug.WriteLine("[DIAG] Remove complete");
 
                 // Use source document content directly
+                System.Diagnostics.Debug.WriteLine("[DIAG] Getting source content...");
                 var sourceRange = sourceDoc.Content;
+                System.Diagnostics.Debug.WriteLine("[DIAG] Got source content");
 
                 // Convert gallery type to Word enum
                 var buildingBlockType = GetBuildingBlockType(galleryType);
 
                 // Access template's BuildingBlockEntries
+                System.Diagnostics.Debug.WriteLine("[DIAG] Getting template attachment...");
                 Word.Template template = (Word.Template)templateDoc.get_AttachedTemplate();
+                System.Diagnostics.Debug.WriteLine("[DIAG] Got template attachment");
                 
                 // Sanitize parameters before Word API call
                 string sanitizedName = SanitizeBuildingBlockName(name);
@@ -298,6 +319,7 @@ namespace BuildingBlocksManager
                 }
                 
                 // Add Building Block using modern BuildingBlockEntries API
+                System.Diagnostics.Debug.WriteLine($"[DIAG] Adding building block: {sanitizedName} to category: {sanitizedCategory}");
                 try
                 {
                     template.BuildingBlockEntries.Add(
@@ -305,9 +327,11 @@ namespace BuildingBlocksManager
                         buildingBlockType,
                         sanitizedCategory,
                         sourceRange);
+                    System.Diagnostics.Debug.WriteLine("[DIAG] Building block added successfully");
                 }
                 catch (COMException comEx) when ((uint)comEx.ErrorCode == 0x800A16DD && galleryType == "AutoText")
                 {
+                    System.Diagnostics.Debug.WriteLine("[DIAG] AutoText failed, trying Quick Parts...");
                     // Try Quick Parts as fallback for AutoText compatibility issues
                     var quickPartsType = GetBuildingBlockType("Quick Parts");
                     template.BuildingBlockEntries.Add(
@@ -315,12 +339,15 @@ namespace BuildingBlocksManager
                         quickPartsType,
                         sanitizedCategory,
                         sourceRange);
+                    System.Diagnostics.Debug.WriteLine("[DIAG] Quick Parts fallback succeeded");
                 }
 
                 // No temporary document to close
-                
+
                 // Save template
+                System.Diagnostics.Debug.WriteLine("[DIAG] Saving template...");
                 templateDoc.Save();
+                System.Diagnostics.Debug.WriteLine("[DIAG] Template saved");
                 
                 result.Success = true;
                 result.ImportedName = sanitizedName;
