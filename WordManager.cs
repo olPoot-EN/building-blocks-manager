@@ -30,16 +30,18 @@ namespace BuildingBlocksManager
             if (wordApp == null)
             {
                 wordApp = new Word.Application();
-                wordApp.Visible = false;
-                wordApp.ScreenUpdating = false;
-                wordApp.DisplayAlerts = Word.WdAlertLevel.wdAlertsNone;
 
-                // Disable macro security prompts during automation
-                // This prevents RPC_E_CALL_REJECTED (0x80010001) errors when Word shows
-                // "Microsoft Office has identified a potential security concern" dialogs
-                // for OneDrive/SharePoint synced files
+                // Set security/alert settings BEFORE doing anything else
                 // Value 1 = msoAutomationSecurityLow (run all macros without prompts)
                 ((dynamic)wordApp).AutomationSecurity = 1;
+                wordApp.DisplayAlerts = Word.WdAlertLevel.wdAlertsNone;
+
+                // Additional settings to suppress security dialogs
+                wordApp.Options.ConfirmConversions = false;
+                wordApp.Options.DoNotPromptForConvert = true;
+
+                wordApp.Visible = false;
+                wordApp.ScreenUpdating = false;
             }
         }
 
