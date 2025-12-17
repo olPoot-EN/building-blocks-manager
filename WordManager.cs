@@ -5,6 +5,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Xml;
 using System.Xml.Linq;
 using DocumentFormat.OpenXml.Packaging;
@@ -20,15 +21,106 @@ namespace BuildingBlocksManager
         private Word.Document templateDoc;
         private bool disposed = false;
 
+        // Dialog dismisser thread
+        private Thread dialogDismisserThread;
+        private volatile bool dismissDialogs = false;
+
+        // Windows API for finding and closing dialogs
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        private static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern int GetWindowText(IntPtr hWnd, System.Text.StringBuilder lpString, int nMaxCount);
+
+        [DllImport("user32.dll")]
+        private static extern bool IsWindowVisible(IntPtr hWnd);
+
+        private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+        private const uint WM_CLOSE = 0x0010;
+
         public WordManager(string templatePath)
         {
             this.templatePath = templatePath;
+        }
+
+        /// <summary>
+        /// Start background thread to auto-dismiss Word security dialogs
+        /// </summary>
+        private void StartDialogDismisser()
+        {
+            dismissDialogs = true;
+            dialogDismisserThread = new Thread(DialogDismisserLoop)
+            {
+                IsBackground = true,
+                Name = "WordDialogDismisser"
+            };
+            dialogDismisserThread.Start();
+        }
+
+        /// <summary>
+        /// Stop the dialog dismisser thread
+        /// </summary>
+        private void StopDialogDismisser()
+        {
+            dismissDialogs = false;
+            if (dialogDismisserThread != null && dialogDismisserThread.IsAlive)
+            {
+                dialogDismisserThread.Join(1000); // Wait up to 1 second
+            }
+        }
+
+        /// <summary>
+        /// Background loop that finds and closes Word security dialogs
+        /// </summary>
+        private void DialogDismisserLoop()
+        {
+            while (dismissDialogs)
+            {
+                try
+                {
+                    EnumWindows((hWnd, lParam) =>
+                    {
+                        if (!IsWindowVisible(hWnd))
+                            return true; // Continue enumeration
+
+                        var sb = new System.Text.StringBuilder(256);
+                        GetWindowText(hWnd, sb, 256);
+                        string title = sb.ToString();
+
+                        // Look for Word security dialog
+                        if (title.Contains("Microsoft Word Security Notice"))
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[DIAG] Found security dialog, closing it...");
+                            SendMessage(hWnd, WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
+                        }
+
+                        return true; // Continue enumeration
+                    }, IntPtr.Zero);
+                }
+                catch
+                {
+                    // Ignore errors in dialog detection
+                }
+
+                Thread.Sleep(100); // Check every 100ms
+            }
         }
 
         private void InitializeWord()
         {
             if (wordApp == null)
             {
+                // Start dialog dismisser BEFORE creating Word instance
+                StartDialogDismisser();
+
                 System.Diagnostics.Debug.WriteLine("[DIAG] Creating Word.Application...");
                 wordApp = new Word.Application();
                 System.Diagnostics.Debug.WriteLine("[DIAG] Word.Application created");
@@ -868,7 +960,8 @@ namespace BuildingBlocksManager
             {
                 if (disposing)
                 {
-                    // Dispose managed resources
+                    // Stop dialog dismisser thread
+                    StopDialogDismisser();
                 }
 
                 // Dispose COM objects aggressively
