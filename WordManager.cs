@@ -264,7 +264,10 @@ namespace BuildingBlocksManager
                 ValidateBuildingBlockParameters(name, category);
                 
                 OpenTemplate();
-                sourceDoc = wordApp.Documents.Open(sourceFile);
+                sourceDoc = wordApp.Documents.Open(
+                    sourceFile,
+                    ReadOnly: true,
+                    AddToRecentFiles: false);
 
                 // Remove existing Building Block with same name if it exists
                 RemoveBuildingBlock(name, category);
