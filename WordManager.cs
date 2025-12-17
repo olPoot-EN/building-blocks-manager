@@ -9,7 +9,6 @@ using System.Xml;
 using System.Xml.Linq;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
-using Microsoft.Office.Core;
 using Word = Microsoft.Office.Interop.Word;
 
 namespace BuildingBlocksManager
@@ -39,7 +38,8 @@ namespace BuildingBlocksManager
                 // This prevents RPC_E_CALL_REJECTED (0x80010001) errors when Word shows
                 // "Microsoft Office has identified a potential security concern" dialogs
                 // for OneDrive/SharePoint synced files
-                wordApp.AutomationSecurity = MsoAutomationSecurity.msoAutomationSecurityLow;
+                // Value 1 = msoAutomationSecurityLow (run all macros without prompts)
+                ((dynamic)wordApp).AutomationSecurity = 1;
             }
         }
 
