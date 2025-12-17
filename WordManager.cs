@@ -25,7 +25,7 @@ namespace BuildingBlocksManager
         private Thread dialogDismisserThread;
         private volatile bool dismissDialogs = false;
 
-        // Windows API for finding and closing dialogs
+        // Windows API for finding and clicking dialog buttons
         [DllImport("user32.dll", SetLastError = true)]
         private static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
 
@@ -36,8 +36,15 @@ namespace BuildingBlocksManager
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
 
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool EnumChildWindows(IntPtr hWndParent, EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern int GetWindowText(IntPtr hWnd, System.Text.StringBuilder lpString, int nMaxCount);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        private static extern int GetClassName(IntPtr hWnd, System.Text.StringBuilder lpClassName, int nMaxCount);
 
         [DllImport("user32.dll")]
         private static extern bool IsWindowVisible(IntPtr hWnd);
@@ -45,6 +52,7 @@ namespace BuildingBlocksManager
         private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
 
         private const uint WM_CLOSE = 0x0010;
+        private const uint BM_CLICK = 0x00F5;
 
         public WordManager(string templatePath)
         {
@@ -78,7 +86,7 @@ namespace BuildingBlocksManager
         }
 
         /// <summary>
-        /// Background loop that finds and closes Word security dialogs
+        /// Background loop that finds and clicks "Disable Macros" on Word security dialogs
         /// </summary>
         private void DialogDismisserLoop()
         {
@@ -98,8 +106,29 @@ namespace BuildingBlocksManager
                         // Look for Word security dialog
                         if (title.Contains("Microsoft Word Security Notice"))
                         {
-                            System.Diagnostics.Debug.WriteLine($"[DIAG] Found security dialog, closing it...");
-                            SendMessage(hWnd, WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
+                            System.Diagnostics.Debug.WriteLine($"[DIAG] Found security dialog, looking for button...");
+
+                            // Find and click the "Disable Macros" button
+                            EnumChildWindows(hWnd, (childHwnd, childLParam) =>
+                            {
+                                var childText = new System.Text.StringBuilder(256);
+                                GetWindowText(childHwnd, childText, 256);
+                                var childClass = new System.Text.StringBuilder(256);
+                                GetClassName(childHwnd, childClass, 256);
+
+                                string buttonText = childText.ToString();
+                                string className = childClass.ToString();
+
+                                // Look for button with "Disable Macros" text
+                                if (className.Contains("Button") && buttonText.Contains("Disable Macros"))
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"[DIAG] Clicking 'Disable Macros' button...");
+                                    SendMessage(childHwnd, BM_CLICK, IntPtr.Zero, IntPtr.Zero);
+                                    return false; // Stop enumeration
+                                }
+
+                                return true; // Continue enumeration
+                            }, IntPtr.Zero);
                         }
 
                         return true; // Continue enumeration
